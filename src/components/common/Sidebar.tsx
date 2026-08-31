@@ -1,0 +1,243 @@
+import React from 'react';
+import { useAuth } from '../../context/AuthContext';
+import { useReports } from '../../context/ReportContext';
+import { 
+  LayoutDashboard, 
+  FilePlus2, 
+  Files, 
+  CheckSquare, 
+  CalendarRange, 
+  BarChart3, 
+  FileSpreadsheet, 
+  Settings, 
+  GraduationCap,
+  ShieldCheck,
+  Users,
+  X
+} from 'lucide-react';
+
+export type NavTab = 
+  | 'dashboard' 
+  | 'submit' 
+  | 'reports' 
+  | 'approvals' 
+  | 'periods' 
+  | 'departments' 
+  | 'progress'
+  | 'personnel'
+  | 'export' 
+  | 'settings';
+
+interface SidebarProps {
+  activeView?: string;
+  activeTab?: string;
+  onNavigate?: (tab: NavTab) => void;
+  onSelectTab?: (tab: NavTab) => void;
+  onOpenSubmit?: () => void;
+  isMobileOpen?: boolean;
+  onCloseMobile?: () => void;
+}
+
+export const Sidebar: React.FC<SidebarProps> = ({
+  activeView,
+  activeTab,
+  onNavigate,
+  onSelectTab,
+  onOpenSubmit,
+  isMobileOpen = false,
+  onCloseMobile
+}) => {
+  const currentTab = activeView || activeTab || 'dashboard';
+  const handleSelect = (tab: NavTab) => {
+    if (tab === 'submit' && onOpenSubmit) {
+      onOpenSubmit();
+    } else {
+      if (onNavigate) onNavigate(tab);
+      if (onSelectTab) onSelectTab(tab);
+    }
+    if (onCloseMobile) onCloseMobile();
+  };
+
+  const { currentUser, isPrincipal, isDeptHead, isAdmin } = useAuth();
+  const { submissions = [], periods = [] } = useReports();
+
+  // Calculate pending reviews for current user
+  const pendingReviewsCount = submissions.filter(sub => {
+    if (isDeptHead && currentUser.role === 'dept_head') {
+      return sub.departmentId === currentUser.departmentId && sub.status === 'submitted';
+    }
+    if (isPrincipal) {
+      return sub.status === 'dept_approved' || (sub.departmentId === 'bgh' && sub.status === 'submitted');
+    }
+    if (isAdmin) {
+      return sub.status === 'submitted' || sub.status === 'dept_approved';
+    }
+    return false;
+  }).length;
+
+  // Active deadlines count
+  const activePeriodsCount = periods.filter(p => p.status === 'active').length;
+
+  // Late count
+  const lateSubmissionsCount = submissions.filter(s => s.isLate).length;
+
+  const navItems: {
+    id: NavTab;
+    label: string;
+    icon: React.ElementType;
+    badge?: number | string;
+    badgeColor?: string;
+  }[] = [
+    {
+      id: 'dashboard',
+      label: 'Tổng quan hệ thống',
+      icon: LayoutDashboard
+    },
+    {
+      id: 'submit',
+      label: 'Nộp báo cáo mới',
+      icon: FilePlus2
+    },
+    {
+      id: 'reports',
+      label: 'Danh sách báo cáo',
+      icon: Files,
+      badge: submissions.length,
+      badgeColor: 'bg-slate-800 text-slate-300'
+    },
+    {
+      id: 'approvals',
+      label: 'Kiểm duyệt báo cáo',
+      icon: CheckSquare,
+      badge: pendingReviewsCount > 0 ? pendingReviewsCount : undefined,
+      badgeColor: 'bg-amber-500 text-slate-950 font-bold animate-pulse'
+    },
+    {
+      id: 'periods',
+      label: 'Đợt nộp & Deadline',
+      icon: CalendarRange,
+      badge: activePeriodsCount > 0 ? `${activePeriodsCount} đợt` : undefined,
+      badgeColor: 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+    },
+    {
+      id: 'departments',
+      label: 'Tiến độ & Trễ hạn',
+      icon: BarChart3,
+      badge: lateSubmissionsCount > 0 ? `${lateSubmissionsCount} trễ` : undefined,
+      badgeColor: 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
+    },
+    {
+      id: 'personnel',
+      label: 'Nhân sự & Giáo viên',
+      icon: Users,
+      badge: '120 CB-GV',
+      badgeColor: 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+    },
+    {
+      id: 'export',
+      label: 'Xuất Báo Cáo Tổng Hợp',
+      icon: FileSpreadsheet
+    }
+  ];
+
+  return (
+    <>
+      {/* Backdrop overlay */}
+      {isMobileOpen && (
+        <div
+          onClick={onCloseMobile}
+          className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs z-40 transition-opacity duration-200"
+          aria-hidden="true"
+        />
+      )}
+
+      {/* Slide-out Sidebar Drawer */}
+      <aside
+        id="app-main-sidebar-drawer"
+        className={`fixed top-0 bottom-0 left-0 z-50 w-72 sm:w-80 bg-slate-900 text-slate-200 flex flex-col shadow-2xl transition-transform duration-300 ease-in-out border-r border-slate-800/80 ${
+          isMobileOpen ? 'translate-x-0' : '-translate-x-full pointer-events-none'
+        }`}
+      >
+        {/* Drawer Header with Title & Close button */}
+        <div className="p-4 border-b border-slate-800/90 flex items-center justify-between bg-slate-950/60">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-500 flex items-center justify-center text-white font-bold shadow-xs">
+              <GraduationCap className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="font-extrabold text-sm text-white tracking-wide">MENU HỆ THỐNG</div>
+              <div className="text-[10px] text-emerald-400 font-medium">THCS & THPT Đốc Binh Kiều</div>
+            </div>
+          </div>
+          <button
+            id="btn-close-sidebar-drawer"
+            onClick={onCloseMobile}
+            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer"
+            aria-label="Đóng menu"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Navigation List */}
+        <div className="flex-1 overflow-y-auto p-3 space-y-1 scrollbar-thin">
+          <div className="px-2 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+            Chức Năng Nghiệp Vụ
+          </div>
+
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = currentTab === item.id || (item.id === 'departments' && currentTab === 'progress');
+
+            return (
+              <button
+                key={item.id}
+                id={`sidebar-tab-${item.id}`}
+                onClick={() => handleSelect(item.id)}
+                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer group ${
+                  isActive
+                    ? 'bg-emerald-600 text-white shadow-xs font-bold'
+                    : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
+                }`}
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <Icon className={`w-4 h-4 shrink-0 transition ${isActive ? 'text-white' : 'text-slate-400 group-hover:text-emerald-400'}`} />
+                  <span className="truncate text-left">{item.label}</span>
+                </div>
+
+                {item.badge !== undefined && (
+                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0 ${item.badgeColor}`}>
+                    {item.badge}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* User Profile Footer in Sidebar */}
+        <div className="p-3 m-3 rounded-2xl bg-slate-950/70 border border-slate-800/80 shrink-0">
+          <div className="flex items-center gap-2.5">
+            <img
+              src={currentUser.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100'}
+              alt={currentUser.name}
+              className="w-8 h-8 rounded-xl object-cover border border-slate-700 shrink-0"
+            />
+            <div className="min-w-0 flex-1">
+              <div className="text-xs font-bold text-white truncate">
+                {currentUser.name}
+              </div>
+              <div className="text-[10px] text-emerald-400 truncate">
+                {currentUser.roleTitle}
+              </div>
+            </div>
+          </div>
+          <div className="mt-2 pt-2 border-t border-slate-800 flex items-center justify-between text-[10px] text-slate-400">
+            <span className="truncate">{currentUser.departmentName}</span>
+            <span className="text-emerald-400 font-semibold shrink-0">Trực tuyến</span>
+          </div>
+        </div>
+      </aside>
+    </>
+  );
+};

@@ -1,0 +1,6 @@
+{
+  "name": "Cổng Nộp Báo Cáo - THCS & THPT Đốc Binh Kiều",
+  "description": "Hệ thống quản lý, nộp và kiểm duyệt báo cáo định kỳ dành cho cán bộ, giáo viên, nhân viên trường THCS & THPT Đốc Binh Kiều với phân quyền đa cấp, theo dõi hạn nộp và xuất báo cáo.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
