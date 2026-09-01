@@ -34,6 +34,7 @@ export const PersonnelRosterView: React.FC = () => {
   const [selectedRole, setSelectedRole] = useState<string>('all');
   const [filterParty, setFilterParty] = useState<string>('all');
   const [filterDegree, setFilterDegree] = useState<string>('all');
+  const [filterHomeroom, setFilterHomeroom] = useState<string>('all'); // 'all' | 'gvcn_only' | 'non_gvcn'
   const [selectedUserDetail, setSelectedUserDetail] = useState<User | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncStatus, setSyncStatus] = useState<string | null>(null);
@@ -53,10 +54,15 @@ export const PersonnelRosterView: React.FC = () => {
         const matchSubject = u.subject?.toLowerCase().includes(q) || false;
         const matchSpec = u.specialization?.toLowerCase().includes(q) || false;
         const matchRole = u.roleTitle.toLowerCase().includes(q);
-        if (!matchName && !matchEmail && !matchSubject && !matchSpec && !matchRole) {
+        const matchClass = u.homeroomClass?.toLowerCase().includes(q) || false;
+        const matchCampus = u.homeroomCampus?.toLowerCase().includes(q) || false;
+        if (!matchName && !matchEmail && !matchSubject && !matchSpec && !matchRole && !matchClass && !matchCampus) {
           return false;
         }
       }
+
+      if (filterHomeroom === 'gvcn_only' && !u.isHomeroomTeacher) return false;
+      if (filterHomeroom === 'non_gvcn' && u.isHomeroomTeacher) return false;
 
       if (selectedDept !== 'all' && u.departmentId !== selectedDept) {
         return false;
@@ -85,13 +91,14 @@ export const PersonnelRosterView: React.FC = () => {
 
       return true;
     });
-  }, [allUsers, searchQuery, selectedDept, selectedSchool, selectedRole, filterParty, filterDegree]);
+  }, [allUsers, searchQuery, selectedDept, selectedSchool, selectedRole, filterParty, filterDegree, filterHomeroom]);
 
   // Statistics
   const stats = useMemo(() => {
     const totalStaff = allUsers.filter(u => u.id !== 'user-admin').length;
     const partyCount = allUsers.filter(u => u.partyMember).length;
     const mastersCount = allUsers.filter(u => u.qualification?.includes('Thạc')).length;
+    const homeroomCount = allUsers.filter(u => u.isHomeroomTeacher).length;
     const thptCount = allUsers.filter(u => u.originalSchool === 'THPTĐBK').length;
     const thcsDbkCount = allUsers.filter(u => u.originalSchool === 'THCSĐBK').length;
     const thcsTkCount = allUsers.filter(u => u.originalSchool === 'THCSTK').length;
@@ -101,6 +108,7 @@ export const PersonnelRosterView: React.FC = () => {
       partyCount,
       partyPercentage: totalStaff ? Math.round((partyCount / totalStaff) * 100) : 0,
       mastersCount,
+      homeroomCount,
       thptCount,
       thcsDbkCount,
       thcsTkCount
@@ -220,11 +228,20 @@ export const PersonnelRosterView: React.FC = () => {
         )}
 
         {/* High Density Metric Cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 mt-4 pt-4 border-t border-slate-100">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-2.5 mt-4 pt-4 border-t border-slate-100">
           <div className="bg-slate-50 rounded-xl p-2.5 border border-slate-200/60">
             <div className="text-[11px] font-semibold text-slate-500">Tổng nhân sự</div>
             <div className="text-lg font-black text-slate-900 mt-0.5">{stats.totalStaff}</div>
             <div className="text-[10px] text-slate-500 font-medium">6 tổ CM + 1 tổ VP</div>
+          </div>
+
+          <div className="bg-amber-50/70 rounded-xl p-2.5 border border-amber-200/80">
+            <div className="text-[11px] font-semibold text-amber-800 flex items-center gap-1">
+              <GraduationCap className="w-3.5 h-3.5 text-amber-600" />
+              <span>GVCN</span>
+            </div>
+            <div className="text-lg font-black text-amber-900 mt-0.5">{stats.homeroomCount || 53}</div>
+            <div className="text-[10px] text-amber-700 font-bold">53 Lớp toàn trường</div>
           </div>
 
           <div className="bg-red-50/50 rounded-xl p-2.5 border border-red-200/60">
@@ -242,19 +259,19 @@ export const PersonnelRosterView: React.FC = () => {
           <div className="bg-sky-50/50 rounded-xl p-2.5 border border-sky-200/60">
             <div className="text-[11px] font-semibold text-sky-700">THPT ĐBK</div>
             <div className="text-lg font-black text-sky-900 mt-0.5">{stats.thptCount}</div>
-            <div className="text-[10px] text-sky-600">Cơ sở THPT</div>
+            <div className="text-[10px] text-sky-600">14 lớp THPT</div>
           </div>
 
           <div className="bg-indigo-50/50 rounded-xl p-2.5 border border-indigo-200/60">
             <div className="text-[11px] font-semibold text-indigo-700">THCS ĐBK</div>
             <div className="text-lg font-black text-indigo-900 mt-0.5">{stats.thcsDbkCount}</div>
-            <div className="text-[10px] text-indigo-600">Cơ sở THCS</div>
+            <div className="text-[10px] text-indigo-600">24 lớp ĐBK</div>
           </div>
 
           <div className="bg-teal-50/50 rounded-xl p-2.5 border border-teal-200/60">
             <div className="text-[11px] font-semibold text-teal-700">THCS Tân Kiều</div>
             <div className="text-lg font-black text-teal-900 mt-0.5">{stats.thcsTkCount}</div>
-            <div className="text-[10px] text-teal-600">Cơ sở sáp nhập</div>
+            <div className="text-[10px] text-teal-600">15 lớp Tân Kiều</div>
           </div>
         </div>
       </div>
@@ -267,11 +284,28 @@ export const PersonnelRosterView: React.FC = () => {
             <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
               type="text"
-              placeholder="Tìm theo họ tên, môn dạy, email..."
+              placeholder="Tìm theo họ tên, lớp chủ nhiệm (12CB1, 6A1...), môn dạy..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-9 pr-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-emerald-600 transition"
             />
+          </div>
+
+          {/* GVCN Quick Filter */}
+          <div>
+            <select
+              value={filterHomeroom}
+              onChange={(e) => setFilterHomeroom(e.target.value)}
+              className={`w-full py-2 px-2.5 text-xs rounded-xl border focus:outline-emerald-600 transition font-medium ${
+                filterHomeroom === 'gvcn_only'
+                  ? 'bg-amber-50 border-amber-300 text-amber-900 font-bold'
+                  : 'bg-slate-50 border-slate-200 text-slate-700'
+              }`}
+            >
+              <option value="all">Tất cả nhiệm vụ</option>
+              <option value="gvcn_only">⭐ Chỉ 53 Giáo viên chủ nhiệm (GVCN)</option>
+              <option value="non_gvcn">Không làm chủ nhiệm</option>
+            </select>
           </div>
 
           {/* Dept Filter */}
@@ -317,27 +351,19 @@ export const PersonnelRosterView: React.FC = () => {
               <option value="teacher">Giáo viên / Nhân viên</option>
             </select>
           </div>
-
-          {/* Party Member Filter */}
-          <div>
-            <select
-              value={filterParty}
-              onChange={(e) => setFilterParty(e.target.value)}
-              className="w-full py-2 px-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-emerald-600 transition"
-            >
-              <option value="all">Đảng viên & Quần chúng</option>
-              <option value="party">Chỉ Đảng viên</option>
-              <option value="non_party">Quần chúng</option>
-            </select>
-          </div>
         </div>
 
         {/* Active Filter Badges */}
         <div className="flex items-center justify-between text-xs text-slate-500 pt-1">
-          <div>
-            Hiển thị <strong className="text-slate-900">{filteredUsers.length}</strong> / {allUsers.length} cán bộ giáo viên, nhân viên
+          <div className="flex items-center gap-2">
+            <span>Hiển thị <strong className="text-slate-900">{filteredUsers.length}</strong> / {allUsers.length} nhân sự</span>
+            {filterHomeroom === 'gvcn_only' && (
+              <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 text-[10px] font-bold">
+                Đang lọc 53 GVCN
+              </span>
+            )}
           </div>
-          {(searchQuery || selectedDept !== 'all' || selectedSchool !== 'all' || selectedRole !== 'all' || filterParty !== 'all') && (
+          {(searchQuery || selectedDept !== 'all' || selectedSchool !== 'all' || selectedRole !== 'all' || filterParty !== 'all' || filterHomeroom !== 'all') && (
             <button
               onClick={() => {
                 setSearchQuery('');
@@ -346,6 +372,7 @@ export const PersonnelRosterView: React.FC = () => {
                 setSelectedRole('all');
                 setFilterParty('all');
                 setFilterDegree('all');
+                setFilterHomeroom('all');
               }}
               className="text-emerald-700 hover:text-emerald-900 font-semibold cursor-pointer underline text-[11px]"
             >
@@ -460,9 +487,15 @@ export const PersonnelRosterView: React.FC = () => {
                       </div>
                     </td>
 
-                    {/* Môn / Nhiệm Vụ */}
-                    <td className="py-2 px-3 text-slate-700 font-medium">
-                      {user.subject || '-'}
+                    {/* Môn / Nhiệm Vụ & GVCN */}
+                    <td className="py-2 px-3">
+                      <div className="text-slate-800 font-medium">{user.subject || '-'}</div>
+                      {user.isHomeroomTeacher && (
+                        <div className="inline-flex items-center gap-1 mt-0.5 px-1.5 py-0.5 rounded bg-amber-100/90 text-amber-900 border border-amber-300/80 text-[10px] font-bold">
+                          <GraduationCap className="w-3 h-3 text-amber-700 shrink-0" />
+                          <span>GVCN {user.homeroomClass} ({user.homeroomStudentCount} HS)</span>
+                        </div>
+                      )}
                     </td>
 
                     {/* Trình độ / Chuyên ngành */}

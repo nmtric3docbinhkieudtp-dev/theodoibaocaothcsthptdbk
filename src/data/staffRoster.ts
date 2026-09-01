@@ -263,10 +263,92 @@ const RAW_120_DATA: RawStaff[] = [
   { tt: 120, school: 'THCSTK', deptId: 'gdtc_qp_nt', deptName: 'Tổ GDTC - QPAN - Nghệ thuật', name: 'Nguyễn Anh Văn', dob: '23/06/1986', gender: 'Nam', subject: 'Âm nhạc', party: false, posBefore: 'Giáo viên', posAfter: 'Giáo viên', qual: 'Đại học', spec: 'Âm nhạc', pol: 'Sơ cấp', it: 'B', foreignLang: 'B' }
 ];
 
+export interface HomeroomInfo {
+  stt: number;
+  campus: 'THPT' | 'DBK' | 'TK';
+  className: string;
+  teacherName: string;
+  studentCount: number;
+  grade: number;
+}
+
+export const HOMEROOM_ROSTER_53: HomeroomInfo[] = [
+  // --- Khối THPT (14 lớp) ---
+  { stt: 1, campus: 'THPT', className: '12CB1', teacherName: 'Phan Thị Ngọc Thơ', studentCount: 28, grade: 12 },
+  { stt: 2, campus: 'THPT', className: '12CB2', teacherName: 'Trương Thị Mỹ Duyên', studentCount: 23, grade: 12 },
+  { stt: 3, campus: 'THPT', className: '12CB3', teacherName: 'Võ Thị Ngọc Hương', studentCount: 47, grade: 12 },
+  { stt: 4, campus: 'THPT', className: '12CB4', teacherName: 'Nguyễn Thị Bé Trang', studentCount: 47, grade: 12 },
+  { stt: 5, campus: 'THPT', className: '12CB5', teacherName: 'Trịnh Văn Sơn', studentCount: 41, grade: 12 },
+  { stt: 6, campus: 'THPT', className: '11CB1', teacherName: 'Bùi Kim Huỳnh', studentCount: 45, grade: 11 },
+  { stt: 7, campus: 'THPT', className: '11CB2', teacherName: 'Phạm Long Phi', studentCount: 35, grade: 11 },
+  { stt: 8, campus: 'THPT', className: '11CB3', teacherName: 'Trần Văn Rỡ', studentCount: 34, grade: 11 },
+  { stt: 9, campus: 'THPT', className: '11CB4', teacherName: 'Đào Thị Ngọc Liên', studentCount: 33, grade: 11 },
+  { stt: 10, campus: 'THPT', className: '10CB1', teacherName: 'Cao Văn Tùng', studentCount: 37, grade: 10 },
+  { stt: 11, campus: 'THPT', className: '10CB2', teacherName: 'Trần Thị Kiều', studentCount: 29, grade: 10 },
+  { stt: 12, campus: 'THPT', className: '10CB3', teacherName: 'Lê Thị Mỹ Ny', studentCount: 44, grade: 10 },
+  { stt: 13, campus: 'THPT', className: '10CB4', teacherName: 'Lê Thị Thu Diễm', studentCount: 47, grade: 10 },
+  { stt: 14, campus: 'THPT', className: '10CB5', teacherName: 'Hồ Văn Nhịnh', studentCount: 45, grade: 10 },
+
+  // --- THCS Điểm Đốc Binh Kiều - DBK (24 lớp) ---
+  { stt: 15, campus: 'DBK', className: '6A1', teacherName: 'Hồ Thị Ngọc Tài', studentCount: 42, grade: 6 },
+  { stt: 16, campus: 'DBK', className: '6A2', teacherName: 'Nguyễn Thị Thắm', studentCount: 41, grade: 6 },
+  { stt: 17, campus: 'DBK', className: '6A3', teacherName: 'Bùi Kim Phướng', studentCount: 43, grade: 6 },
+  { stt: 18, campus: 'DBK', className: '6A4', teacherName: 'Nguyễn Thanh Hùng', studentCount: 41, grade: 6 },
+  { stt: 19, campus: 'DBK', className: '6A5', teacherName: 'Lê Kim Ngân', studentCount: 41, grade: 6 },
+  { stt: 20, campus: 'DBK', className: '6A6', teacherName: 'Lê Thị Bình', studentCount: 42, grade: 6 },
+  { stt: 21, campus: 'DBK', className: '7A1', teacherName: 'Nguyễn Văn Ngoan', studentCount: 40, grade: 7 },
+  { stt: 22, campus: 'DBK', className: '7A2', teacherName: 'Mai Phước Lộc', studentCount: 40, grade: 7 },
+  { stt: 23, campus: 'DBK', className: '7A3', teacherName: 'Nguyễn Quốc Nguyễn', studentCount: 41, grade: 7 },
+  { stt: 24, campus: 'DBK', className: '7A4', teacherName: 'Lê Ngọc Ẩn', studentCount: 40, grade: 7 },
+  { stt: 25, campus: 'DBK', className: '7A5', teacherName: 'Nguyễn Thị Hiếu', studentCount: 39, grade: 7 },
+  { stt: 26, campus: 'DBK', className: '7A6', teacherName: 'Trần Thị Cẩm', studentCount: 40, grade: 7 },
+  { stt: 27, campus: 'DBK', className: '8A1', teacherName: 'Nguyễn Thái Hùng', studentCount: 43, grade: 8 },
+  { stt: 28, campus: 'DBK', className: '8A2', teacherName: 'Trần Phi Hải', studentCount: 42, grade: 8 },
+  { stt: 29, campus: 'DBK', className: '8A3', teacherName: 'Nguyễn Thị Xe', studentCount: 43, grade: 8 },
+  { stt: 30, campus: 'DBK', className: '8A4', teacherName: 'Nguyễn Kim Ngân', studentCount: 43, grade: 8 },
+  { stt: 31, campus: 'DBK', className: '8A5', teacherName: 'Võ Hoàng Toàn', studentCount: 43, grade: 8 },
+  { stt: 32, campus: 'DBK', className: '8A6', teacherName: 'Huỳnh Thanh Dân', studentCount: 42, grade: 8 },
+  { stt: 33, campus: 'DBK', className: '9A1', teacherName: 'Nguyễn Thị Cẩm Nhung', studentCount: 42, grade: 9 },
+  { stt: 34, campus: 'DBK', className: '9A2', teacherName: 'Trần Thị Hậu', studentCount: 39, grade: 9 },
+  { stt: 35, campus: 'DBK', className: '9A3', teacherName: 'Nguyễn Thị Bích Lang', studentCount: 44, grade: 9 },
+  { stt: 36, campus: 'DBK', className: '9A4', teacherName: 'Nguyễn Văn Tài', studentCount: 43, grade: 9 },
+  { stt: 37, campus: 'DBK', className: '9A5', teacherName: 'Hồ Mai Thảo', studentCount: 42, grade: 9 },
+  { stt: 38, campus: 'DBK', className: '9A6', teacherName: 'Lê Thái Phương', studentCount: 43, grade: 9 },
+
+  // --- THCS Điểm Tân Kiều - TK (15 lớp) ---
+  { stt: 39, campus: 'TK', className: '6A7', teacherName: 'Nguyễn Thị Kim Sang', studentCount: 41, grade: 6 },
+  { stt: 40, campus: 'TK', className: '6A8', teacherName: 'Lê Thị Ngọc Điệp', studentCount: 43, grade: 6 },
+  { stt: 41, campus: 'TK', className: '6A9', teacherName: 'Nguyễn Thị Ngọc Diễm', studentCount: 42, grade: 6 },
+  { stt: 42, campus: 'TK', className: '6A10', teacherName: 'Nguyễn Thị Lụa', studentCount: 41, grade: 6 },
+  { stt: 43, campus: 'TK', className: '7A7', teacherName: 'Trần Kim Phương', studentCount: 47, grade: 7 },
+  { stt: 44, campus: 'TK', className: '7A8', teacherName: 'Phạm Thị Mỹ Châu', studentCount: 45, grade: 7 },
+  { stt: 45, campus: 'TK', className: '7A9', teacherName: 'Lê Văn Chính', studentCount: 45, grade: 7 },
+  { stt: 46, campus: 'TK', className: '8A7', teacherName: 'Thái Văn Tiến', studentCount: 39, grade: 8 },
+  { stt: 47, campus: 'TK', className: '8A8', teacherName: 'Nguyễn Thị Bích Phượng', studentCount: 38, grade: 8 },
+  { stt: 48, campus: 'TK', className: '8A9', teacherName: 'Lê Phước Hậu', studentCount: 38, grade: 8 },
+  { stt: 49, campus: 'TK', className: '8A10', teacherName: 'Trần Văn Nhuận', studentCount: 38, grade: 8 },
+  { stt: 50, campus: 'TK', className: '9A7', teacherName: 'Trần Quốc Huy', studentCount: 40, grade: 9 },
+  { stt: 51, campus: 'TK', className: '9A8', teacherName: 'Đinh Thị Giàu', studentCount: 38, grade: 9 },
+  { stt: 52, campus: 'TK', className: '9A9', teacherName: 'Nguyễn Mỹ Ngân', studentCount: 39, grade: 9 },
+  { stt: 53, campus: 'TK', className: '9A10', teacherName: 'Nguyễn Thành Tín', studentCount: 40, grade: 9 }
+];
+
+// Helper to normalize names for comparison
+const normalizeStr = (s: string) => s.toLowerCase().trim().replace(/\s+/g, ' ');
+
+// Build homeroom lookup map
+const homeroomMap = new Map<string, HomeroomInfo>();
+HOMEROOM_ROSTER_53.forEach(h => {
+  homeroomMap.set(normalizeStr(h.teacherName), h);
+});
+
 export const OFFICIAL_USERS: User[] = RAW_120_DATA.map((item) => {
   const { role, roleTitle } = mapRole(item.posAfter, item.posBefore, item.deptId, item.subject);
   const isThayTri = item.tt === 2 || item.name === 'Nguyễn Minh Trí';
   const userEmail = isThayTri ? 'nmtri.c3docbinhkieu.dtp@moet.edu.vn' : makeEmail(item.name, item.tt);
+
+  // Check homeroom assignment
+  const hrInfo = homeroomMap.get(normalizeStr(item.name));
 
   return {
     id: `staff-${item.tt}`,
@@ -291,6 +373,13 @@ export const OFFICIAL_USERS: User[] = RAW_120_DATA.map((item) => {
     managementDegree: item.mgmtDegree,
     notes: item.notes,
     email: userEmail,
-    isActive: true
+    isActive: true,
+
+    // GVCN fields
+    isHomeroomTeacher: !!hrInfo,
+    homeroomClass: hrInfo?.className,
+    homeroomCampus: hrInfo?.campus,
+    homeroomStudentCount: hrInfo?.studentCount,
+    homeroomGrade: hrInfo?.grade
   } as User;
 });

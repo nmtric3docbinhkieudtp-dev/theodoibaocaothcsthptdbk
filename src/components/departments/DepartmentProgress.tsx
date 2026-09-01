@@ -14,7 +14,8 @@ import {
   UserCheck,
   Calendar,
   Eye,
-  FileSpreadsheet
+  FileSpreadsheet,
+  GraduationCap
 } from 'lucide-react';
 import { Department, ReportSubmission, User } from '../../types';
 
@@ -182,13 +183,26 @@ export const DepartmentProgress: React.FC<DepartmentProgressProps> = ({
 
                       return (
                         <tr key={user.id} className="hover:bg-slate-50 transition">
-                          <td className="p-3 font-bold text-slate-900 flex items-center gap-2">
-                            <img
-                              src={user.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80'}
-                              alt=""
-                              className="w-6 h-6 rounded-full object-cover"
-                            />
-                            <span>{user.name}</span>
+                          <td className="p-3 font-bold text-slate-900">
+                            <div className="flex items-center gap-2">
+                              <div className="w-6 h-6 rounded-full bg-slate-200 text-slate-700 flex items-center justify-center font-bold text-[10px] shrink-0">
+                                {user.name.slice(0, 2).toUpperCase()}
+                              </div>
+                              <div>
+                                <div className="flex items-center gap-1.5">
+                                  <span>{user.name}</span>
+                                  {user.isHomeroomTeacher && (
+                                    <span className="px-1.5 py-0.2 rounded bg-amber-100 text-amber-900 border border-amber-300 text-[10px] font-bold flex items-center gap-0.5">
+                                      <GraduationCap className="w-2.5 h-2.5 text-amber-700" />
+                                      GVCN {user.homeroomClass}
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="text-[10px] text-slate-400 font-normal">
+                                  {user.subject || user.roleTitle}
+                                </div>
+                              </div>
+                            </div>
                           </td>
                           <td className="p-3 text-slate-600">{user.roleTitle}</td>
                           <td className="p-3 text-slate-600">{user.departmentName}</td>

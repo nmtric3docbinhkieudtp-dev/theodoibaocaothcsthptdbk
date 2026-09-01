@@ -17,9 +17,13 @@ import {
   Image as ImageIcon,
   HelpCircle,
   Clock,
-  Sparkles
+  Sparkles,
+  GraduationCap,
+  School,
+  Users
 } from 'lucide-react';
 import { ReportPeriod, ReportAttachment } from '../../types';
+import { isUserEligibleForPeriod, getAudienceLabel } from '../../utils/reportFilters';
 import confetti from 'canvas-confetti';
 
 interface SubmitReportModalProps {
@@ -33,10 +37,18 @@ export const SubmitReportModal: React.FC<SubmitReportModalProps> = ({
   onClose,
   defaultPeriodId
 }) => {
-  const { currentUser } = useAuth();
+  const { currentUser, isPrincipal, isAdmin } = useAuth();
   const { periods, submitReport } = useReports();
 
-  const activePeriods = periods.filter(p => p.status === 'active');
+  // STRICT FILTERING: Only show periods the current user is eligible for!
+  // If a period has targetAudience: 'homeroom_teachers', only homeroom teachers (or admin/principal previewing) see it.
+  const eligiblePeriods = periods.filter(p => {
+    // Principal and Admin have oversight to test/submit any period
+    if (isPrincipal || isAdmin) return true;
+    return isUserEligibleForPeriod(currentUser, p);
+  });
+
+  const activePeriods = eligiblePeriods.filter(p => p.status === 'active');
   const [selectedPeriodId, setSelectedPeriodId] = useState<string>('');
   
   const [title, setTitle] = useState('');
@@ -51,21 +63,66 @@ export const SubmitReportModal: React.FC<SubmitReportModalProps> = ({
 
   // Set initial period
   useEffect(() => {
-    if (defaultPeriodId) {
+    if (defaultPeriodId && eligiblePeriods.some(p => p.id === defaultPeriodId)) {
       setSelectedPeriodId(defaultPeriodId);
-    } else if (activePeriods.length > 0 && !selectedPeriodId) {
-      setSelectedPeriodId(activePeriods[0].id);
+    } else if (activePeriods.length > 0) {
+      // Pick first active eligible period
+      if (!selectedPeriodId || !eligiblePeriods.some(p => p.id === selectedPeriodId)) {
+        setSelectedPeriodId(activePeriods[0].id);
+      }
+    } else if (eligiblePeriods.length > 0) {
+      if (!selectedPeriodId || !eligiblePeriods.some(p => p.id === selectedPeriodId)) {
+        setSelectedPeriodId(eligiblePeriods[0].id);
+      }
     }
-  }, [defaultPeriodId, activePeriods, selectedPeriodId]);
+  }, [defaultPeriodId, eligiblePeriods, activePeriods, selectedPeriodId]);
 
   const currentPeriod = periods.find(p => p.id === selectedPeriodId);
+  const isHomeroomPeriod = currentPeriod?.targetAudience === 'homeroom_teachers';
 
   // Check if current submission is past deadline
   const isPastDeadline = currentPeriod 
     ? new Date(currentPeriod.deadline).getTime() < Date.now() 
     : false;
 
+  // Auto-fill template when period changes if empty
+  useEffect(() => {
+    if (isHomeroomPeriod && currentUser.isHomeroomTeacher && !title) {
+      setTitle(`Báo cáo công tác chủ nhiệm Lớp ${currentUser.homeroomClass || ''} - ${currentUser.name}`);
+    }
+  }, [selectedPeriodId, isHomeroomPeriod, currentUser, title]);
+
   const handleTemplateInsert = () => {
+    if (isHomeroomPeriod && currentUser.isHomeroomTeacher) {
+      const gvcnTemplate = `BÁO CÁO CÔNG TÁC CHỦ NHIỆM LỚP ${currentUser.homeroomClass || '...'}
+Họ và tên GVCN: ${currentUser.name}
+Phân hiệu: ${currentUser.homeroomCampus || 'THCS & THPT Đốc Binh Kiều'}
+Sĩ số lớp: ${currentUser.homeroomStudentCount || 0} học sinh
+
+1. TÌNH HÌNH SĨ SỐ & DUY TRÌ NỀ NẾP CHUYÊN CẦN:
+- Sĩ số đầu năm / hiện diện: ${currentUser.homeroomStudentCount || 0} HS (Nữ: ... HS).
+- Tình hình chuyên cần: Học sinh đi học đúng giờ, thực hiện tốt đồng phục và tác phong.
+- Số lượt vắng có phép: ... | Vắng không phép: 0.
+
+2. CƠ CẤU TỔ CHỨC & BAN CÁN SỰ LỚP:
+- Đã kiện toàn Ban Cán sự lớp (Lớp trưởng, 2 Lớp phó, 4 Tổ trưởng).
+- Ban Chấp hành Chi đoàn / Ban Chỉ huy Chi đội hoạt động nghiêm túc.
+
+3. HỌC SINH CÓ HOÀN CẢNH KHÓ KHĂN / ĐẶC BIỆT CẦN HỖ TRỢ:
+- Học sinh thuộc diện hộ nghèo / cận nghèo: ... em.
+- Học sinh có nguy cơ bỏ học / cần động viên: Không có.
+- Đề xuất hỗ trợ BHYT, học bổng hoặc sách vở: ...
+
+4. KẾT QUẢ PHỐI HỢP BAN ĐẠI DIỆN CHA MẸ HỌC SINH:
+- Đã thiết lập kênh liên lạc qua Zalo nhóm lớp và sổ liên lạc điện tử.
+- 100% phụ huynh đồng thuận với kế hoạch giáo dục của nhà trường.
+
+5. ĐỀ XUẤT, KIẾN NGHỊ VỚI BAN GIÁM HIỆU:
+- Kính đề nghị Ban Giám Hiệu xem xét: Tiếp tục hỗ trợ quản lý trật tự đầu giờ và các phong trào ngoại khóa.`;
+      setContent(gvcnTemplate);
+      return;
+    }
+
     const template = `Kính gửi Ban Giám Hiệu và Tổ chuyên môn ${currentUser.departmentName},
 
 1. ĐÁNH GIÁ CHUNG VỀ TÌNH HÌNH THỰC HIỆN:
@@ -200,21 +257,33 @@ export const SubmitReportModal: React.FC<SubmitReportModalProps> = ({
         {/* Period Selector & Deadline Alert */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-200/80">
           <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">
-              Chọn Đợt Báo Cáo <span className="text-rose-500">*</span>
+            <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center justify-between">
+              <span>Chọn Đợt Báo Cáo <span className="text-rose-500">*</span></span>
+              {isHomeroomPeriod && (
+                <span className="text-[11px] font-bold text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full flex items-center gap-1">
+                  <GraduationCap className="w-3.5 h-3.5" />
+                  Đợt báo cáo GVCN
+                </span>
+              )}
             </label>
-            <select
-              id="select-period"
-              value={selectedPeriodId}
-              onChange={(e) => setSelectedPeriodId(e.target.value)}
-              className="w-full text-xs sm:text-sm px-3 py-2 rounded-xl bg-white border border-slate-300 focus:outline-emerald-600 font-medium"
-            >
-              {periods.map(p => (
-                <option key={p.id} value={p.id}>
-                  {p.title} ({p.status === 'active' ? 'Đang mở' : 'Đã đóng'})
-                </option>
-              ))}
-            </select>
+            {eligiblePeriods.length === 0 ? (
+              <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs">
+                Hiện không có đợt báo cáo nào phân công cho vai trò của bạn.
+              </div>
+            ) : (
+              <select
+                id="select-period"
+                value={selectedPeriodId}
+                onChange={(e) => setSelectedPeriodId(e.target.value)}
+                className="w-full text-xs sm:text-sm px-3 py-2 rounded-xl bg-white border border-slate-300 focus:outline-emerald-600 font-medium"
+              >
+                {eligiblePeriods.map(p => (
+                  <option key={p.id} value={p.id}>
+                    {p.targetAudience === 'homeroom_teachers' ? '[GVCN] ' : ''}{p.title} ({p.status === 'active' ? 'Đang mở' : 'Đã đóng'})
+                  </option>
+                ))}
+              </select>
+            )}
           </div>
 
           <div className="flex items-center">

@@ -22,6 +22,14 @@ export interface User {
   itSkill?: string; // Trình độ tin học
   foreignLanguage?: string; // Trình độ ngoại ngữ
   managementDegree?: string; // Trình độ quản lý GD / Quản lý nhà nước
+  
+  // Giáo viên chủ nhiệm (GVCN)
+  isHomeroomTeacher?: boolean;
+  homeroomClass?: string; // e.g. "12CB1", "6A1", "9A10"
+  homeroomCampus?: 'THPT' | 'DBK' | 'TK' | string; // Điểm trường
+  homeroomStudentCount?: number; // Sĩ số
+  homeroomGrade?: number; // Khối: 6, 7, 8, 9, 10, 11, 12
+
   avatarUrl?: string;
   phone?: string;
   password?: string;
@@ -57,6 +65,13 @@ export interface ReportAttachment {
   uploadedAt: string;
 }
 
+export type TargetAudienceType = 
+  | 'all'                 // Tất cả 120 cán bộ, GV, NV
+  | 'homeroom_teachers'   // Chỉ 53 Giáo viên chủ nhiệm (GVCN)
+  | 'dept_heads_only'     // Chỉ Tổ trưởng / Tổ phó
+  | 'teachers_only'       // Chỉ Giáo viên bộ môn (không tính NV VP)
+  | 'staff_only';         // Chỉ Nhân viên văn phòng
+
 export interface ReportPeriod {
   id: string;
   title: string;
@@ -70,6 +85,7 @@ export interface ReportPeriod {
   maxFileSizeMb?: number;
   targetDepartmentIds: string[]; // ['all'] or specific departments
   targetRoles: UserRole[]; // Which roles need to submit
+  targetAudience?: TargetAudienceType; // Phân nhóm đối tượng nộp báo cáo (GVCN, Tổ trưởng, toàn trường...)
   isRequired: boolean;
   status: 'active' | 'closed' | 'upcoming';
   createdBy: string;
@@ -109,6 +125,12 @@ export interface ReportSubmission {
   departmentId: string;
   departmentName: string;
   
+  // Dành cho báo cáo GVCN
+  isHomeroomReport?: boolean;
+  homeroomClass?: string;
+  homeroomStudentCount?: number;
+  homeroomCampus?: string;
+
   title: string;
   content: string; // Rich text / structured markdown / text
   structuredData?: Record<string, any>; // For template fields

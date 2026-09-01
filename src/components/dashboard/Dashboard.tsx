@@ -15,9 +15,13 @@ import {
   ChevronRight,
   TrendingUp,
   Building,
-  Check
+  Check,
+  GraduationCap,
+  School,
+  Users
 } from 'lucide-react';
 import { ReportPeriod, ReportSubmission } from '../../types';
+import { isUserEligibleForPeriod, getAudienceLabel } from '../../utils/reportFilters';
 
 interface DashboardProps {
   onOpenSubmit: (periodId?: string) => void;
@@ -56,8 +60,13 @@ export const Dashboard: React.FC<DashboardProps> = ({
     return false;
   });
 
-  // Active periods
-  const activePeriods = periods.filter((p: ReportPeriod) => p.status === 'active');
+  // Filter active periods based on role:
+  // Non-admins only see periods that they are assigned to (e.g. GVCN-only periods only appear for GVCN)
+  const activePeriods = periods.filter((p: ReportPeriod) => {
+    if (p.status !== 'active') return false;
+    if (isPrincipal || isAdmin) return true;
+    return isUserEligibleForPeriod(currentUser, p);
+  });
   const totalSubmissionsCount = submissions.length;
   const totalLateCount = submissions.filter((s: ReportSubmission) => s.isLate).length;
   const onTimeRate = totalSubmissionsCount > 0 
@@ -106,7 +115,12 @@ export const Dashboard: React.FC<DashboardProps> = ({
             </h1>
             <p className="text-sm text-emerald-100/90 mt-1 leading-relaxed">
               Bạn đang ở giao diện <strong>{currentUser.roleTitle}</strong> ({currentUser.departmentName}). 
-              Hệ thống đã sẵn sàng tiếp nhận, kiểm duyệt báo cáo và đồng bộ dữ liệu.
+              {currentUser.isHomeroomTeacher && (
+                <span className="inline-flex items-center gap-1 ml-2 px-2 py-0.5 rounded-full bg-amber-400 text-amber-950 font-bold text-xs shadow-xs">
+                  <GraduationCap className="w-3.5 h-3.5" />
+                  GVCN Lớp {currentUser.homeroomClass} ({currentUser.homeroomStudentCount} HS - {currentUser.homeroomCampus})
+                </span>
+              )}
             </p>
           </div>
 

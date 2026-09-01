@@ -85,7 +85,14 @@ export const StorageService = {
   // --- USERS ---
   getUsers(): User[] {
     initializeDatabaseIfNeeded();
-    return getLocal<User[]>(STORAGE_KEYS.USERS, INITIAL_USERS);
+    const stored = getLocal<User[]>(STORAGE_KEYS.USERS, INITIAL_USERS);
+    // Check if homeroom data needs syncing (if stored list doesn't have homeroom flags)
+    const hrCount = stored.filter(u => u.isHomeroomTeacher).length;
+    if (hrCount < 50) {
+      setLocal(STORAGE_KEYS.USERS, INITIAL_USERS);
+      return INITIAL_USERS;
+    }
+    return stored;
   },
 
   saveUser(user: User): User[] {

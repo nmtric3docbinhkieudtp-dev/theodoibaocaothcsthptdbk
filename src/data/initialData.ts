@@ -18,6 +18,25 @@ export const INITIAL_USERS: User[] = OFFICIAL_USERS;
 
 export const INITIAL_PERIODS: ReportPeriod[] = [
   {
+    id: 'period-gvcn-1',
+    title: 'Báo cáo công tác Giáo viên chủ nhiệm (GVCN) tháng 9 & Thống kê sĩ số',
+    description: 'Dành riêng cho 53 Giáo viên chủ nhiệm: Báo cáo tình hình ổn định nề nếp, cơ cấu ban cán sự lớp, nắm bắt học sinh có hoàn cảnh đặc biệt và kế hoạch phối hợp phụ huynh.',
+    academicYear: '2025-2026',
+    semester: 'HK1',
+    startDate: '2026-09-01T07:00:00.000Z',
+    deadline: '2026-09-10T17:00:00.000Z',
+    reportType: 'hybrid',
+    allowedFileTypes: ['.pdf', '.docx', '.xlsx', '.zip'],
+    maxFileSizeMb: 25,
+    targetDepartmentIds: ['all'],
+    targetRoles: ['teacher', 'dept_head'],
+    targetAudience: 'homeroom_teachers', // Chỉ 53 GVCN
+    isRequired: true,
+    status: 'active',
+    createdBy: 'Thầy Lê Thanh Cường (Hiệu trưởng)',
+    createdAt: '2026-09-01T07:00:00.000Z'
+  },
+  {
     id: 'period-1',
     title: 'Báo cáo sơ kết công tác chuyên môn & Kiểm tra định kỳ giữa HK1',
     description: 'Báo cáo thống kê phân tích điểm số, đánh giá chất lượng dạy học theo chương trình GDPT 2018 và đề xuất giải pháp phụ đạo.',
@@ -30,6 +49,7 @@ export const INITIAL_PERIODS: ReportPeriod[] = [
     maxFileSizeMb: 25,
     targetDepartmentIds: ['all'],
     targetRoles: ['teacher', 'dept_head'],
+    targetAudience: 'all',
     isRequired: true,
     status: 'active',
     createdBy: 'Thầy Lê Thanh Cường (Hiệu trưởng)',
@@ -48,6 +68,7 @@ export const INITIAL_PERIODS: ReportPeriod[] = [
     maxFileSizeMb: 20,
     targetDepartmentIds: ['toan', 'ngu_van_tv_tb', 'khtn_cn', 'su_dia_gdcd', 'nn_tin'],
     targetRoles: ['teacher', 'dept_head'],
+    targetAudience: 'teachers_only',
     isRequired: true,
     status: 'active',
     createdBy: 'Thầy Nguyễn Minh Trí (Phó Hiệu trưởng)',
@@ -64,6 +85,7 @@ export const INITIAL_PERIODS: ReportPeriod[] = [
     reportType: 'text_only',
     targetDepartmentIds: ['all'],
     targetRoles: ['teacher'],
+    targetAudience: 'homeroom_teachers',
     isRequired: true,
     status: 'closed',
     createdBy: 'Ban Giám Hiệu',
@@ -82,6 +104,7 @@ export const INITIAL_PERIODS: ReportPeriod[] = [
     maxFileSizeMb: 50,
     targetDepartmentIds: ['toan', 'ngu_van_tv_tb', 'khtn_cn', 'su_dia_gdcd', 'nn_tin', 'gdtc_qp_nt'],
     targetRoles: ['dept_head', 'teacher'],
+    targetAudience: 'teachers_only',
     isRequired: false,
     status: 'active',
     createdBy: 'Thầy Phan Thanh Thảo (Phó Hiệu trưởng)',
