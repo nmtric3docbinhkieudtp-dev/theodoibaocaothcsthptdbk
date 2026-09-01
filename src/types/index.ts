@@ -24,6 +24,7 @@ export interface User {
   managementDegree?: string; // Trình độ quản lý GD / Quản lý nhà nước
   avatarUrl?: string;
   phone?: string;
+  password?: string;
   isActive: boolean;
 }
 

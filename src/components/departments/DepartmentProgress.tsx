@@ -64,7 +64,7 @@ export const DepartmentProgress: React.FC<DepartmentProgressProps> = ({
               activeTab === 'departments' ? 'bg-white text-emerald-800 shadow-2xs' : 'text-slate-500 hover:text-slate-900'
             }`}
           >
-            Tiến độ theo Tổ ({departments.length})
+            Tiến độ 7 Tổ ({departments.filter(d => d.id !== 'bgh').length})
           </button>
           <button
             onClick={() => setActiveTab('late_history')}
@@ -84,7 +84,7 @@ export const DepartmentProgress: React.FC<DepartmentProgressProps> = ({
           
           {/* Department Cards Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {departments.map((dept: Department) => {
+            {departments.filter((d: Department) => d.id !== 'bgh').map((dept: Department) => {
               const deptUsers = allUsers.filter((u: User) => u.departmentId === dept.id);
               const deptSubs = submissions.filter((s: ReportSubmission) => s.departmentId === dept.id && s.status !== 'draft');
               const lateCount = deptSubs.filter((s: ReportSubmission) => s.isLate).length;
@@ -112,11 +112,7 @@ export const DepartmentProgress: React.FC<DepartmentProgressProps> = ({
                     {dept.name}
                   </h3>
                   <p className="text-[11px] text-slate-500 mt-0.5">
-                    {dept.id === 'bgh' ? (
-                      <span>Lãnh đạo: <strong>Thầy Lê Thanh Cường</strong> (Hiệu trưởng)</span>
-                    ) : (
-                      <span>Tổ trưởng: <strong>{dept.headUserName}</strong></span>
-                    )}
+                    <span>Tổ trưởng: <strong>{dept.headUserName}</strong></span>
                   </p>
 
                   {/* Progress Bar */}

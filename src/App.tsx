@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { AuthProvider } from './context/AuthContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import { ReportProvider } from './context/ReportContext';
+import { LoginPage } from './components/auth/LoginPage';
 import { Header } from './components/common/Header';
 import { Sidebar, NavTab } from './components/common/Sidebar';
 import { Dashboard } from './components/dashboard/Dashboard';
@@ -10,19 +11,23 @@ import { PeriodManagement } from './components/periods/PeriodManagement';
 import { DepartmentProgress } from './components/departments/DepartmentProgress';
 import { PersonnelRosterView } from './components/admin/PersonnelRosterView';
 import { AdminReportsExport } from './components/admin/AdminReportsExport';
-import { FirebaseSettingsModal } from './components/admin/FirebaseSettingsModal';
 import { SubmitReportModal } from './components/reports/SubmitReportModal';
 import { ReportDetailModal } from './components/reports/ReportDetailModal';
 import { ReportSubmission } from './types';
 
 const MainLayout: React.FC = () => {
+  const { isAuthenticated } = useAuth();
   const [activeView, setActiveView] = useState<NavTab>('dashboard');
   const [isSubmitModalOpen, setIsSubmitModalOpen] = useState(false);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
-  const [isFirebaseModalOpen, setIsFirebaseModalOpen] = useState(false);
   const [selectedSubmission, setSelectedSubmission] = useState<ReportSubmission | null>(null);
   const [defaultPeriodForSubmit, setDefaultPeriodForSubmit] = useState<string | undefined>(undefined);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+
+  // If user is not authenticated, show full login portal
+  if (!isAuthenticated) {
+    return <LoginPage />;
+  }
 
   const handleOpenSubmit = (periodId?: string) => {
     setDefaultPeriodForSubmit(periodId);
@@ -48,7 +53,6 @@ const MainLayout: React.FC = () => {
       {/* Top High-Density Header */}
       <Header
         onOpenSubmit={() => handleOpenSubmit()}
-        onOpenFirebaseSettings={() => setIsFirebaseModalOpen(true)}
         onOpenReportDetail={handleOpenReportDetail}
         onToggleMobileMenu={() => setIsMobileSidebarOpen(true)}
         onNavigate={handleNavigate}
@@ -123,11 +127,6 @@ const MainLayout: React.FC = () => {
           setSelectedSubmission(null);
         }}
         submission={selectedSubmission}
-      />
-
-      <FirebaseSettingsModal
-        isOpen={isFirebaseModalOpen}
-        onClose={() => setIsFirebaseModalOpen(false)}
       />
 
       {/* Minimal Footer */}

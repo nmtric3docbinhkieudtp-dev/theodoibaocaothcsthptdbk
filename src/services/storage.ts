@@ -26,7 +26,7 @@ const STORAGE_KEYS = {
   NOTIFICATIONS: 'dbk_notifications_data',
   EMAIL_LOGS: 'dbk_email_logs_data',
   SCHOOL_INFO: 'dbk_school_info_data',
-  SEEDED: 'dbk_seeded_v7_exact_txt_roster'
+  SEEDED: 'dbk_seeded_v13_fixed_le_van_nguyen_gdtc_name'
 };
 
 // Safe LocalStorage helpers
@@ -48,20 +48,25 @@ export function setLocal<T>(key: string, value: T): void {
   }
 }
 
+export const VALID_DEPT_IDS = ['van_phong', 'toan', 'ngu_van_tv_tb', 'su_dia_gdcd', 'khtn_cn', 'nn_tin', 'gdtc_qp_nt'];
+
 export function initializeDatabaseIfNeeded(forceReset = false) {
   const isSeeded = localStorage.getItem(STORAGE_KEYS.SEEDED);
   const currentUsers = getLocal<User[]>(STORAGE_KEYS.USERS, []);
   const currentDepts = getLocal<Department[]>(STORAGE_KEYS.DEPARTMENTS, []);
   
   const hasOutdatedDepts = currentDepts.some(d => 
-    d.name.includes('Khoa học tự nhiên') || 
-    d.name.includes('Khoa học xã hội') ||
-    (d.headUserName && d.headUserName.includes('Nguyễn Minh Trí') && d.id !== 'bgh')
+    !VALID_DEPT_IDS.includes(d.id) ||
+    d.id === 'bgh' ||
+    d.name.includes('Khoa học') || 
+    d.name.includes('Tự nhiên') ||
+    d.name.includes('Xã hội') ||
+    (d.id === 'toan' && !d.headUserName?.includes('Nguyễn Văn Tới'))
   );
 
-  const hasOldUserIds = currentUsers.some(u => u.id.startsWith('user-toan') || u.id === 'user-bgh-1');
+  const hasOldUserIds = currentUsers.some(u => u.id.startsWith('user-toan') || u.id === 'user-bgh-1' || u.id === 'user-admin');
 
-  if (forceReset || !isSeeded || currentUsers.length < 100 || currentDepts.length !== 8 || hasOutdatedDepts || hasOldUserIds) {
+  if (forceReset || !isSeeded || currentUsers.length < 100 || currentDepts.length !== 7 || hasOutdatedDepts || hasOldUserIds) {
     setLocal(STORAGE_KEYS.SCHOOL_INFO, INITIAL_SCHOOL_INFO);
     setLocal(STORAGE_KEYS.DEPARTMENTS, INITIAL_DEPARTMENTS);
     setLocal(STORAGE_KEYS.USERS, INITIAL_USERS);
@@ -71,11 +76,8 @@ export function initializeDatabaseIfNeeded(forceReset = false) {
     setLocal(STORAGE_KEYS.EMAIL_LOGS, []);
     localStorage.setItem(STORAGE_KEYS.SEEDED, 'true');
 
-    // Clean up active user key if obsolete
-    const activeUserId = localStorage.getItem('dbk_active_user_id');
-    if (activeUserId === 'user-bgh-1' || !INITIAL_USERS.some(u => u.id === activeUserId)) {
-      localStorage.setItem('dbk_active_user_id', 'staff-1');
-    }
+    // Set active user key to Thầy Nguyễn Minh Trí (staff-2)
+    localStorage.setItem('dbk_active_user_id', 'staff-2');
   }
 }
 
@@ -109,7 +111,13 @@ export const StorageService = {
   // --- DEPARTMENTS ---
   getDepartments(): Department[] {
     initializeDatabaseIfNeeded();
-    return getLocal<Department[]>(STORAGE_KEYS.DEPARTMENTS, INITIAL_DEPARTMENTS);
+    const stored = getLocal<Department[]>(STORAGE_KEYS.DEPARTMENTS, INITIAL_DEPARTMENTS);
+    const isValid = stored.length === 7 && stored.every(d => VALID_DEPT_IDS.includes(d.id));
+    if (!isValid) {
+      setLocal(STORAGE_KEYS.DEPARTMENTS, INITIAL_DEPARTMENTS);
+      return INITIAL_DEPARTMENTS;
+    }
+    return stored;
   },
 
   saveDepartment(dept: Department): Department[] {
@@ -170,7 +178,14 @@ export const StorageService = {
   // --- SUBMISSIONS ---
   getSubmissions(): ReportSubmission[] {
     initializeDatabaseIfNeeded();
-    return getLocal<ReportSubmission[]>(STORAGE_KEYS.SUBMISSIONS, INITIAL_SUBMISSIONS);
+    const stored = getLocal<ReportSubmission[]>(STORAGE_KEYS.SUBMISSIONS, INITIAL_SUBMISSIONS);
+    const validStaffIds = new Set(INITIAL_USERS.map(u => u.id));
+    const validSubs = stored.filter(s => validStaffIds.has(s.authorId));
+    if (validSubs.length !== stored.length) {
+      setLocal(STORAGE_KEYS.SUBMISSIONS, validSubs.length > 0 ? validSubs : INITIAL_SUBMISSIONS);
+      return validSubs.length > 0 ? validSubs : INITIAL_SUBMISSIONS;
+    }
+    return stored;
   },
 
   saveSubmission(submission: ReportSubmission): ReportSubmission[] {

@@ -2,15 +2,6 @@ import { User, Department } from '../types';
 
 export const OFFICIAL_DEPARTMENTS: Department[] = [
   {
-    id: 'bgh',
-    name: 'Ban Giám Hiệu',
-    code: 'BGH',
-    headUserId: 'staff-1',
-    headUserName: 'Thầy Lê Thanh Cường (Hiệu trưởng)',
-    description: 'Chỉ đạo, điều hành toàn diện các hoạt động giáo dục và quản lý nhà trường',
-    memberCount: 4
-  },
-  {
     id: 'van_phong',
     name: 'Tổ Hành chính - Văn phòng',
     code: 'VAN_PHONG',
@@ -69,36 +60,38 @@ export const OFFICIAL_DEPARTMENTS: Department[] = [
     name: 'Tổ GDTC - QPAN - Nghệ thuật',
     code: 'GDTC_QP_NT',
     headUserId: 'staff-109',
-    headUserName: 'Thầy Lê Văn Nguyện',
+    headUserName: 'Thầy Lê Văn Nguyên',
     description: 'Giáo dục thể chất, Giáo dục Quốc phòng & An ninh, Âm nhạc và Mỹ thuật',
     memberCount: 12
   }
 ];
 
-// Helper to determine role from position
-function mapRole(posAfter: string, posBefore: string, deptId: string): { role: 'teacher' | 'department_head' | 'principal' | 'staff' | 'admin', roleTitle: string } {
+// Helper to determine role and title STRICTLY from post-merger position (posAfter)
+function mapRole(posAfter: string, posBefore: string, deptId: string, subject: string): { role: 'teacher' | 'department_head' | 'principal' | 'staff' | 'admin', roleTitle: string } {
   const p = (posAfter || '').trim().toLowerCase();
-  const b = (posBefore || '').trim().toLowerCase();
   
-  if (p === 'hiệu trưởng' || b === 'hiệu trưởng') {
+  if (p === 'hiệu trưởng') {
     return { role: 'principal', roleTitle: 'Hiệu trưởng' };
   }
-  if (p.includes('phó hiệu trưởng') || b.includes('phó hiệu trưởng') || (deptId === 'bgh' && p.includes('phó'))) {
+  if (p.includes('phó hiệu trưởng') || (deptId === 'bgh' && p.includes('phó'))) {
     return { role: 'principal', roleTitle: 'Phó Hiệu trưởng' };
   }
   if (p.includes('tổ trưởng')) {
-    return { role: 'department_head', roleTitle: 'Tổ trưởng chuyên môn' };
+    if (deptId === 'van_phong') {
+      return { role: 'department_head', roleTitle: 'Tổ trưởng Văn phòng' };
+    }
+    return { role: 'department_head', roleTitle: `Tổ trưởng (${subject})` };
   }
   if (p.includes('tổ phó')) {
-    return { role: 'department_head', roleTitle: 'Tổ phó chuyên môn' };
+    if (deptId === 'van_phong') {
+      return { role: 'department_head', roleTitle: 'Tổ phó Văn phòng' };
+    }
+    return { role: 'department_head', roleTitle: `Tổ phó (${subject})` };
   }
-  if (deptId === 'van_phong') {
-    return { role: 'staff', roleTitle: 'Nhân viên hành chính' };
+  if (p.includes('nhân viên') || deptId === 'van_phong') {
+    return { role: 'staff', roleTitle: `Nhân viên ${subject}` };
   }
-  if (p.includes('nhân viên')) {
-    return { role: 'staff', roleTitle: 'Nhân viên trường học' };
-  }
-  return { role: 'teacher', roleTitle: 'Giáo viên' };
+  return { role: 'teacher', roleTitle: `Giáo viên ${subject}` };
 }
 
 // Generate email prefix from name
@@ -168,7 +161,7 @@ const RAW_120_DATA: RawStaff[] = [
   { tt: 28, school: 'THCSĐBK', deptId: 'toan', deptName: 'Tổ Toán', name: 'Nguyễn Văn Ngoan', dob: '07/10/1981', gender: 'Nam', subject: 'Toán', party: true, posBefore: 'Giáo viên', posAfter: 'Giáo viên', qual: 'Đại học', spec: 'Toán học', pol: 'Sơ cấp', it: 'THCB', foreignLang: 'B' },
   { tt: 29, school: 'THCSĐBK', deptId: 'toan', deptName: 'Tổ Toán', name: 'Nguyễn Quốc Nguyễn', dob: '09/12/1982', gender: 'Nam', subject: 'Toán', party: true, posBefore: 'Giáo viên', posAfter: 'Giáo viên', qual: 'Đại học', spec: 'Toán học', pol: 'Sơ cấp', it: 'Cao đẳng', foreignLang: '' },
   { tt: 30, school: 'THCSĐBK', deptId: 'toan', deptName: 'Tổ Toán', name: 'Nguyễn Văn Tài', dob: '10/10/1983', gender: 'Nam', subject: 'Toán', party: true, posBefore: 'Giáo viên', posAfter: 'Giáo viên', qual: 'Đại học', spec: 'Toán học', pol: 'Sơ cấp', it: 'Cao đẳng', foreignLang: '' },
-  { tt: 31, school: 'THCSTK', deptId: 'toan', deptName: 'Tổ Toán', name: 'Nguyễn Thành Tín', dob: '10/13/1988', gender: 'Nam', subject: 'Toán', party: true, posBefore: 'Giáo viên', posAfter: 'Giáo viên', qual: 'Đại học', spec: 'Toán', pol: 'Sơ cấp', it: 'A', foreignLang: 'A2', mgmtDegree: 'Chứng chỉ QLGD' },
+  { tt: 31, school: 'THCSTK', deptId: 'toan', deptName: 'Tổ Toán', name: 'Nguyễn Thành Tín', dob: '13/10/1988', gender: 'Nam', subject: 'Toán', party: true, posBefore: 'Giáo viên', posAfter: 'Giáo viên', qual: 'Đại học', spec: 'Toán', pol: 'Sơ cấp', it: 'A', foreignLang: 'A2', mgmtDegree: 'Chứng chỉ QLGD' },
   { tt: 32, school: 'THCSTK', deptId: 'toan', deptName: 'Tổ Toán', name: 'Huỳnh Thị Huỳnh Nga', dob: '16/11/1992', gender: 'Nữ', subject: 'Toán', party: false, posBefore: 'Giáo viên', posAfter: 'Giáo viên', qual: 'Đại học', spec: 'Toán', pol: 'Sơ cấp', it: 'B', foreignLang: 'B' },
   { tt: 33, school: 'THCSTK', deptId: 'toan', deptName: 'Tổ Toán', name: 'Trần Văn Nhuận', dob: '14/01/1984', gender: 'Nam', subject: 'Toán', party: false, posBefore: 'Giáo viên', posAfter: 'Giáo viên', qual: 'Đại học', spec: 'Toán', pol: 'Sơ cấp', it: 'A', foreignLang: '' },
 
@@ -182,7 +175,7 @@ const RAW_120_DATA: RawStaff[] = [
   { tt: 40, school: 'THPTĐBK', deptId: 'ngu_van_tv_tb', deptName: 'Tổ Ngữ văn - Thư viện - Thiết bị', name: 'Nguyễn Thị Xuyến', dob: '20/07/1986', gender: 'Nữ', subject: 'Thư viện', party: true, posBefore: 'Nhân viên', posAfter: 'Nhân viên', qual: 'Đại Học', spec: 'Thư viện', pol: 'Sơ cấp', it: 'A', foreignLang: 'B' },
   { tt: 41, school: 'THCSĐBK', deptId: 'ngu_van_tv_tb', deptName: 'Tổ Ngữ văn - Thư viện - Thiết bị', name: 'Phạm Thanh Lâm', dob: '04/04/1980', gender: 'Nam', subject: 'Ngữ văn', party: true, posBefore: 'Giáo viên', posAfter: 'Giáo viên', qual: 'Đại học', spec: 'Ngữ văn', pol: 'Sơ cấp', it: 'B', foreignLang: 'A2' },
   { tt: 42, school: 'THCSĐBK', deptId: 'ngu_van_tv_tb', deptName: 'Tổ Ngữ văn - Thư viện - Thiết bị', name: 'Nguyễn Thị Kim Xoa', dob: '07/10/1983', gender: 'Nữ', subject: 'Ngữ văn', party: true, posBefore: 'Giáo viên', posAfter: 'Giáo viên', qual: 'Đại học', spec: 'Ngữ văn', pol: 'Sơ cấp', it: 'A', foreignLang: '' },
-  { tt: 43, school: 'THCSĐBK', deptId: 'ngu_van_tv_tb', deptName: 'Tổ Ngữ văn - Thư viện - Thiết bị', name: 'Hứa Thùy Dương', dob: '10/13/1985', gender: 'Nữ', subject: 'Ngữ văn', party: true, posBefore: 'Giáo viên', posAfter: 'Giáo viên', qual: 'Đại học', spec: 'Ngữ văn', pol: 'Sơ cấp', it: 'A', foreignLang: '' },
+  { tt: 43, school: 'THCSĐBK', deptId: 'ngu_van_tv_tb', deptName: 'Tổ Ngữ văn - Thư viện - Thiết bị', name: 'Hứa Thùy Dương', dob: '13/10/1985', gender: 'Nữ', subject: 'Ngữ văn', party: true, posBefore: 'Giáo viên', posAfter: 'Giáo viên', qual: 'Đại học', spec: 'Ngữ văn', pol: 'Sơ cấp', it: 'A', foreignLang: '' },
   { tt: 44, school: 'THCSĐBK', deptId: 'ngu_van_tv_tb', deptName: 'Tổ Ngữ văn - Thư viện - Thiết bị', name: 'Lê Thị Hoài An', dob: '29/09/1995', gender: 'Nữ', subject: 'Ngữ văn', party: true, posBefore: 'Giáo viên', posAfter: 'Giáo viên', qual: 'Đại học', spec: 'Ngữ văn', pol: 'Sơ cấp', it: 'A', foreignLang: '' },
   { tt: 45, school: 'THCSĐBK', deptId: 'ngu_van_tv_tb', deptName: 'Tổ Ngữ văn - Thư viện - Thiết bị', name: 'Hồ Văn Hữu', dob: '30/07/1982', gender: 'Nam', subject: 'Thư viện', party: true, posBefore: 'Nhân viên', posAfter: 'Nhân viên', qual: 'Cao đẳng', spec: 'Thư viện', pol: 'Sơ cấp', it: 'A', foreignLang: '' },
   { tt: 46, school: 'THCSTK', deptId: 'ngu_van_tv_tb', deptName: 'Tổ Ngữ văn - Thư viện - Thiết bị', name: 'Nguyễn Thị Thảo', dob: '10/02/1978', gender: 'Nữ', subject: 'Ngữ văn', party: true, posBefore: 'Giáo viên', posAfter: 'Giáo viên', qual: 'Đại học', spec: 'Ngữ văn', pol: 'Sơ cấp', it: 'A', foreignLang: 'B' },
@@ -256,7 +249,7 @@ const RAW_120_DATA: RawStaff[] = [
   { tt: 108, school: 'THCSTK', deptId: 'nn_tin', deptName: 'Tổ Ngoại ngữ - Tin học', name: 'Lê Phước Hậu', dob: '25/02/1980', gender: 'Nam', subject: 'Tin học', party: true, posBefore: 'Giáo viên', posAfter: 'Giáo viên', qual: 'Đại học', spec: 'Tin học', pol: 'Sơ cấp', it: 'ĐH', foreignLang: '' },
 
   // --- GDTC - QPAN - NGHỆ THUẬT (109 -> 120) ---
-  { tt: 109, school: 'THCSĐBK', deptId: 'gdtc_qp_nt', deptName: 'Tổ GDTC - QPAN - Nghệ thuật', name: 'Lê Văn Nguyện', dob: '01/01/1975', gender: 'Nam', subject: 'GDTC', party: true, posBefore: 'Phó hiệu trưởng', posAfter: 'Tổ trưởng', qual: 'Đại học', spec: 'GDTC', pol: 'Trung cấp', it: 'THCB', foreignLang: 'A2', mgmtDegree: 'Quản lý GD' },
+  { tt: 109, school: 'THCSĐBK', deptId: 'gdtc_qp_nt', deptName: 'Tổ GDTC - QPAN - Nghệ thuật', name: 'Lê Văn Nguyên', dob: '01/01/1975', gender: 'Nam', subject: 'GDTC', party: true, posBefore: 'Phó hiệu trưởng', posAfter: 'Tổ trưởng', qual: 'Đại học', spec: 'GDTC', pol: 'Trung cấp', it: 'THCB', foreignLang: 'A2', mgmtDegree: 'Quản lý GD' },
   { tt: 110, school: 'THPTĐBK', deptId: 'gdtc_qp_nt', deptName: 'Tổ GDTC - QPAN - Nghệ thuật', name: 'Nguyễn Kim Rạng', dob: '26/03/1986', gender: 'Nữ', subject: 'GDQPAN', party: true, posBefore: 'Giáo viên', posAfter: 'Tổ phó', qual: 'ĐH', spec: 'GDQPAN', pol: 'Trung cấp', it: 'CNTT cơ bản', foreignLang: 'B' },
   { tt: 111, school: 'THCSTK', deptId: 'gdtc_qp_nt', deptName: 'Tổ GDTC - QPAN - Nghệ thuật', name: 'Lê Thị Ngọc Điệp', dob: '02/02/1978', gender: 'Nữ', subject: 'GDTC', party: true, posBefore: 'Tổ phó', posAfter: 'Tổ phó', qual: 'Đại học', spec: 'GDTC', pol: 'Sơ cấp', it: 'A', foreignLang: '' },
   { tt: 112, school: 'THPTĐBK', deptId: 'gdtc_qp_nt', deptName: 'Tổ GDTC - QPAN - Nghệ thuật', name: 'Hồ Hoài Ngân', dob: '06/07/1989', gender: 'Nam', subject: 'Thể dục', party: true, posBefore: 'Giáo viên', posAfter: 'Giáo viên', qual: 'ĐH', spec: 'GD Thể chất', pol: 'Sơ cấp', it: 'CNTT cơ bản', foreignLang: '' },
@@ -270,46 +263,34 @@ const RAW_120_DATA: RawStaff[] = [
   { tt: 120, school: 'THCSTK', deptId: 'gdtc_qp_nt', deptName: 'Tổ GDTC - QPAN - Nghệ thuật', name: 'Nguyễn Anh Văn', dob: '23/06/1986', gender: 'Nam', subject: 'Âm nhạc', party: false, posBefore: 'Giáo viên', posAfter: 'Giáo viên', qual: 'Đại học', spec: 'Âm nhạc', pol: 'Sơ cấp', it: 'B', foreignLang: 'B' }
 ];
 
-export const OFFICIAL_USERS: User[] = [
-  // System Admin
-  {
-    id: 'user-admin',
-    name: 'Quản trị viên Hệ thống',
-    email: 'admin.docbinhkieu@dongthap.edu.vn',
-    role: 'admin',
-    roleTitle: 'Quản trị viên Hệ thống',
-    departmentId: 'bgh',
-    departmentName: 'Ban Giám Hiệu',
-    isActive: true
-  },
-  ...RAW_120_DATA.map((item) => {
-    const { role, roleTitle } = mapRole(item.posAfter, item.posBefore, item.deptId);
-    const userEmail = makeEmail(item.name, item.tt);
+export const OFFICIAL_USERS: User[] = RAW_120_DATA.map((item) => {
+  const { role, roleTitle } = mapRole(item.posAfter, item.posBefore, item.deptId, item.subject);
+  const isThayTri = item.tt === 2 || item.name === 'Nguyễn Minh Trí';
+  const userEmail = isThayTri ? 'nmtri.c3docbinhkieu.dtp@moet.edu.vn' : makeEmail(item.name, item.tt);
 
-    return {
-      id: `staff-${item.tt}`,
-      orderNo: item.tt,
-      originalSchool: item.school,
-      departmentId: item.deptId,
-      departmentName: item.deptName,
-      name: item.name,
-      dateOfBirth: item.dob,
-      gender: item.gender,
-      subject: item.subject,
-      partyMember: item.party,
-      positionBefore: item.posBefore,
-      positionAfter: item.posAfter,
-      role: role,
-      roleTitle: roleTitle,
-      qualification: item.qual,
-      specialization: item.spec,
-      politicalTheory: item.pol,
-      itSkill: item.it,
-      foreignLanguage: item.foreignLang,
-      managementDegree: item.mgmtDegree,
-      notes: item.notes,
-      email: userEmail,
-      isActive: true
-    } as User;
-  })
-];
+  return {
+    id: `staff-${item.tt}`,
+    orderNo: item.tt,
+    originalSchool: item.school,
+    departmentId: item.deptId,
+    departmentName: item.deptName,
+    name: item.name,
+    dateOfBirth: item.dob,
+    gender: item.gender,
+    subject: item.subject,
+    partyMember: item.party,
+    positionBefore: item.posBefore,
+    positionAfter: item.posAfter,
+    role: isThayTri ? 'admin' : role,
+    roleTitle: isThayTri ? 'Phó Hiệu trưởng (Quản trị hệ thống)' : roleTitle,
+    qualification: item.qual,
+    specialization: item.spec,
+    politicalTheory: item.pol,
+    itSkill: item.it,
+    foreignLanguage: item.foreignLang,
+    managementDegree: item.mgmtDegree,
+    notes: item.notes,
+    email: userEmail,
+    isActive: true
+  } as User;
+});

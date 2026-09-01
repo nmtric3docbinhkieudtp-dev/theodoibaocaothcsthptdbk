@@ -8,13 +8,14 @@ import {
   School, 
   Sparkles,
   Menu,
-  Clock
+  Clock,
+  LogOut,
+  UserCheck
 } from 'lucide-react';
 import { UserRole } from '../../types';
 
 interface HeaderProps {
   onOpenNotifications?: () => void;
-  onOpenFirebaseSettings?: () => void;
   onOpenSubmit?: () => void;
   onOpenReportDetail?: (submission: any) => void;
   onToggleMobileMenu?: () => void;
@@ -23,27 +24,22 @@ interface HeaderProps {
 
 export const Header: React.FC<HeaderProps> = ({
   onOpenNotifications,
-  onOpenFirebaseSettings,
   onOpenSubmit,
   onOpenReportDetail,
   onToggleMobileMenu,
   onNavigate
 }) => {
-  const { currentUser, allUsers = [], switchUser } = useAuth();
+  const { currentUser, allUsers = [], switchUser, logout } = useAuth();
   const { 
     schoolInfo, 
     unreadCount, 
     notifications, 
     markNotificationRead, 
-    markAllNotificationsRead, 
-    firebaseConfig, 
-    syncToFirebase 
+    markAllNotificationsRead
   } = useReports();
   
   const [showRoleMenu, setShowRoleMenu] = useState(false);
   const [showNotifMenu, setShowNotifMenu] = useState(false);
-  const [isSyncing, setIsSyncing] = useState(false);
-  const [syncToast, setSyncToast] = useState<string | null>(null);
   const [userSearch, setUserSearch] = useState('');
 
   const filteredSwitcherUsers = allUsers.filter(u => {
@@ -56,14 +52,6 @@ export const Header: React.FC<HeaderProps> = ({
       (u.subject && u.subject.toLowerCase().includes(q))
     );
   });
-
-  const handleQuickSync = async () => {
-    setIsSyncing(true);
-    const res = await syncToFirebase();
-    setIsSyncing(false);
-    setSyncToast(res.message);
-    setTimeout(() => setSyncToast(null), 4000);
-  };
 
   const getRoleBadgeColor = (role: UserRole) => {
     switch (role) {
@@ -315,19 +303,30 @@ export const Header: React.FC<HeaderProps> = ({
                     )}
                   </div>
                 </div>
+
+                {/* Dropdown footer with Logout action */}
+                <div className="p-2 border-t border-slate-100 bg-slate-50/70 flex items-center justify-between">
+                  <span className="text-[10px] text-slate-400">
+                    ID: {currentUser.id}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowRoleMenu(false);
+                      logout();
+                    }}
+                    className="px-3 py-1.5 rounded-lg text-xs font-bold text-rose-700 hover:text-white bg-rose-50 hover:bg-rose-600 transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                  >
+                    <LogOut className="w-3.5 h-3.5" />
+                    <span>Đăng xuất</span>
+                  </button>
+                </div>
               </div>
             )}
           </div>
 
         </div>
       </div>
-
-      {/* Sync Toast Notification */}
-      {syncToast && (
-        <div className="bg-emerald-700 text-white text-xs px-4 py-1.5 text-center font-medium shadow-xs transition-all">
-          {syncToast}
-        </div>
-      )}
     </header>
   );
 };

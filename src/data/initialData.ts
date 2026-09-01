@@ -272,7 +272,7 @@ Tôi xin báo cáo kết quả kiểm tra chất lượng định kỳ môn Toá
     deptHeadReview: {
       id: 'rev-4',
       reviewedBy: 'staff-34',
-      reviewerName: 'Tô Thị Lâm',
+      reviewerName: 'Tô Thị Lắm',
       reviewerRole: 'dept_head',
       reviewerRoleTitle: 'Tổ trưởng Ngữ văn - TV - TB',
       action: 'requested_edit',
@@ -283,7 +283,7 @@ Tôi xin báo cáo kết quả kiểm tra chất lượng định kỳ môn Toá
       {
         id: 'rev-4',
         reviewedBy: 'staff-34',
-        reviewerName: 'Tô Thị Lâm',
+        reviewerName: 'Tô Thị Lắm',
         reviewerRole: 'dept_head',
         reviewerRoleTitle: 'Tổ trưởng Ngữ văn - TV - TB',
         action: 'requested_edit',
@@ -363,7 +363,7 @@ export const INITIAL_NOTIFICATIONS: AppNotification[] = [
     id: 'notif-3',
     userId: 'staff-38',
     title: 'Yêu cầu chỉnh sửa bổ sung báo cáo',
-    message: 'Cô Tô Thị Lâm (Tổ trưởng Ngữ văn) đã trả lại báo cáo "Kế hoạch bồi dưỡng HSG" kèm nhận xét cần bổ sung.',
+    message: 'Cô Tô Thị Lắm (Tổ trưởng Ngữ văn) đã trả lại báo cáo "Kế hoạch bồi dưỡng HSG" kèm nhận xét cần bổ sung.',
     type: 'review_rejected',
     linkId: 'sub-3',
     isRead: false,

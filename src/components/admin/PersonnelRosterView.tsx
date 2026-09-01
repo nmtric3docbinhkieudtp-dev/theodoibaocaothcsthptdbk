@@ -224,7 +224,7 @@ export const PersonnelRosterView: React.FC = () => {
           <div className="bg-slate-50 rounded-xl p-2.5 border border-slate-200/60">
             <div className="text-[11px] font-semibold text-slate-500">Tổng nhân sự</div>
             <div className="text-lg font-black text-slate-900 mt-0.5">{stats.totalStaff}</div>
-            <div className="text-[10px] text-slate-500">8 tổ chuyên môn</div>
+            <div className="text-[10px] text-slate-500 font-medium">6 tổ CM + 1 tổ VP</div>
           </div>
 
           <div className="bg-red-50/50 rounded-xl p-2.5 border border-red-200/60">
@@ -281,7 +281,7 @@ export const PersonnelRosterView: React.FC = () => {
               onChange={(e) => setSelectedDept(e.target.value)}
               className="w-full py-2 px-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-emerald-600 transition"
             >
-              <option value="all">Tất cả Tổ bộ môn ({departments.length})</option>
+              <option value="all">Tất cả 7 Tổ (6 CM + 1 VP)</option>
               {departments.map((d) => (
                 <option key={d.id} value={d.id}>
                   {d.name} ({d.memberCount || 0})
@@ -440,17 +440,24 @@ export const PersonnelRosterView: React.FC = () => {
                       {user.departmentName}
                     </td>
 
-                    {/* Chức Vụ */}
+                    {/* Chức Vụ Sau Sáp Nhập (Hiện tại) & Trước sáp nhập */}
                     <td className="py-2 px-3">
-                      <span className={`inline-flex px-2 py-0.5 rounded text-[10px] font-bold ${
-                        user.role === 'principal'
-                          ? 'bg-purple-100 text-purple-900 border border-purple-200'
-                          : user.role === 'dept_head'
-                          ? 'bg-amber-100 text-amber-900 border border-amber-200'
-                          : 'bg-slate-100 text-slate-700'
-                      }`}>
-                        {user.roleTitle}
-                      </span>
+                      <div>
+                        <span className={`inline-flex px-2 py-0.5 rounded text-[10px] font-bold ${
+                          user.role === 'principal'
+                            ? 'bg-purple-100 text-purple-900 border border-purple-200'
+                            : user.role === 'dept_head'
+                            ? 'bg-amber-100 text-amber-900 border border-amber-200'
+                            : 'bg-slate-100 text-slate-700'
+                        }`}>
+                          {user.positionAfter || user.roleTitle}
+                        </span>
+                        {user.positionBefore && user.positionBefore !== user.positionAfter && (
+                          <div className="text-[9px] text-slate-400 mt-0.5">
+                            Trước SN: {user.positionBefore}
+                          </div>
+                        )}
+                      </div>
                     </td>
 
                     {/* Môn / Nhiệm Vụ */}

@@ -401,7 +401,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-1.5 text-xs font-bold text-slate-800">
                 <Building className="w-4 h-4 text-emerald-600" />
-                <span>Tiến độ 8 tổ công tác & chuyên môn</span>
+                <span>Tiến độ 7 tổ công tác & chuyên môn</span>
               </div>
               <button
                 onClick={() => handleNav('departments')}
@@ -412,19 +412,19 @@ export const Dashboard: React.FC<DashboardProps> = ({
             </div>
 
             <div className="space-y-2.5 max-h-72 overflow-y-auto pr-1 scrollbar-thin">
-              {departments.map((dept: any) => {
+              {departments.filter((d: any) => d.id !== 'bgh').map((dept: any) => {
                 const deptUsers = allUsers.filter((u: any) => u.departmentId === dept.id);
                 const deptSubs = submissions.filter((s: ReportSubmission) => s.departmentId === dept.id && s.status !== 'draft');
                 const targetCount = dept.memberCount || Math.max(deptUsers.length, 1);
                 const percent = Math.min(100, Math.round((deptSubs.length / targetCount) * 100));
 
                 return (
-                  <div key={dept.id} className="text-xs bg-slate-50/70 p-2 rounded-xl border border-slate-100">
+                  <div key={dept.id} className="text-xs bg-slate-50/70 p-2.5 rounded-xl border border-slate-100">
                     <div className="flex justify-between items-center font-medium text-slate-700 mb-1">
                       <div className="min-w-0 pr-2">
                         <div className="font-bold text-slate-900 truncate">{dept.name}</div>
                         <div className="text-[10px] text-slate-500 truncate">
-                          Tổ trưởng: {dept.headUserName || 'Ban Giám Hiệu'} • {targetCount} CB-GV
+                          <span>Tổ trưởng: <strong>{dept.headUserName}</strong> • {targetCount} CB-GV</span>
                         </div>
                       </div>
                       <span className="font-black text-slate-900 text-xs shrink-0">{percent}%</span>

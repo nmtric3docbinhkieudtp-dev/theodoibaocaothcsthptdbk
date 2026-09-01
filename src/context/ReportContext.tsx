@@ -10,9 +10,11 @@ import {
   ReviewHistory,
   SubmissionStatus
 } from '../types';
-import { StorageService, setLocal } from '../services/storage';
+import { StorageService, setLocal, VALID_DEPT_IDS } from '../services/storage';
 import { getStoredFirebaseConfig, saveStoredFirebaseConfig, testFirebaseConnection, getFirebaseInstance } from '../services/firebase';
-import { collection, onSnapshot, getDocs } from 'firebase/firestore';
+import { collection, doc, onSnapshot, getDocs, setDoc, deleteDoc } from 'firebase/firestore';
+import { OFFICIAL_DEPARTMENTS, OFFICIAL_USERS } from '../data/staffRoster';
+import { INITIAL_SUBMISSIONS } from '../data/initialData';
 import { EmailService } from '../services/emailService';
 import { useAuth } from './AuthContext';
 
@@ -98,16 +100,50 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     let unsubscribeDepts: (() => void) | null = null;
 
     const setupFirestoreRealtime = async () => {
+      const validStaffIds = new Set(OFFICIAL_USERS.map(u => u.id));
       try {
+        // Check and sanitize departments in Firestore
+        const deptsSnap = await getDocs(collection(db, 'departments'));
+        const hasInvalidDepts = deptsSnap.docs.some(docSnap => {
+          if (!VALID_DEPT_IDS.includes(docSnap.id) || docSnap.id === 'bgh') return true;
+          const data = docSnap.data();
+          if (docSnap.id === 'gdtc_qp_nt' && data.headUserName?.includes('Nguyện')) return true;
+          return false;
+        });
+        if (deptsSnap.empty || hasInvalidDepts || deptsSnap.size !== 7) {
+          // Delete old invalid docs (including 'bgh' which is not a department)
+          for (const d of deptsSnap.docs) {
+            if (!VALID_DEPT_IDS.includes(d.id) || d.id === 'bgh') {
+              await deleteDoc(doc(db, 'departments', d.id));
+            }
+          }
+          // Seed the 7 official departments
+          for (const offDept of OFFICIAL_DEPARTMENTS) {
+            await setDoc(doc(db, 'departments', offDept.id), offDept);
+          }
+          setDepartments(OFFICIAL_DEPARTMENTS);
+          setLocal('dbk_departments_data', OFFICIAL_DEPARTMENTS);
+        }
+
         const subsSnap = await getDocs(collection(db, 'submissions'));
         if (subsSnap.empty) {
           // If Firestore is empty, seed it automatically with the initial data
           await StorageService.syncAllToFirebase();
         } else {
-          // If Firestore already has data, load it into state
-          const list: ReportSubmission[] = subsSnap.docs.map(d => d.data() as ReportSubmission);
-          setSubmissions(list);
-          setLocal('dbk_submissions_data', list);
+          // If Firestore already has data, purge any old test docs and load valid into state
+          const list: ReportSubmission[] = [];
+          for (const docSnap of subsSnap.docs) {
+            const data = docSnap.data() as ReportSubmission;
+            if (!validStaffIds.has(data.authorId)) {
+              // delete invalid mock submission doc
+              await deleteDoc(doc(db, 'submissions', docSnap.id)).catch(() => {});
+            } else {
+              list.push(data);
+            }
+          }
+          const finalList = list.length > 0 ? list : INITIAL_SUBMISSIONS;
+          setSubmissions(finalList);
+          setLocal('dbk_submissions_data', finalList);
         }
       } catch (err) {
         console.warn('Firestore initial check error:', err);
@@ -117,7 +153,9 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       try {
         unsubscribeSubs = onSnapshot(collection(db, 'submissions'), (snapshot) => {
           if (!snapshot.empty) {
-            const list: ReportSubmission[] = snapshot.docs.map(d => d.data() as ReportSubmission);
+            const list: ReportSubmission[] = snapshot.docs
+              .map(d => d.data() as ReportSubmission)
+              .filter(s => validStaffIds.has(s.authorId));
             list.sort((a, b) => new Date(b.updatedAt || b.submittedAt || 0).getTime() - new Date(a.updatedAt || a.submittedAt || 0).getTime());
             setSubmissions(list);
             setLocal('dbk_submissions_data', list);
@@ -136,9 +174,19 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         // Realtime listener for Departments
         unsubscribeDepts = onSnapshot(collection(db, 'departments'), (snapshot) => {
           if (!snapshot.empty) {
-            const list: Department[] = snapshot.docs.map(d => d.data() as Department);
-            setDepartments(list);
-            setLocal('dbk_departments_data', list);
+            const rawList: Department[] = snapshot.docs.map(d => d.data() as Department);
+            const validList = rawList.filter(d => VALID_DEPT_IDS.includes(d.id));
+            if (validList.length === 7) {
+              const sorted = [...validList].sort((a, b) => VALID_DEPT_IDS.indexOf(a.id) - VALID_DEPT_IDS.indexOf(b.id));
+              setDepartments(sorted);
+              setLocal('dbk_departments_data', sorted);
+            } else {
+              setDepartments(OFFICIAL_DEPARTMENTS);
+              setLocal('dbk_departments_data', OFFICIAL_DEPARTMENTS);
+            }
+          } else {
+            setDepartments(OFFICIAL_DEPARTMENTS);
+            setLocal('dbk_departments_data', OFFICIAL_DEPARTMENTS);
           }
         }, (err) => console.warn('Departments snapshot listener error:', err));
       } catch (err) {
