@@ -21,7 +21,7 @@ export const INITIAL_PERIODS: ReportPeriod[] = [
     id: 'period-gvcn-1',
     title: 'Báo cáo công tác Giáo viên chủ nhiệm (GVCN) tháng 9 & Thống kê sĩ số',
     description: 'Dành riêng cho 53 Giáo viên chủ nhiệm: Báo cáo tình hình ổn định nề nếp, cơ cấu ban cán sự lớp, nắm bắt học sinh có hoàn cảnh đặc biệt và kế hoạch phối hợp phụ huynh.',
-    academicYear: '2025-2026',
+    academicYear: '2026-2027',
     semester: 'HK1',
     startDate: '2026-09-01T07:00:00.000Z',
     deadline: '2026-09-10T17:00:00.000Z',
@@ -40,7 +40,7 @@ export const INITIAL_PERIODS: ReportPeriod[] = [
     id: 'period-1',
     title: 'Báo cáo sơ kết công tác chuyên môn & Kiểm tra định kỳ giữa HK1',
     description: 'Báo cáo thống kê phân tích điểm số, đánh giá chất lượng dạy học theo chương trình GDPT 2018 và đề xuất giải pháp phụ đạo.',
-    academicYear: '2025-2026',
+    academicYear: '2026-2027',
     semester: 'HK1',
     startDate: '2026-08-15T07:00:00.000Z',
     deadline: '2026-09-05T17:00:00.000Z', // Coming soon
@@ -59,7 +59,7 @@ export const INITIAL_PERIODS: ReportPeriod[] = [
     id: 'period-2',
     title: 'Báo cáo công tác bồi dưỡng Học sinh giỏi cấp Tỉnh và Phụ đạo yếu kém',
     description: 'Tổng hợp danh sách đội tuyển dự thi cấp Tỉnh, giáo án bồi dưỡng, lịch dạy tăng cường và kết quả khảo sát tháng 8.',
-    academicYear: '2025-2026',
+    academicYear: '2026-2027',
     semester: 'HK1',
     startDate: '2026-08-20T07:00:00.000Z',
     deadline: '2026-09-02T23:59:59.000Z', // Due in ~2 days
@@ -78,7 +78,7 @@ export const INITIAL_PERIODS: ReportPeriod[] = [
     id: 'period-3',
     title: 'Báo cáo công tác chủ nhiệm & Quản lý nền nếp học sinh tháng 8',
     description: 'Nộp nhận xét tình hình chuyên cần, học sinh có hoàn cảnh khó khăn, các hoạt động Đoàn Đội và phối hợp phụ huynh.',
-    academicYear: '2025-2026',
+    academicYear: '2026-2027',
     semester: 'HK1',
     startDate: '2026-08-10T07:00:00.000Z',
     deadline: '2026-08-28T17:00:00.000Z', // Past deadline
@@ -95,7 +95,7 @@ export const INITIAL_PERIODS: ReportPeriod[] = [
     id: 'period-4',
     title: 'Báo cáo chuyên đề đổi mới phương pháp dạy học & Kế hoạch bài dạy (STEM)',
     description: 'Mỗi tổ chuyên môn nộp ít nhất 02 chuyên đề dạy học tích hợp STEM và bài giảng điện tử minh họa.',
-    academicYear: '2025-2026',
+    academicYear: '2026-2027',
     semester: 'HK1',
     startDate: '2026-08-25T07:00:00.000Z',
     deadline: '2026-09-15T17:00:00.000Z',
@@ -273,7 +273,7 @@ Tôi xin báo cáo kết quả kiểm tra chất lượng định kỳ môn Toá
     departmentId: 'ngu_van_tv_tb',
     departmentName: 'Tổ Ngữ văn - Thư viện - Thiết bị',
     title: 'Kế hoạch bồi dưỡng đội tuyển Học sinh giỏi môn Ngữ Văn lớp 12',
-    content: `Báo cáo kế hoạch bồi dưỡng HSG cấp tỉnh năm học 2025-2026:
+    content: `Báo cáo kế hoạch bồi dưỡng HSG cấp tỉnh năm học 2026-2027:
 - Danh sách đội tuyển: 05 học sinh xuất sắc khối 12.
 - Thời lượng: 03 buổi/tuần (Thứ 2, Thứ 4, Thứ 7).
 - Chuyên đề trọng tâm: Nghị luận văn học hiện đại Việt Nam và Kỹ năng phân tích đề thi học sinh giỏi các năm.

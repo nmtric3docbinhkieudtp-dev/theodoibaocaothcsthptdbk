@@ -67,7 +67,7 @@ export const OFFICIAL_DEPARTMENTS: Department[] = [
 ];
 
 // Helper to determine role and title STRICTLY from post-merger position (posAfter)
-function mapRole(posAfter: string, posBefore: string, deptId: string, subject: string): { role: 'teacher' | 'department_head' | 'principal' | 'staff' | 'admin', roleTitle: string } {
+function mapRole(posAfter: string, posBefore: string, deptId: string, subject: string): { role: 'teacher' | 'dept_head' | 'principal' | 'admin', roleTitle: string } {
   const p = (posAfter || '').trim().toLowerCase();
   
   if (p === 'hiệu trưởng') {
@@ -76,20 +76,20 @@ function mapRole(posAfter: string, posBefore: string, deptId: string, subject: s
   if (p.includes('phó hiệu trưởng') || (deptId === 'bgh' && p.includes('phó'))) {
     return { role: 'principal', roleTitle: 'Phó Hiệu trưởng' };
   }
-  if (p.includes('tổ trưởng')) {
+  if (p === 'tổ trưởng' || p.includes('tổ trưởng')) {
     if (deptId === 'van_phong') {
-      return { role: 'department_head', roleTitle: 'Tổ trưởng Văn phòng' };
+      return { role: 'dept_head', roleTitle: 'Tổ trưởng Hành chính - Văn phòng' };
     }
-    return { role: 'department_head', roleTitle: `Tổ trưởng (${subject})` };
+    return { role: 'dept_head', roleTitle: `Tổ trưởng (${subject})` };
   }
   if (p.includes('tổ phó')) {
     if (deptId === 'van_phong') {
-      return { role: 'department_head', roleTitle: 'Tổ phó Văn phòng' };
+      return { role: 'dept_head', roleTitle: 'Tổ phó Hành chính - Văn phòng' };
     }
-    return { role: 'department_head', roleTitle: `Tổ phó (${subject})` };
+    return { role: 'dept_head', roleTitle: `Tổ phó (${subject})` };
   }
   if (p.includes('nhân viên') || deptId === 'van_phong') {
-    return { role: 'staff', roleTitle: `Nhân viên ${subject}` };
+    return { role: 'teacher', roleTitle: `Nhân viên ${subject}` };
   }
   return { role: 'teacher', roleTitle: `Giáo viên ${subject}` };
 }
@@ -228,7 +228,7 @@ const RAW_120_DATA: RawStaff[] = [
   { tt: 89, school: 'THCSĐBK', deptId: 'khtn_cn', deptName: 'Tổ Vật lý - Hóa học - Sinh học - CN', name: 'Trần Thị Cẩm', dob: '01/01/1981', gender: 'Nữ', subject: 'Công nghệ', party: false, posBefore: 'Giáo viên', posAfter: 'Giáo viên', qual: 'Đại học', spec: 'Công nghệ - KTNN', pol: 'Sơ cấp', it: 'THCB', foreignLang: '' },
   { tt: 90, school: 'THCSĐBK', deptId: 'khtn_cn', deptName: 'Tổ Vật lý - Hóa học - Sinh học - CN', name: 'Lê Kim Ngân', dob: '17/04/1986', gender: 'Nữ', subject: 'Công nghệ', party: true, posBefore: 'Giáo viên', posAfter: 'Giáo viên', qual: 'Đại học', spec: 'Công nghệ - KTNN', pol: 'Sơ cấp', it: 'A', foreignLang: '' },
   { tt: 91, school: 'THCSTK', deptId: 'khtn_cn', deptName: 'Tổ Vật lý - Hóa học - Sinh học - CN', name: 'Nguyễn Thị Ngọc Diễm', dob: '21/02/1989', gender: 'Nữ', subject: 'Công nghệ', party: true, posBefore: 'Giáo viên', posAfter: 'Giáo viên', qual: 'Đại học', spec: 'Kỹ thuật nông nghiệp', pol: 'Sơ cấp', it: 'B', foreignLang: 'A2' },
-  { tt: 92, school: 'THCSTK', deptId: 'khtn_cn', deptName: 'Tổ Vật lý - Hóa học - Sinh học - CN', name: 'Phan Văn Tặt', dob: '01/01/1968', gender: 'Nam', subject: 'Công nghệ', party: true, posBefore: 'Tổ trưởng', posAfter: 'Tổ trưởng', qual: 'Đại học', spec: 'Kỹ thuật nông nghiệp', pol: 'Sơ cấp', it: 'B', foreignLang: 'B', mgmtDegree: 'Quản lý GD' },
+  { tt: 92, school: 'THCSTK', deptId: 'khtn_cn', deptName: 'Tổ Vật lý - Hóa học - Sinh học - CN', name: 'Phan Văn Tặt', dob: '01/01/1968', gender: 'Nam', subject: 'Công nghệ', party: true, posBefore: 'Tổ trưởng', posAfter: 'Giáo viên', qual: 'Đại học', spec: 'Kỹ thuật nông nghiệp', pol: 'Sơ cấp', it: 'B', foreignLang: 'B', mgmtDegree: 'Quản lý GD' },
 
   // --- NGOẠI NGỮ - TIN HỌC (93 -> 108) ---
   { tt: 93, school: 'THCSTK', deptId: 'nn_tin', deptName: 'Tổ Ngoại ngữ - Tin học', name: 'Lê Thị Ngọc Tuyền', dob: '11/02/1990', gender: 'Nữ', subject: 'Tiếng Anh', party: true, posBefore: 'Phó hiệu trưởng', posAfter: 'Tổ trưởng', qual: 'Thạc sĩ', spec: 'Tiếng Anh', pol: 'Trung cấp', it: 'A', foreignLang: 'B', mgmtDegree: 'Quản lý GD' },

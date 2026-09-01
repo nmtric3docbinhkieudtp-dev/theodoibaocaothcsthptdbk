@@ -39,7 +39,7 @@ export const PeriodManagement: React.FC<PeriodManagementProps> = ({
   // Form State
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [academicYear, setAcademicYear] = useState('2025-2026');
+  const [academicYear, setAcademicYear] = useState('2026-2027');
   const [semester, setSemester] = useState<'HK1' | 'HK2' | 'Ca_Nam'>('HK1');
   const [deadline, setDeadline] = useState('');
   const [reportType, setReportType] = useState<ReportType>('hybrid');
@@ -50,7 +50,7 @@ export const PeriodManagement: React.FC<PeriodManagementProps> = ({
   const handleOpenCreate = (presetAudience?: TargetAudienceType) => {
     setTitle('');
     setDescription('');
-    setAcademicYear('2025-2026');
+    setAcademicYear('2026-2027');
     setSemester('HK1');
     // Default deadline 7 days from now
     const nextWeek = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);

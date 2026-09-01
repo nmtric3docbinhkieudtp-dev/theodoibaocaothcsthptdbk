@@ -26,7 +26,7 @@ const STORAGE_KEYS = {
   NOTIFICATIONS: 'dbk_notifications_data',
   EMAIL_LOGS: 'dbk_email_logs_data',
   SCHOOL_INFO: 'dbk_school_info_data',
-  SEEDED: 'dbk_seeded_v13_fixed_le_van_nguyen_gdtc_name'
+  SEEDED: 'dbk_seeded_v15_fixed_phan_van_tat_and_year_26_27'
 };
 
 // Safe LocalStorage helpers
@@ -86,9 +86,11 @@ export const StorageService = {
   getUsers(): User[] {
     initializeDatabaseIfNeeded();
     const stored = getLocal<User[]>(STORAGE_KEYS.USERS, INITIAL_USERS);
-    // Check if homeroom data needs syncing (if stored list doesn't have homeroom flags)
+    // Check if homeroom data, dept_head data, or Phan Van Tat position needs syncing
     const hrCount = stored.filter(u => u.isHomeroomTeacher).length;
-    if (hrCount < 50) {
+    const deptHeadCount = stored.filter(u => u.role === 'dept_head').length;
+    const isTatFixed = stored.some(u => u.name === 'Phan Văn Tặt' && u.role === 'teacher' && u.roleTitle.includes('Giáo viên'));
+    if (hrCount < 50 || deptHeadCount < 7 || !isTatFixed) {
       setLocal(STORAGE_KEYS.USERS, INITIAL_USERS);
       return INITIAL_USERS;
     }

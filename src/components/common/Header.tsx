@@ -10,7 +10,9 @@ import {
   Menu,
   Clock,
   LogOut,
-  UserCheck
+  UserCheck,
+  KeyRound,
+  ShieldCheck
 } from 'lucide-react';
 import { UserRole } from '../../types';
 
@@ -20,6 +22,7 @@ interface HeaderProps {
   onOpenReportDetail?: (submission: any) => void;
   onToggleMobileMenu?: () => void;
   onNavigate?: (tab: any) => void;
+  onOpenChangePassword?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -27,7 +30,8 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenSubmit,
   onOpenReportDetail,
   onToggleMobileMenu,
-  onNavigate
+  onNavigate,
+  onOpenChangePassword
 }) => {
   const { currentUser, allUsers = [], switchUser, logout } = useAuth();
   const { 
@@ -101,7 +105,7 @@ export const Header: React.FC<HeaderProps> = ({
               </span>
             </div>
             <p className="text-[11px] text-slate-500 truncate hidden xs:block">
-              Hệ thống Quản lý & Nộp Báo Cáo Định Kỳ • Năm học 2025 - 2026
+              Hệ thống Quản lý & Nộp Báo Cáo Định Kỳ • Năm học 2026 - 2027
             </p>
           </div>
         </div>
@@ -304,18 +308,29 @@ export const Header: React.FC<HeaderProps> = ({
                   </div>
                 </div>
 
-                {/* Dropdown footer with Logout action */}
-                <div className="p-2 border-t border-slate-100 bg-slate-50/70 flex items-center justify-between">
-                  <span className="text-[10px] text-slate-400">
-                    ID: {currentUser.id}
-                  </span>
+                {/* Dropdown footer with Change Password & Logout actions */}
+                <div className="p-2 border-t border-slate-100 bg-slate-50/70 flex items-center justify-between gap-2">
+                  {onOpenChangePassword && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowRoleMenu(false);
+                        onOpenChangePassword();
+                      }}
+                      className="px-2.5 py-1.5 rounded-lg text-xs font-bold text-slate-700 hover:text-emerald-800 bg-white hover:bg-emerald-50 border border-slate-200 hover:border-emerald-200 transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                      title="Đổi mật khẩu tài khoản"
+                    >
+                      <KeyRound className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>Đổi mật khẩu</span>
+                    </button>
+                  )}
                   <button
                     type="button"
                     onClick={() => {
                       setShowRoleMenu(false);
                       logout();
                     }}
-                    className="px-3 py-1.5 rounded-lg text-xs font-bold text-rose-700 hover:text-white bg-rose-50 hover:bg-rose-600 transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                    className="px-3 py-1.5 rounded-lg text-xs font-bold text-rose-700 hover:text-white bg-rose-50 hover:bg-rose-600 transition flex items-center gap-1.5 cursor-pointer shadow-2xs ml-auto"
                   >
                     <LogOut className="w-3.5 h-3.5" />
                     <span>Đăng xuất</span>

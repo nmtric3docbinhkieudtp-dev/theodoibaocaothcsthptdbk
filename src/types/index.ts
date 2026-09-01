@@ -33,6 +33,8 @@ export interface User {
   avatarUrl?: string;
   phone?: string;
   password?: string;
+  hasChangedPassword?: boolean;
+  mustChangePassword?: boolean;
   isActive: boolean;
 }
 
@@ -76,7 +78,7 @@ export interface ReportPeriod {
   id: string;
   title: string;
   description: string;
-  academicYear: string; // "2025-2026"
+  academicYear: string; // "2026-2027"
   semester: 'HK1' | 'HK2' | 'Ca_Nam' | 'He';
   startDate: string; // ISO string
   deadline: string; // ISO string

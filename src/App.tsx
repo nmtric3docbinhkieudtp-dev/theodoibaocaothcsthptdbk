@@ -13,13 +13,15 @@ import { PersonnelRosterView } from './components/admin/PersonnelRosterView';
 import { AdminReportsExport } from './components/admin/AdminReportsExport';
 import { SubmitReportModal } from './components/reports/SubmitReportModal';
 import { ReportDetailModal } from './components/reports/ReportDetailModal';
+import { ForceChangePasswordModal } from './components/auth/ForceChangePasswordModal';
 import { ReportSubmission } from './types';
 
 const MainLayout: React.FC = () => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, currentUser } = useAuth();
   const [activeView, setActiveView] = useState<NavTab>('dashboard');
   const [isSubmitModalOpen, setIsSubmitModalOpen] = useState(false);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
   const [selectedSubmission, setSelectedSubmission] = useState<ReportSubmission | null>(null);
   const [defaultPeriodForSubmit, setDefaultPeriodForSubmit] = useState<string | undefined>(undefined);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
@@ -28,6 +30,13 @@ const MainLayout: React.FC = () => {
   if (!isAuthenticated) {
     return <LoginPage />;
   }
+
+  // Check if first-time mandatory password change is required
+  const isFirstTimePasswordRequired = Boolean(
+    currentUser &&
+    !currentUser.hasChangedPassword &&
+    (!currentUser.password || currentUser.password === '123456' || currentUser.mustChangePassword)
+  );
 
   const handleOpenSubmit = (periodId?: string) => {
     setDefaultPeriodForSubmit(periodId);
@@ -56,6 +65,7 @@ const MainLayout: React.FC = () => {
         onOpenReportDetail={handleOpenReportDetail}
         onToggleMobileMenu={() => setIsMobileSidebarOpen(true)}
         onNavigate={handleNavigate}
+        onOpenChangePassword={() => setIsChangePasswordOpen(true)}
       />
 
       {/* Slide-out Navigation Drawer (Appears when clicking hamburger menu ☰) */}
@@ -127,6 +137,13 @@ const MainLayout: React.FC = () => {
           setSelectedSubmission(null);
         }}
         submission={selectedSubmission}
+      />
+
+      {/* Mandatory First-Time or Manual Password Change Modal */}
+      <ForceChangePasswordModal
+        isOpen={isFirstTimePasswordRequired || isChangePasswordOpen}
+        onClose={() => setIsChangePasswordOpen(false)}
+        isMandatory={isFirstTimePasswordRequired}
       />
 
       {/* Minimal Footer */}
