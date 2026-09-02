@@ -1,0 +1,84 @@
+{
+  "entities": {
+    "ReportSubmission": {
+      "title": "ReportSubmission",
+      "description": "Báo cáo hoặc biên bản nộp bởi giáo viên / cán bộ trường THCS & THPT Đốc Binh Kiều",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "periodId": { "type": "string" },
+        "periodTitle": { "type": "string" },
+        "authorId": { "type": "string" },
+        "authorName": { "type": "string" },
+        "authorEmail": { "type": "string" },
+        "authorRole": { "type": "string" },
+        "departmentId": { "type": "string" },
+        "departmentName": { "type": "string" },
+        "title": { "type": "string" },
+        "content": { "type": "string" },
+        "status": { "type": "string" },
+        "submittedAt": { "type": "string" },
+        "updatedAt": { "type": "string" },
+        "isLate": { "type": "boolean" }
+      },
+      "required": ["id", "periodId", "authorId", "title", "status"]
+    },
+    "ReportPeriod": {
+      "title": "ReportPeriod",
+      "description": "Đợt nộp báo cáo hoặc deadline của nhà trường",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "academicYear": { "type": "string" },
+        "semester": { "type": "string" },
+        "deadline": { "type": "string" },
+        "status": { "type": "string" },
+        "targetAudience": { "type": "string" }
+      },
+      "required": ["id", "title", "deadline", "status"]
+    },
+    "Department": {
+      "title": "Department",
+      "description": "Tổ chuyên môn hoặc phòng ban",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "headUserId": { "type": "string" }
+      },
+      "required": ["id", "name"]
+    },
+    "User": {
+      "title": "User",
+      "description": "Cán bộ giáo viên nhân viên trường",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "role": { "type": "string" }
+      },
+      "required": ["id", "name", "email", "role"]
+    }
+  },
+  "firestore": {
+    "/submissions/{submissionId}": {
+      "schema": { "$ref": "#/entities/ReportSubmission" },
+      "description": "Danh sách các báo cáo do giáo viên nộp"
+    },
+    "/periods/{periodId}": {
+      "schema": { "$ref": "#/entities/ReportPeriod" },
+      "description": "Danh sách các đợt nộp báo cáo và deadline"
+    },
+    "/departments/{departmentId}": {
+      "schema": { "$ref": "#/entities/Department" },
+      "description": "Danh sách 7 tổ chuyên môn và ban giám hiệu"
+    },
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "Danh sách 120 cán bộ giáo viên nhân viên"
+    }
+  }
+}

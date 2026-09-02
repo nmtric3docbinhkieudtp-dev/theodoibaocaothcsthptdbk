@@ -290,9 +290,16 @@ export const Dashboard: React.FC<DashboardProps> = ({
                         <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold border ${badge.color}`}>
                           {badge.text}
                         </span>
-                        <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 text-[11px] font-medium">
-                          {period.reportType === 'text_only' ? 'Văn bản nhập liệu' : 'Kèm tệp đính kèm'}
-                        </span>
+                        {period.targetAudience === 'homeroom_teachers' ? (
+                          <span className="px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-900 border border-amber-300 text-[11px] font-bold flex items-center gap-1">
+                            <GraduationCap className="w-3.5 h-3.5 text-amber-700" />
+                            <span>Dành riêng cho 53 GVCN</span>
+                          </span>
+                        ) : (
+                          <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 text-[11px] font-medium">
+                            {period.reportType === 'text_only' ? 'Văn bản nhập liệu' : 'Kèm tệp đính kèm'}
+                          </span>
+                        )}
                         {period.isRequired && (
                           <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-rose-50 text-rose-600 border border-rose-200">
                             Bắt buộc

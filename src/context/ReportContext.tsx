@@ -14,7 +14,7 @@ import { StorageService, setLocal, VALID_DEPT_IDS } from '../services/storage';
 import { getStoredFirebaseConfig, saveStoredFirebaseConfig, testFirebaseConnection, getFirebaseInstance } from '../services/firebase';
 import { collection, doc, onSnapshot, getDocs, setDoc, deleteDoc } from 'firebase/firestore';
 import { OFFICIAL_DEPARTMENTS, OFFICIAL_USERS } from '../data/staffRoster';
-import { INITIAL_SUBMISSIONS } from '../data/initialData';
+import { INITIAL_SUBMISSIONS, INITIAL_PERIODS } from '../data/initialData';
 import { EmailService } from '../services/emailService';
 import { useAuth } from './AuthContext';
 
@@ -32,9 +32,14 @@ interface ReportContextType {
     periodId: string;
     title: string;
     content: string;
+    structuredData?: any;
     attachments: any[];
     isDraft?: boolean;
     lateExplanation?: string;
+    isHomeroomReport?: boolean;
+    homeroomClass?: string;
+    homeroomStudentCount?: number;
+    homeroomCampus?: string;
   }) => Promise<ReportSubmission>;
   
   updateReport: (
@@ -42,7 +47,10 @@ interface ReportContextType {
     data: Partial<ReportSubmission>
   ) => Promise<ReportSubmission>;
 
-  deleteReport: (id: string) => void;
+  deleteReport: (id: string) => Promise<void>;
+  bulkDeleteReports: (ids: string[]) => Promise<void>;
+  clearTestReports: () => Promise<{ count: number }>;
+  clearAllReports: () => Promise<{ count: number }>;
 
   reviewReport: (
     submissionId: string,
@@ -53,7 +61,8 @@ interface ReportContextType {
   // Actions for Periods (Campaigns)
   createPeriod: (periodData: Omit<ReportPeriod, 'id' | 'createdAt'>) => ReportPeriod;
   updatePeriod: (id: string, periodData: Partial<ReportPeriod>) => ReportPeriod;
-  deletePeriod: (id: string) => void;
+  deletePeriod: (id: string) => Promise<void>;
+  clearAllPeriods: () => Promise<{ count: number }>;
 
   // Department management
   saveDepartment: (dept: Department) => void;
@@ -125,25 +134,26 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           setLocal('dbk_departments_data', OFFICIAL_DEPARTMENTS);
         }
 
+        // Check and sanitize periods in Firestore - never auto re-seed if cleared
+        const isPeriodsCleared = localStorage.getItem('dbk_periods_cleared_by_user') === 'true';
+        const periodsSnap = await getDocs(collection(db, 'periods'));
+        if (periodsSnap.empty && !isPeriodsCleared) {
+          // If empty and explicitly cleared, leave empty
+          localStorage.setItem('dbk_periods_cleared_by_user', 'true');
+        }
+
         const subsSnap = await getDocs(collection(db, 'submissions'));
-        if (subsSnap.empty) {
-          // If Firestore is empty, seed it automatically with the initial data
-          await StorageService.syncAllToFirebase();
-        } else {
-          // If Firestore already has data, purge any old test docs and load valid into state
-          const list: ReportSubmission[] = [];
+        const isSubmissionsCleared = localStorage.getItem('dbk_submissions_cleared_by_user') === 'true';
+        if (subsSnap.empty && !isSubmissionsCleared) {
+          localStorage.setItem('dbk_submissions_cleared_by_user', 'true');
+        } else if (!subsSnap.empty) {
+          // Purge any invalid old test docs
           for (const docSnap of subsSnap.docs) {
             const data = docSnap.data() as ReportSubmission;
-            if (!validStaffIds.has(data.authorId)) {
-              // delete invalid mock submission doc
+            if (data.authorId && !validStaffIds.has(data.authorId)) {
               await deleteDoc(doc(db, 'submissions', docSnap.id)).catch(() => {});
-            } else {
-              list.push(data);
             }
           }
-          const finalList = list.length > 0 ? list : INITIAL_SUBMISSIONS;
-          setSubmissions(finalList);
-          setLocal('dbk_submissions_data', finalList);
         }
       } catch (err) {
         console.warn('Firestore initial check error:', err);
@@ -159,6 +169,9 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             list.sort((a, b) => new Date(b.updatedAt || b.submittedAt || 0).getTime() - new Date(a.updatedAt || a.submittedAt || 0).getTime());
             setSubmissions(list);
             setLocal('dbk_submissions_data', list);
+          } else {
+            setSubmissions([]);
+            setLocal('dbk_submissions_data', []);
           }
         }, (err) => console.warn('Submissions snapshot listener error:', err));
 
@@ -168,6 +181,9 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             const list: ReportPeriod[] = snapshot.docs.map(d => d.data() as ReportPeriod);
             setPeriods(list);
             setLocal('dbk_periods_data', list);
+          } else {
+            setPeriods([]);
+            setLocal('dbk_periods_data', []);
           }
         }, (err) => console.warn('Periods snapshot listener error:', err));
 
@@ -213,9 +229,14 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     periodId: string;
     title: string;
     content: string;
+    structuredData?: any;
     attachments: any[];
     isDraft?: boolean;
     lateExplanation?: string;
+    isHomeroomReport?: boolean;
+    homeroomClass?: string;
+    homeroomStudentCount?: number;
+    homeroomCampus?: string;
   }): Promise<ReportSubmission> => {
     const period = periods.find(p => p.id === data.periodId);
     const now = new Date();
@@ -243,8 +264,13 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       authorRoleTitle: currentUser.roleTitle,
       departmentId: currentUser.departmentId,
       departmentName: currentUser.departmentName,
+      isHomeroomReport: data.isHomeroomReport ?? (period?.targetAudience === 'homeroom_teachers' || currentUser.isHomeroomTeacher),
+      homeroomClass: data.homeroomClass || currentUser.homeroomClass,
+      homeroomStudentCount: data.homeroomStudentCount || currentUser.homeroomStudentCount,
+      homeroomCampus: data.homeroomCampus || currentUser.homeroomCampus,
       title: data.title,
       content: data.content,
+      structuredData: data.structuredData,
       attachments: data.attachments || [],
       status: isDraft ? 'draft' : 'submitted',
       submittedAt: isDraft ? null : now.toISOString(),
@@ -295,9 +321,66 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     return updatedSub;
   };
 
-  const deleteReport = (id: string) => {
-    const updated = StorageService.deleteSubmission(id);
+  const deleteReport = async (id: string) => {
+    const updated = submissions.filter(s => s.id !== id);
     setSubmissions(updated);
+    setLocal('dbk_submissions_data', updated);
+    StorageService.deleteSubmission(id);
+    try {
+      const { db } = getFirebaseInstance();
+      if (db) {
+        await deleteDoc(doc(db, 'submissions', id)).catch(() => {});
+      }
+    } catch (e) {
+      console.warn('Error deleting report from Firestore:', e);
+    }
+  };
+
+  const bulkDeleteReports = async (ids: string[]) => {
+    const updated = submissions.filter(s => !ids.includes(s.id));
+    setSubmissions(updated);
+    setLocal('dbk_submissions_data', updated);
+    for (const id of ids) {
+      StorageService.deleteSubmission(id);
+    }
+    try {
+      const { db } = getFirebaseInstance();
+      if (db) {
+        for (const id of ids) {
+          await deleteDoc(doc(db, 'submissions', id)).catch(() => {});
+        }
+      }
+    } catch (e) {
+      console.warn('Error bulk deleting reports from Firestore:', e);
+    }
+  };
+
+  const clearAllReports = async (): Promise<{ count: number }> => {
+    const count = submissions.length;
+    setSubmissions([]);
+    setLocal('dbk_submissions_data', []);
+    localStorage.setItem('dbk_submissions_cleared_by_user', 'true');
+    StorageService.clearAllSubmissions();
+    try {
+      const { db } = getFirebaseInstance();
+      if (db) {
+        const snap = await getDocs(collection(db, 'submissions'));
+        snap.forEach(d => {
+          deleteDoc(doc(db, 'submissions', d.id)).catch(() => {});
+        });
+      }
+    } catch (e) {
+      console.warn('Error clearing submissions in Firestore:', e);
+    }
+    return { count };
+  };
+
+  const clearTestReports = async (): Promise<{ count: number }> => {
+    const ids = submissions.map(s => s.id);
+    if (ids.length > 0) {
+      await bulkDeleteReports(ids);
+    }
+    return { count: ids.length };
   };
 
   // Review workflow: Dept Head -> BGH
@@ -412,9 +495,37 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     return updatedPeriod;
   };
 
-  const deletePeriod = (id: string) => {
+  const deletePeriod = async (id: string) => {
     const updated = StorageService.deletePeriod(id);
     setPeriods(updated);
+    try {
+      const { db } = getFirebaseInstance();
+      if (db) {
+        await deleteDoc(doc(db, 'periods', id)).catch(() => {});
+      }
+    } catch (e) {
+      console.warn('Error deleting period from Firestore:', e);
+    }
+  };
+
+  const clearAllPeriods = async (): Promise<{ count: number }> => {
+    const count = periods.length;
+    StorageService.clearAllPeriods();
+    setPeriods([]);
+    setLocal('dbk_periods_data', []);
+    localStorage.setItem('dbk_periods_cleared_by_user', 'true');
+    try {
+      const { db } = getFirebaseInstance();
+      if (db) {
+        const snap = await getDocs(collection(db, 'periods'));
+        for (const d of snap.docs) {
+          await deleteDoc(doc(db, 'periods', d.id)).catch(() => {});
+        }
+      }
+    } catch (e) {
+      console.warn('Error clearing periods from Firestore:', e);
+    }
+    return { count };
   };
 
   const saveDepartment = (dept: Department) => {
@@ -500,10 +611,14 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         submitReport,
         updateReport,
         deleteReport,
+        bulkDeleteReports,
+        clearTestReports,
+        clearAllReports,
         reviewReport,
         createPeriod,
         updatePeriod,
         deletePeriod,
+        clearAllPeriods,
         saveDepartment,
         markNotificationRead,
         markAllNotificationsRead,

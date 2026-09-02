@@ -26,7 +26,7 @@ const STORAGE_KEYS = {
   NOTIFICATIONS: 'dbk_notifications_data',
   EMAIL_LOGS: 'dbk_email_logs_data',
   SCHOOL_INFO: 'dbk_school_info_data',
-  SEEDED: 'dbk_seeded_v15_fixed_phan_van_tat_and_year_26_27'
+  SEEDED: 'dbk_seeded_v17_homeroom_minutes_period_sync'
 };
 
 // Safe LocalStorage helpers
@@ -151,7 +151,7 @@ export const StorageService = {
   // --- PERIODS (CAMPAIGNS) ---
   getPeriods(): ReportPeriod[] {
     initializeDatabaseIfNeeded();
-    return getLocal<ReportPeriod[]>(STORAGE_KEYS.PERIODS, INITIAL_PERIODS);
+    return getLocal<ReportPeriod[]>(STORAGE_KEYS.PERIODS, []);
   },
 
   savePeriod(period: ReportPeriod): ReportPeriod[] {
@@ -184,17 +184,24 @@ export const StorageService = {
     return periods;
   },
 
+  clearAllPeriods(): ReportPeriod[] {
+    setLocal(STORAGE_KEYS.PERIODS, []);
+    localStorage.setItem('dbk_periods_cleared_by_user', 'true');
+    const { db, isReady } = getFirebaseInstance();
+    if (isReady && db) {
+      getDocs(collection(db, 'periods')).then(snap => {
+        snap.forEach(d => {
+          deleteDoc(doc(db, 'periods', d.id)).catch(() => {});
+        });
+      }).catch(err => console.warn('Firestore clear periods err:', err));
+    }
+    return [];
+  },
+
   // --- SUBMISSIONS ---
   getSubmissions(): ReportSubmission[] {
     initializeDatabaseIfNeeded();
-    const stored = getLocal<ReportSubmission[]>(STORAGE_KEYS.SUBMISSIONS, INITIAL_SUBMISSIONS);
-    const validStaffIds = new Set(INITIAL_USERS.map(u => u.id));
-    const validSubs = stored.filter(s => validStaffIds.has(s.authorId));
-    if (validSubs.length !== stored.length) {
-      setLocal(STORAGE_KEYS.SUBMISSIONS, validSubs.length > 0 ? validSubs : INITIAL_SUBMISSIONS);
-      return validSubs.length > 0 ? validSubs : INITIAL_SUBMISSIONS;
-    }
-    return stored;
+    return getLocal<ReportSubmission[]>(STORAGE_KEYS.SUBMISSIONS, []);
   },
 
   saveSubmission(submission: ReportSubmission): ReportSubmission[] {
@@ -225,6 +232,20 @@ export const StorageService = {
       deleteDoc(doc(db, 'submissions', submissionId)).catch(err => console.warn('Firestore submission delete err:', err));
     }
     return subs;
+  },
+
+  clearAllSubmissions(): ReportSubmission[] {
+    setLocal(STORAGE_KEYS.SUBMISSIONS, []);
+    localStorage.setItem('dbk_submissions_cleared_by_user', 'true');
+    const { db, isReady } = getFirebaseInstance();
+    if (isReady && db) {
+      getDocs(collection(db, 'submissions')).then(snap => {
+        snap.forEach(d => {
+          deleteDoc(doc(db, 'submissions', d.id)).catch(() => {});
+        });
+      }).catch(err => console.warn('Firestore clear submissions err:', err));
+    }
+    return [];
   },
 
   // --- NOTIFICATIONS ---

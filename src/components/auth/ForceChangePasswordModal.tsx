@@ -9,7 +9,8 @@ import {
   AlertCircle, 
   ArrowRight, 
   KeyRound,
-  ShieldCheck
+  ShieldCheck,
+  X
 } from 'lucide-react';
 
 interface ForceChangePasswordModalProps {
@@ -90,11 +91,24 @@ export const ForceChangePasswordModal: React.FC<ForceChangePasswordModalProps> =
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-xs animate-fadeIn">
-      <div className="w-full max-w-lg bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden text-slate-900">
+      <div className="w-full max-w-lg bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden text-slate-900 relative">
         
         {/* Header Bar */}
         <div className="bg-gradient-to-r from-amber-700 via-emerald-800 to-teal-800 p-6 text-white relative">
-          <div className="flex items-center gap-3">
+          {/* Top-right Close "X" button */}
+          {onClose && (
+            <button
+              type="button"
+              onClick={onClose}
+              className="absolute top-4 right-4 p-2 rounded-full bg-black/20 hover:bg-black/40 text-white/90 hover:text-white transition cursor-pointer z-10"
+              title="Đóng / Để sau"
+              aria-label="Đóng cửa sổ đổi mật khẩu"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          )}
+
+          <div className="flex items-center gap-3 pr-8">
             <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-xs flex items-center justify-center border border-white/30 shrink-0">
               <ShieldAlert className="w-6 h-6 text-amber-300" />
             </div>
@@ -216,7 +230,7 @@ export const ForceChangePasswordModal: React.FC<ForceChangePasswordModalProps> =
 
             {/* Submit Actions */}
             <div className="flex items-center justify-end gap-2.5 pt-3">
-              {!isMandatory && onClose && (
+              {onClose && (
                 <button
                   type="button"
                   onClick={onClose}
@@ -231,7 +245,7 @@ export const ForceChangePasswordModal: React.FC<ForceChangePasswordModalProps> =
                 className="flex-1 py-3 px-5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition active:scale-98 cursor-pointer"
               >
                 <ShieldCheck className="w-4 h-4" />
-                <span>{isSubmitting ? 'Đang lưu...' : 'Lưu Mật Khẩu & Kích Hoạt Bảo Vệ'}</span>
+                <span>{isSubmitting ? 'Đang lưu...' : 'Lưu Mật Khẩu & Kích Hoạt'}</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
             </div>

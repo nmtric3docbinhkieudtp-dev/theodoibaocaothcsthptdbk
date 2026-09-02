@@ -74,6 +74,30 @@ export type TargetAudienceType =
   | 'teachers_only'       // Chỉ Giáo viên bộ môn (không tính NV VP)
   | 'staff_only';         // Chỉ Nhân viên văn phòng
 
+export interface CustomFormField {
+  id: string;
+  label: string;
+  type: 'text' | 'textarea' | 'number' | 'select' | 'checkbox' | 'table';
+  required?: boolean;
+  placeholder?: string;
+  options?: string[];
+  tableColumns?: string[]; // for table type: e.g. ["STT", "Họ và tên", "Nhiệm vụ", "Kết quả"]
+  tableRows?: Record<string, string>[];
+}
+
+export interface CustomDynamicTable {
+  id: string;
+  title: string;
+  headers: string[];
+  rows: Record<string, string>[];
+}
+
+export interface PeriodFormTemplate {
+  defaultTemplateContent?: string;
+  fields?: CustomFormField[];
+  tables?: CustomDynamicTable[];
+}
+
 export interface ReportPeriod {
   id: string;
   title: string;
@@ -92,16 +116,8 @@ export interface ReportPeriod {
   status: 'active' | 'closed' | 'upcoming';
   createdBy: string;
   createdAt: string;
-  formTemplate?: {
-    fields: {
-      id: string;
-      label: string;
-      type: 'text' | 'textarea' | 'number' | 'select';
-      required: boolean;
-      placeholder?: string;
-      options?: string[];
-    }[];
-  };
+  defaultTemplateContent?: string;
+  formTemplate?: PeriodFormTemplate;
 }
 
 export interface ReviewHistory {
@@ -135,7 +151,10 @@ export interface ReportSubmission {
 
   title: string;
   content: string; // Rich text / structured markdown / text
-  structuredData?: Record<string, any>; // For template fields
+  structuredData?: {
+    homeroomMinutes?: HomeroomMeetingMinutesData;
+    [key: string]: any;
+  };
   attachments: ReportAttachment[];
   
   status: SubmissionStatus;
@@ -201,3 +220,57 @@ export interface FirebaseConfig {
   firestoreDatabaseId?: string;
   isConfigured: boolean;
 }
+
+// ----------------------------------------------------
+// BÁO CÁO GIÁO VIÊN CHỦ NHIỆM: BIÊN BẢN TẬP TRUNG ĐẦU NĂM HỌC
+// ----------------------------------------------------
+export interface TalentAchievementItem {
+  id: string;
+  tt?: number;
+  competition: string;
+  prize: string;
+  studentName: string;
+  note?: string;
+}
+
+export interface ClassCadreItem {
+  id: string;
+  tt?: number;
+  role: string;
+  studentName: string;
+  academicPerf: string; // Tốt / Khá / Đạt / Giỏi...
+  conductPerf: string;  // Tốt / Khá / Đạt...
+  phone: string;
+}
+
+export interface AbsentStudentItem {
+  id: string;
+  tt?: number;
+  studentName: string;
+  previousClass: string;
+  currentAddress: string;
+  studentPhone: string;
+  parentPhone: string;
+  reason: string;
+}
+
+export interface HomeroomMeetingMinutesData {
+  academicYear: string; // "2026 – 2027"
+  timeHour: string;      // e.g. "07"
+  timeMinute: string;    // e.g. "30"
+  meetingDate: string;   // e.g. "28"
+  meetingMonth: string;  // e.g. "8"
+  meetingYear: string;   // e.g. "2026"
+  roomNumber: string;    // e.g. "12" hoặc "Phòng 10"
+  teacherName: string;
+  className: string;
+  totalStudents: number;
+  maleStudents: number;
+  femaleStudents: number;
+  absentCount?: number;
+  talents: TalentAchievementItem[];
+  cadres: ClassCadreItem[];
+  absentStudents: AbsentStudentItem[];
+  additionalNotes?: string;
+}
+

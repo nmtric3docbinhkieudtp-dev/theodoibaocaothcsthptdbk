@@ -22,6 +22,7 @@ const MainLayout: React.FC = () => {
   const [isSubmitModalOpen, setIsSubmitModalOpen] = useState(false);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
+  const [dismissedFirstTimeUserIds, setDismissedFirstTimeUserIds] = useState<Record<string, boolean>>({});
   const [selectedSubmission, setSelectedSubmission] = useState<ReportSubmission | null>(null);
   const [defaultPeriodForSubmit, setDefaultPeriodForSubmit] = useState<string | undefined>(undefined);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
@@ -31,12 +32,20 @@ const MainLayout: React.FC = () => {
     return <LoginPage />;
   }
 
-  // Check if first-time mandatory password change is required
+  // Check if first-time mandatory password change is required and not dismissed
   const isFirstTimePasswordRequired = Boolean(
     currentUser &&
+    !dismissedFirstTimeUserIds[currentUser.id] &&
     !currentUser.hasChangedPassword &&
     (!currentUser.password || currentUser.password === '123456' || currentUser.mustChangePassword)
   );
+
+  const handleClosePasswordModal = () => {
+    setIsChangePasswordOpen(false);
+    if (currentUser) {
+      setDismissedFirstTimeUserIds(prev => ({ ...prev, [currentUser.id]: true }));
+    }
+  };
 
   const handleOpenSubmit = (periodId?: string) => {
     setDefaultPeriodForSubmit(periodId);
@@ -142,7 +151,7 @@ const MainLayout: React.FC = () => {
       {/* Mandatory First-Time or Manual Password Change Modal */}
       <ForceChangePasswordModal
         isOpen={isFirstTimePasswordRequired || isChangePasswordOpen}
-        onClose={() => setIsChangePasswordOpen(false)}
+        onClose={handleClosePasswordModal}
         isMandatory={isFirstTimePasswordRequired}
       />
 
