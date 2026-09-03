@@ -32,6 +32,8 @@ import { isUserEligibleForPeriod, getAudienceLabel } from '../../utils/reportFil
 import { HomeroomMeetingMinutesForm } from './HomeroomMeetingMinutesForm';
 import { CustomReportFormBuilder } from './CustomReportFormBuilder';
 import { OFFICIAL_REPORT_TEMPLATES, ReportTemplateOption } from '../../utils/reportTemplates';
+import { ImportFormFromDocModal } from '../common/ImportFormFromDocModal';
+import { ParsedTemplateResult } from '../../utils/formFileParser';
 import confetti from 'canvas-confetti';
 
 interface SubmitReportModalProps {
@@ -68,6 +70,7 @@ export const SubmitReportModal: React.FC<SubmitReportModalProps> = ({
   const [customFields, setCustomFields] = useState<CustomFormField[]>([]);
   const [customTables, setCustomTables] = useState<CustomDynamicTable[]>([]);
   const [customFieldValues, setCustomFieldValues] = useState<Record<string, any>>({});
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
@@ -152,6 +155,18 @@ export const SubmitReportModal: React.FC<SubmitReportModalProps> = ({
 
   const handleInsertSection = (sectionText: string) => {
     setContent(prev => (prev ? prev + '\n\n' + sectionText : sectionText));
+  };
+
+  const handleApplyParsedForm = (parsed: ParsedTemplateResult) => {
+    setCustomFields(parsed.fields);
+    setCustomTables(parsed.tables);
+    if (!title.trim() && parsed.title) {
+      setTitle(parsed.title);
+    }
+    if (!content.trim() && parsed.fullRawText) {
+      setContent(parsed.fullRawText);
+    }
+    setActiveTab('custom_form');
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -398,65 +413,77 @@ export const SubmitReportModal: React.FC<SubmitReportModalProps> = ({
           />
         </div>
 
-        {/* 4 MODE TABS */}
-        <div className="flex border-b border-slate-200 overflow-x-auto gap-2 text-xs">
-          <button
-            type="button"
-            onClick={() => setActiveTab('text')}
-            className={`pb-2.5 px-3 font-bold transition flex items-center gap-1.5 whitespace-nowrap cursor-pointer ${
-              activeTab === 'text'
-                ? 'border-b-2 border-emerald-600 text-emerald-700'
-                : 'text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            <FileText className="w-4 h-4" />
-            <span>1. Soạn Thảo Văn Bản Báo Cáo</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab('custom_form')}
-            className={`pb-2.5 px-3 font-bold transition flex items-center gap-1.5 whitespace-nowrap cursor-pointer ${
-              activeTab === 'custom_form'
-                ? 'border-b-2 border-emerald-600 text-emerald-700'
-                : 'text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            <Layers className="w-4 h-4 text-emerald-600" />
-            <span>2. Bộ Biểu Mẫu & Bảng Số Liệu Tùy Biến</span>
-            {(customFields.length > 0 || customTables.length > 0) && (
-              <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-emerald-100 text-emerald-800 font-bold">
-                {customFields.length + customTables.length}
-              </span>
-            )}
-          </button>
-
-          {isHomeroomPeriod && (
+        {/* 4 MODE TABS + SMART FORM GENERATOR BUTTON */}
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-1">
+          <div className="flex overflow-x-auto gap-2 text-xs">
             <button
               type="button"
-              onClick={() => setActiveTab('homeroom')}
-              className={`pb-2.5 px-3 font-bold transition flex items-center gap-1.5 whitespace-nowrap cursor-pointer ${
-                activeTab === 'homeroom'
+              onClick={() => setActiveTab('text')}
+              className={`pb-2 px-3 font-bold transition flex items-center gap-1.5 whitespace-nowrap cursor-pointer ${
+                activeTab === 'text'
                   ? 'border-b-2 border-emerald-600 text-emerald-700'
                   : 'text-slate-500 hover:text-slate-800'
               }`}
             >
-              <ClipboardList className="w-4 h-4 text-amber-600" />
-              <span>3. Biên Bản Tập Trung Học Sinh (GVCN)</span>
+              <FileText className="w-4 h-4" />
+              <span>1. Soạn Thảo Văn Bản Báo Cáo</span>
             </button>
-          )}
+
+            <button
+              type="button"
+              onClick={() => setActiveTab('custom_form')}
+              className={`pb-2 px-3 font-bold transition flex items-center gap-1.5 whitespace-nowrap cursor-pointer ${
+                activeTab === 'custom_form'
+                  ? 'border-b-2 border-emerald-600 text-emerald-700'
+                  : 'text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              <Layers className="w-4 h-4 text-emerald-600" />
+              <span>2. Bộ Biểu Mẫu & Bảng Số Liệu Tùy Biến</span>
+              {(customFields.length > 0 || customTables.length > 0) && (
+                <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-emerald-100 text-emerald-800 font-bold">
+                  {customFields.length + customTables.length}
+                </span>
+              )}
+            </button>
+
+            {isHomeroomPeriod && (
+              <button
+                type="button"
+                onClick={() => setActiveTab('homeroom')}
+                className={`pb-2 px-3 font-bold transition flex items-center gap-1.5 whitespace-nowrap cursor-pointer ${
+                  activeTab === 'homeroom'
+                    ? 'border-b-2 border-emerald-600 text-emerald-700'
+                    : 'text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                <ClipboardList className="w-4 h-4 text-amber-600" />
+                <span>3. Biên Bản Tập Trung Học Sinh (GVCN)</span>
+              </button>
+            )}
+
+            <button
+              type="button"
+              onClick={() => setActiveTab('file')}
+              className={`pb-2 px-3 font-bold transition flex items-center gap-1.5 whitespace-nowrap cursor-pointer ${
+                activeTab === 'file'
+                  ? 'border-b-2 border-emerald-600 text-emerald-700'
+                  : 'text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              <Paperclip className="w-4 h-4" />
+              <span>4. Đính Kèm Tệp ({attachments.length})</span>
+            </button>
+          </div>
 
           <button
             type="button"
-            onClick={() => setActiveTab('file')}
-            className={`pb-2.5 px-3 font-bold transition flex items-center gap-1.5 whitespace-nowrap cursor-pointer ${
-              activeTab === 'file'
-                ? 'border-b-2 border-emerald-600 text-emerald-700'
-                : 'text-slate-500 hover:text-slate-800'
-            }`}
+            onClick={() => setIsImportModalOpen(true)}
+            className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-2xs cursor-pointer active:scale-98 shrink-0"
+            title="Tải lên tệp .docx, .txt, .md mẫu để hệ thống tự động bóc tách và tạo form chuẩn trên web"
           >
-            <Paperclip className="w-4 h-4" />
-            <span>4. Đính Kèm Tệp ({attachments.length})</span>
+            <UploadCloud className="w-3.5 h-3.5" />
+            <span>Tạo Form Tự Động Từ Tệp (.docx/.txt/.md)</span>
           </button>
         </div>
 
@@ -554,6 +581,9 @@ export const SubmitReportModal: React.FC<SubmitReportModalProps> = ({
             onTablesChange={setCustomTables}
             fieldValues={customFieldValues}
             onFieldValueChange={(fId, val) => setCustomFieldValues(prev => ({ ...prev, [fId]: val }))}
+            onApplyParsedTitle={(newTitle) => {
+              if (!title.trim()) setTitle(newTitle);
+            }}
           />
         )}
 
@@ -688,6 +718,14 @@ export const SubmitReportModal: React.FC<SubmitReportModalProps> = ({
         </div>
 
       </div>
+
+      {/* Smart Form Parser Modal from File (.docx, .txt, .md) */}
+      <ImportFormFromDocModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        onApplyParsedForm={handleApplyParsedForm}
+        mode="fill_submission"
+      />
     </Modal>
   );
 };

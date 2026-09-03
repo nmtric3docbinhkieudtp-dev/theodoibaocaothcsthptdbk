@@ -152,6 +152,15 @@ export const CustomReportFormBuilder: React.FC<CustomReportFormBuilderProps> = (
     onTablesChange(updated);
   };
 
+  const handleApplyParsedForm = (parsed: ParsedTemplateResult) => {
+    onFieldsChange(parsed.fields);
+    onTablesChange(parsed.tables);
+    if (parsed.title && onApplyParsedTitle) {
+      onApplyParsedTitle(parsed.title);
+    }
+    setActiveTab('fill');
+  };
+
   return (
     <div className="space-y-4 rounded-2xl border border-slate-200 bg-slate-50/50 p-4">
       
@@ -507,6 +516,14 @@ export const CustomReportFormBuilder: React.FC<CustomReportFormBuilderProps> = (
 
         </div>
       )}
+
+      {/* Smart Form Parser Modal from File */}
+      <ImportFormFromDocModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        onApplyParsedForm={handleApplyParsedForm}
+        mode="fill_submission"
+      />
 
     </div>
   );

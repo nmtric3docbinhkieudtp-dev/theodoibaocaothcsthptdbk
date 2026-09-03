@@ -20,10 +20,13 @@ import {
   Sparkles,
   School,
   RefreshCw,
-  FolderX
+  FolderX,
+  UploadCloud
 } from 'lucide-react';
-import { ReportPeriod, ReportType, UserRole, TargetAudienceType } from '../../types';
+import { ReportPeriod, ReportType, UserRole, TargetAudienceType, PeriodFormTemplate } from '../../types';
 import { getAudienceLabel, getRequiredUsersForPeriod } from '../../utils/reportFilters';
+import { ImportFormFromDocModal } from '../common/ImportFormFromDocModal';
+import { ParsedTemplateResult } from '../../utils/formFileParser';
 
 interface PeriodManagementProps {
   onOpenSubmit: (periodId?: string) => void;
@@ -70,6 +73,10 @@ export const PeriodManagement: React.FC<PeriodManagementProps> = ({
   const [targetAudience, setTargetAudience] = useState<TargetAudienceType>('all');
   const [isRequired, setIsRequired] = useState(true);
   const [selectedDepts, setSelectedDepts] = useState<string[]>(['all']);
+  
+  // Smart File Import State
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [importedTemplate, setImportedTemplate] = useState<PeriodFormTemplate | null>(null);
 
   const handleOpenCreate = (presetAudience?: TargetAudienceType) => {
     setTitle('');
@@ -83,6 +90,29 @@ export const PeriodManagement: React.FC<PeriodManagementProps> = ({
     setIsRequired(true);
     setSelectedDepts(['all']);
     setEditingPeriod(null);
+    setImportedTemplate(null);
+    setIsCreateModalOpen(true);
+  };
+
+  const handleApplyParsedToPeriod = (parsed: ParsedTemplateResult) => {
+    setTitle(parsed.title || 'Báo cáo theo biểu mẫu quy định');
+    setDescription(
+      `Biểu mẫu trực tuyến chuẩn Web gồm ${parsed.fields.length} trường thông tin và ${parsed.tables.length} bảng biểu số liệu. Thầy/Cô điền trực tiếp vào form trên hệ thống.`
+    );
+    setAcademicYear('2026-2027');
+    setSemester('HK1');
+    const nextWeek = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    setDeadline(nextWeek.toISOString().slice(0, 16));
+    setReportType('hybrid');
+    setTargetAudience('all');
+    setIsRequired(true);
+    setSelectedDepts(['all']);
+    setEditingPeriod(null);
+    setImportedTemplate({
+      fields: parsed.fields,
+      tables: parsed.tables,
+      defaultTemplateContent: parsed.fullRawText
+    });
     setIsCreateModalOpen(true);
   };
 
@@ -138,11 +168,14 @@ export const PeriodManagement: React.FC<PeriodManagementProps> = ({
         targetDepartmentIds: selectedDepts,
         targetRoles: ['teacher', 'dept_head'],
         status: isPast ? 'closed' : 'active',
-        createdBy: 'Ban Giám Hiệu'
+        createdBy: 'Ban Giám Hiệu',
+        defaultTemplateContent: importedTemplate?.defaultTemplateContent,
+        formTemplate: importedTemplate || undefined
       });
       showToast(`Đã ban hành đợt báo cáo mới "${title}" thành công!`);
     }
 
+    setImportedTemplate(null);
     setIsCreateModalOpen(false);
   };
 
@@ -225,6 +258,16 @@ export const PeriodManagement: React.FC<PeriodManagementProps> = ({
             )}
 
             <button
+              id="btn-create-period-from-file"
+              onClick={() => setIsImportModalOpen(true)}
+              className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-xs transition active:scale-98 cursor-pointer"
+              title="Tải lên tệp .docx, .txt hoặc .md có sẵn để hệ thống tự động bóc tách và tạo đợt báo cáo kèm Form web chuẩn"
+            >
+              <UploadCloud className="w-4 h-4" />
+              <span>Tạo Đợt Từ Tệp Mẫu (.docx/.txt/.md)</span>
+            </button>
+
+            <button
               id="btn-create-gvcn-period"
               onClick={() => {
                 handleOpenCreate('homeroom_teachers');
@@ -279,7 +322,14 @@ export const PeriodManagement: React.FC<PeriodManagementProps> = ({
             </p>
           </div>
           {canManagePeriods && (
-            <div className="flex items-center justify-center gap-3 pt-2">
+            <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+              <button
+                onClick={() => setIsImportModalOpen(true)}
+                className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 text-white font-bold text-xs flex items-center gap-2 shadow-xs cursor-pointer"
+              >
+                <UploadCloud className="w-4 h-4" />
+                <span>Tạo Đợt Báo Cáo Từ Tệp Mẫu (.docx/.txt/.md)</span>
+              </button>
               <button
                 onClick={() => {
                   handleOpenCreate('homeroom_teachers');
@@ -552,6 +602,29 @@ export const PeriodManagement: React.FC<PeriodManagementProps> = ({
         maxWidth="2xl"
       >
         <form onSubmit={handleSave} className="space-y-4">
+          {importedTemplate && (
+            <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-950 flex items-start justify-between gap-3 shadow-2xs">
+              <div className="flex items-start gap-2.5">
+                <Sparkles className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                <div>
+                  <div className="font-bold text-emerald-900">
+                    ✨ Đã liên kết Form Biểu Mẫu Chuẩn Web Tự Động
+                  </div>
+                  <div className="text-[11px] text-emerald-800 mt-0.5">
+                    Hệ thống đã tự động cấu hình <strong>{importedTemplate.fields?.length || 0} trường thông tin</strong> và <strong>{importedTemplate.tables?.length || 0} bảng dữ liệu</strong> từ tệp tải lên. Người nộp sẽ thấy ngay form trực tuyến này để nhập liệu.
+                  </div>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setImportedTemplate(null)}
+                className="text-[11px] font-bold text-rose-600 hover:text-rose-800 underline shrink-0 cursor-pointer"
+              >
+                Gỡ bỏ mẫu
+              </button>
+            </div>
+          )}
+
           <div>
             <label className="block text-xs font-bold text-slate-700 mb-1">
               Tên Đợt Báo Cáo <span className="text-rose-500">*</span>
@@ -742,6 +815,14 @@ export const PeriodManagement: React.FC<PeriodManagementProps> = ({
           </div>
         </form>
       </Modal>
+
+      {/* Smart Form Parser Modal from File (.docx, .txt, .md) */}
+      <ImportFormFromDocModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        onApplyParsedForm={handleApplyParsedToPeriod}
+        mode="create_period"
+      />
 
     </div>
   );
