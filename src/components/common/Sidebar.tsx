@@ -34,6 +34,7 @@ interface SidebarProps {
   onNavigate?: (tab: NavTab) => void;
   onSelectTab?: (tab: NavTab) => void;
   onOpenSubmit?: () => void;
+  onOpenCreatePeriod?: () => void;
   isMobileOpen?: boolean;
   onCloseMobile?: () => void;
 }
@@ -44,21 +45,30 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onNavigate,
   onSelectTab,
   onOpenSubmit,
+  onOpenCreatePeriod,
   isMobileOpen = false,
   onCloseMobile
 }) => {
   const currentTab = activeView || activeTab || 'dashboard';
+  const { currentUser, isPrincipal, isDeptHead, isAdmin } = useAuth();
+
   const handleSelect = (tab: NavTab) => {
-    if (tab === 'submit' && onOpenSubmit) {
-      onOpenSubmit();
+    if (tab === 'submit') {
+      if (isAdmin || isPrincipal) {
+        if (onOpenCreatePeriod) {
+          onOpenCreatePeriod();
+        } else if (onNavigate) {
+          onNavigate('periods');
+        }
+      } else if (onOpenSubmit) {
+        onOpenSubmit();
+      }
     } else {
       if (onNavigate) onNavigate(tab);
       if (onSelectTab) onSelectTab(tab);
     }
     if (onCloseMobile) onCloseMobile();
   };
-
-  const { currentUser, isPrincipal, isDeptHead, isAdmin } = useAuth();
   const { submissions = [], periods = [] } = useReports();
 
   // Calculate pending reviews for current user
@@ -95,8 +105,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
     },
     {
       id: 'submit',
-      label: 'Nộp báo cáo mới',
-      icon: FilePlus2
+      label: (isAdmin || isPrincipal) ? 'Ban hành yêu cầu báo cáo' : 'Điền & nộp báo cáo',
+      icon: FilePlus2,
+      badge: (isAdmin || isPrincipal) ? 'Tạo mẫu & Đặt hạn' : undefined,
+      badgeColor: 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold'
     },
     {
       id: 'reports',
@@ -114,7 +126,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     },
     {
       id: 'periods',
-      label: 'Đợt nộp & Deadline',
+      label: (isAdmin || isPrincipal) ? 'Quản lý đợt & Hạn chót' : 'Đợt nộp & Hạn chót',
       icon: CalendarRange,
       badge: activePeriodsCount > 0 ? `${activePeriodsCount} đợt` : undefined,
       badgeColor: 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'

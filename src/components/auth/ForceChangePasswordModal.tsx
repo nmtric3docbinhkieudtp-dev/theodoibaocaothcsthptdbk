@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { StorageService } from '../../services/storage';
 import { 
   ShieldAlert, 
   Lock, 
@@ -49,7 +50,8 @@ export const ForceChangePasswordModal: React.FC<ForceChangePasswordModalProps> =
     const cleanConfirm = confirmPassword.trim();
 
     // Verify current password
-    const expectedPass = currentUser.password || '123456';
+    const creds = StorageService.getUserCredentials();
+    const expectedPass = creds[currentUser.id]?.password || currentUser.password || '123456';
     if (cleanCurrent !== expectedPass && cleanCurrent !== '123456' && cleanCurrent !== 'dbk@2026' && cleanCurrent !== 'dbk@2025') {
       setErrorMsg('Mật khẩu hiện tại chưa chính xác. Vui lòng kiểm tra lại!');
       return;

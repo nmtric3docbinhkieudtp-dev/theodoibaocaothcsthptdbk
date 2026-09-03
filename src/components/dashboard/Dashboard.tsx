@@ -18,13 +18,15 @@ import {
   Check,
   GraduationCap,
   School,
-  Users
+  Users,
+  Plus
 } from 'lucide-react';
 import { ReportPeriod, ReportSubmission } from '../../types';
 import { isUserEligibleForPeriod, getAudienceLabel } from '../../utils/reportFilters';
 
 interface DashboardProps {
   onOpenSubmit: (periodId?: string) => void;
+  onOpenCreatePeriod?: () => void;
   onOpenReportDetail: (submission: ReportSubmission) => void;
   onNavigate?: (tab: any) => void;
   onNavigateTab?: (tab: any) => void;
@@ -32,6 +34,7 @@ interface DashboardProps {
 
 export const Dashboard: React.FC<DashboardProps> = ({
   onOpenSubmit,
+  onOpenCreatePeriod,
   onOpenReportDetail,
   onNavigate,
   onNavigateTab
@@ -125,20 +128,31 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
-            <button
-              id="btn-dash-submit-report"
-              onClick={() => onOpenSubmit()}
-              className="px-4 py-2.5 rounded-xl bg-emerald-400 hover:bg-emerald-300 text-slate-950 font-bold text-xs sm:text-sm flex items-center gap-2 shadow-md hover:shadow-lg transition active:scale-98 cursor-pointer"
-            >
-              <Send className="w-4 h-4" />
-              <span>Nộp Báo Cáo Mới</span>
-            </button>
+            {isAdmin || isPrincipal ? (
+              <button
+                id="btn-dash-create-period"
+                onClick={onOpenCreatePeriod || (() => handleNav('periods'))}
+                className="px-4 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs sm:text-sm flex items-center gap-2 shadow-md hover:shadow-lg transition active:scale-98 cursor-pointer ring-2 ring-amber-300/40"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Ban Hành Yêu Cầu & Đặt Deadline</span>
+              </button>
+            ) : (
+              <button
+                id="btn-dash-submit-report"
+                onClick={() => onOpenSubmit()}
+                className="px-4 py-2.5 rounded-xl bg-emerald-400 hover:bg-emerald-300 text-slate-950 font-bold text-xs sm:text-sm flex items-center gap-2 shadow-md hover:shadow-lg transition active:scale-98 cursor-pointer"
+              >
+                <Send className="w-4 h-4" />
+                <span>Nộp Báo Cáo Mới</span>
+              </button>
+            )}
             <button
               onClick={() => handleNav('periods')}
               className="px-4 py-2.5 rounded-xl bg-white/15 hover:bg-white/25 backdrop-blur-md text-white font-semibold text-xs sm:text-sm border border-white/20 flex items-center gap-2 transition cursor-pointer"
             >
               <Calendar className="w-4 h-4" />
-              <span>Xem Hạn Nộp</span>
+              <span>Xem Các Đợt & Hạn Chót</span>
             </button>
           </div>
         </div>

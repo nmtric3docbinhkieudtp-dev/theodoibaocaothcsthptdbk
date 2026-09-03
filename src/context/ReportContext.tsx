@@ -111,6 +111,34 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     const setupFirestoreRealtime = async () => {
       const validStaffIds = new Set(OFFICIAL_USERS.map(u => u.id));
       try {
+        // Check and sync user_credentials from Firestore
+        try {
+          const credsSnap = await getDocs(collection(db, 'user_credentials'));
+          if (!credsSnap.empty) {
+            const localCreds = StorageService.getUserCredentials();
+            let hasNewCreds = false;
+            credsSnap.docs.forEach(docSnap => {
+              const data = docSnap.data();
+              if (data && data.password && (!localCreds[docSnap.id] || localCreds[docSnap.id].password !== data.password)) {
+                localCreds[docSnap.id] = {
+                  userId: docSnap.id,
+                  password: data.password,
+                  hasChangedPassword: data.hasChangedPassword ?? true,
+                  mustChangePassword: data.mustChangePassword ?? false,
+                  updatedAt: data.updatedAt || new Date().toISOString()
+                };
+                hasNewCreds = true;
+              }
+            });
+            if (hasNewCreds) {
+              setLocal('dbk_user_credentials', localCreds);
+              StorageService.getUsers();
+            }
+          }
+        } catch (credErr) {
+          console.warn('Firestore user_credentials sync error:', credErr);
+        }
+
         // Check and sanitize departments in Firestore
         const deptsSnap = await getDocs(collection(db, 'departments'));
         const hasInvalidDepts = deptsSnap.docs.some(docSnap => {
@@ -302,6 +330,28 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           isRead: false,
           createdAt: now.toISOString()
         });
+      }
+
+      // If submitted late, immediately notify Admin/BGH
+      if (isLate) {
+        const users = StorageService.getUsers();
+        const admins = users.filter(u => u.role === 'admin' || u.role === 'principal');
+        const lateText = lateMinutes > 60 
+          ? `${Math.floor(lateMinutes / 60)} giờ ${lateMinutes % 60} phút` 
+          : `${lateMinutes} phút`;
+
+        for (const adm of admins) {
+          StorageService.addNotification({
+            id: 'notif-late-' + Date.now() + '-' + adm.id,
+            userId: adm.id,
+            title: `⚠️ Nộp trễ hạn: ${currentUser.name} (${lateText})`,
+            message: `Giáo viên/Nhân viên ${currentUser.name} (${currentUser.departmentName}) vừa nộp báo cáo trễ hạn cho yêu cầu "${newSub.periodTitle}". Thời gian trễ: ${lateText}. Lý do giải trình: "${data.lateExplanation || 'Không có giải trình'}"`,
+            type: 'system',
+            linkId: newSub.id,
+            isRead: false,
+            createdAt: now.toISOString()
+          });
+        }
       }
     }
 

@@ -12,13 +12,15 @@ import {
   LogOut,
   UserCheck,
   KeyRound,
-  ShieldCheck
+  ShieldCheck,
+  Plus
 } from 'lucide-react';
 import { UserRole } from '../../types';
 
 interface HeaderProps {
   onOpenNotifications?: () => void;
   onOpenSubmit?: () => void;
+  onOpenCreatePeriod?: () => void;
   onOpenReportDetail?: (submission: any) => void;
   onToggleMobileMenu?: () => void;
   onNavigate?: (tab: any) => void;
@@ -28,12 +30,13 @@ interface HeaderProps {
 export const Header: React.FC<HeaderProps> = ({
   onOpenNotifications,
   onOpenSubmit,
+  onOpenCreatePeriod,
   onOpenReportDetail,
   onToggleMobileMenu,
   onNavigate,
   onOpenChangePassword
 }) => {
-  const { currentUser, allUsers = [], switchUser, logout } = useAuth();
+  const { currentUser, allUsers = [], switchUser, logout, isAdmin, isPrincipal } = useAuth();
   const { 
     schoolInfo, 
     unreadCount, 
@@ -114,7 +117,19 @@ export const Header: React.FC<HeaderProps> = ({
         <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
           
           {/* Quick Submit Button */}
-          {onOpenSubmit && (
+          {/* Role-based action button: Admin creates requirement & sets deadline, Staff submits */}
+          {isAdmin || isPrincipal ? (
+            <button
+              id="btn-header-create-period"
+              onClick={onOpenCreatePeriod || onOpenSubmit}
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 active:scale-98 transition shadow-xs cursor-pointer ring-1 ring-emerald-400/30"
+              title="Ban hành yêu cầu báo cáo kèm biểu mẫu & ấn định thời hạn chót"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Ban Hành Yêu Cầu Báo Cáo</span>
+              <span className="sm:hidden">Tạo Báo Cáo</span>
+            </button>
+          ) : onOpenSubmit ? (
             <button
               id="btn-quick-submit"
               onClick={onOpenSubmit}
@@ -124,7 +139,7 @@ export const Header: React.FC<HeaderProps> = ({
               <span className="hidden xs:inline">Nộp Báo Cáo</span>
               <span className="xs:hidden">Nộp</span>
             </button>
-          )}
+          ) : null}
 
           {/* Notifications Dropdown */}
           <div className="relative">

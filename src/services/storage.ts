@@ -20,13 +20,14 @@ import { collection, doc, getDocs, setDoc, updateDoc, deleteDoc } from 'firebase
 
 const STORAGE_KEYS = {
   USERS: 'dbk_users_data',
+  USER_CREDENTIALS: 'dbk_user_credentials',
   DEPARTMENTS: 'dbk_departments_data',
   PERIODS: 'dbk_periods_data',
   SUBMISSIONS: 'dbk_submissions_data',
   NOTIFICATIONS: 'dbk_notifications_data',
   EMAIL_LOGS: 'dbk_email_logs_data',
   SCHOOL_INFO: 'dbk_school_info_data',
-  SEEDED: 'dbk_seeded_v17_homeroom_minutes_period_sync'
+  SEEDED: 'dbk_seeded_v18_persistent_password_fix'
 };
 
 // Safe LocalStorage helpers
@@ -70,6 +71,41 @@ export function setLocal<T>(key: string, value: T): void {
   }
 }
 
+export interface UserCredentialData {
+  userId: string;
+  password?: string;
+  hasChangedPassword?: boolean;
+  mustChangePassword?: boolean;
+  updatedAt?: string;
+}
+export type UserCredentialsMap = Record<string, UserCredentialData>;
+
+export function getUserCredentials(): UserCredentialsMap {
+  return getLocal<UserCredentialsMap>(STORAGE_KEYS.USER_CREDENTIALS, {});
+}
+
+export function saveUserCredential(userId: string, data: Partial<UserCredentialData>): void {
+  const all = getUserCredentials();
+  all[userId] = {
+    ...all[userId],
+    userId,
+    ...data,
+    updatedAt: new Date().toISOString()
+  };
+  setLocal(STORAGE_KEYS.USER_CREDENTIALS, all);
+
+  // Background sync to Firestore user_credentials
+  const { db, isReady } = getFirebaseInstance();
+  if (isReady && db) {
+    try {
+      const payload = cleanFirestorePayload(all[userId]);
+      setDoc(doc(db, 'user_credentials', userId), payload).catch(err => console.warn('Firestore credential save err:', err));
+    } catch (e) {
+      console.warn('Sync credential error:', e);
+    }
+  }
+}
+
 export const VALID_DEPT_IDS = ['van_phong', 'toan', 'ngu_van_tv_tb', 'su_dia_gdcd', 'khtn_cn', 'nn_tin', 'gdtc_qp_nt'];
 
 export function initializeDatabaseIfNeeded(forceReset = false) {
@@ -77,13 +113,26 @@ export function initializeDatabaseIfNeeded(forceReset = false) {
   const currentUsers = getLocal<User[]>(STORAGE_KEYS.USERS, []);
   const currentDepts = getLocal<Department[]>(STORAGE_KEYS.DEPARTMENTS, []);
   
+  // Guard credentials first: harvest any passwords in currentUsers
+  const credentials = getUserCredentials();
+  currentUsers.forEach(u => {
+    if (u.password || u.hasChangedPassword) {
+      if (!credentials[u.id] || !credentials[u.id].password) {
+        credentials[u.id] = {
+          userId: u.id,
+          password: u.password,
+          hasChangedPassword: u.hasChangedPassword ?? true,
+          mustChangePassword: u.mustChangePassword ?? false,
+          updatedAt: new Date().toISOString()
+        };
+      }
+    }
+  });
+  setLocal(STORAGE_KEYS.USER_CREDENTIALS, credentials);
+
   const hasOutdatedDepts = currentDepts.some(d => 
     !VALID_DEPT_IDS.includes(d.id) ||
-    d.id === 'bgh' ||
-    d.name.includes('Khoa học') || 
-    d.name.includes('Tự nhiên') ||
-    d.name.includes('Xã hội') ||
-    (d.id === 'toan' && !d.headUserName?.includes('Nguyễn Văn Tới'))
+    d.id === 'bgh'
   );
 
   const hasOldUserIds = currentUsers.some(u => u.id.startsWith('user-toan') || u.id === 'user-bgh-1' || u.id === 'user-admin');
@@ -91,47 +140,107 @@ export function initializeDatabaseIfNeeded(forceReset = false) {
   if (forceReset || !isSeeded || currentUsers.length < 100 || currentDepts.length !== 7 || hasOutdatedDepts || hasOldUserIds) {
     setLocal(STORAGE_KEYS.SCHOOL_INFO, INITIAL_SCHOOL_INFO);
     setLocal(STORAGE_KEYS.DEPARTMENTS, INITIAL_DEPARTMENTS);
-    setLocal(STORAGE_KEYS.USERS, INITIAL_USERS);
-    setLocal(STORAGE_KEYS.PERIODS, INITIAL_PERIODS);
-    setLocal(STORAGE_KEYS.SUBMISSIONS, INITIAL_SUBMISSIONS);
-    setLocal(STORAGE_KEYS.NOTIFICATIONS, INITIAL_NOTIFICATIONS);
+
+    // Merge preserved credentials into INITIAL_USERS so passwords are NEVER lost
+    const mergedUsers = INITIAL_USERS.map(u => {
+      const cred = credentials[u.id];
+      return {
+        ...u,
+        ...(cred?.password ? { password: cred.password } : {}),
+        hasChangedPassword: cred?.hasChangedPassword ?? false,
+        mustChangePassword: cred?.mustChangePassword ?? false
+      };
+    });
+    setLocal(STORAGE_KEYS.USERS, mergedUsers);
+
+    // Only set periods/submissions/notifications if not already initialized
+    const existingPeriods = getLocal<ReportPeriod[]>(STORAGE_KEYS.PERIODS, []);
+    const existingSubs = getLocal<ReportSubmission[]>(STORAGE_KEYS.SUBMISSIONS, []);
+    const existingNotifs = getLocal<AppNotification[]>(STORAGE_KEYS.NOTIFICATIONS, []);
+    
+    if (forceReset || !isSeeded) {
+      setLocal(STORAGE_KEYS.PERIODS, existingPeriods.length > 0 ? existingPeriods : INITIAL_PERIODS);
+      setLocal(STORAGE_KEYS.SUBMISSIONS, existingSubs.length > 0 ? existingSubs : INITIAL_SUBMISSIONS);
+      setLocal(STORAGE_KEYS.NOTIFICATIONS, existingNotifs.length > 0 ? existingNotifs : INITIAL_NOTIFICATIONS);
+    }
     setLocal(STORAGE_KEYS.EMAIL_LOGS, []);
     localStorage.setItem(STORAGE_KEYS.SEEDED, 'true');
 
-    // Set active user key to Thầy Nguyễn Minh Trí (staff-2)
-    localStorage.setItem('dbk_active_user_id', 'staff-2');
+    // Only set active user if not already set
+    if (!localStorage.getItem('dbk_active_user_id')) {
+      localStorage.setItem('dbk_active_user_id', 'staff-2');
+    }
   }
 }
 
 export const StorageService = {
+  // --- CREDENTIALS ---
+  getUserCredentials(): UserCredentialsMap {
+    return getUserCredentials();
+  },
+
+  saveUserCredential(userId: string, data: Partial<UserCredentialData>): void {
+    saveUserCredential(userId, data);
+  },
+
   // --- USERS ---
   getUsers(): User[] {
     initializeDatabaseIfNeeded();
     const stored = getLocal<User[]>(STORAGE_KEYS.USERS, INITIAL_USERS);
+    const credentials = getUserCredentials();
+
     // Check if homeroom data, dept_head data, or Phan Van Tat position needs syncing
     const hrCount = stored.filter(u => u.isHomeroomTeacher).length;
     const deptHeadCount = stored.filter(u => u.role === 'dept_head').length;
     const isTatFixed = stored.some(u => u.name === 'Phan Văn Tặt' && u.role === 'teacher' && u.roleTitle.includes('Giáo viên'));
-    if (hrCount < 50 || deptHeadCount < 7 || !isTatFixed) {
-      setLocal(STORAGE_KEYS.USERS, INITIAL_USERS);
-      return INITIAL_USERS;
+    
+    let baseList = stored;
+    if (hrCount < 50 || deptHeadCount < 7 || !isTatFixed || stored.length < 100) {
+      baseList = INITIAL_USERS;
     }
-    return stored;
+
+    // Always merge passwords and change status from credentials and stored state
+    const merged = baseList.map(u => {
+      const cred = credentials[u.id];
+      const existingInStored = stored.find(s => s.id === u.id);
+      const password = cred?.password || existingInStored?.password || u.password;
+      const hasChangedPassword = cred?.hasChangedPassword ?? existingInStored?.hasChangedPassword ?? u.hasChangedPassword ?? false;
+      const mustChangePassword = cred?.mustChangePassword ?? existingInStored?.mustChangePassword ?? u.mustChangePassword ?? false;
+      return {
+        ...u,
+        ...(password ? { password } : {}),
+        hasChangedPassword,
+        mustChangePassword
+      };
+    });
+
+    setLocal(STORAGE_KEYS.USERS, merged);
+    return merged;
   },
 
   saveUser(user: User): User[] {
+    // 1. Immediately persist credentials
+    if (user.password || user.hasChangedPassword !== undefined) {
+      saveUserCredential(user.id, {
+        password: user.password,
+        hasChangedPassword: user.hasChangedPassword ?? true,
+        mustChangePassword: user.mustChangePassword ?? false
+      });
+    }
+
+    // 2. Persist in users list
     const users = this.getUsers();
     const index = users.findIndex(u => u.id === user.id);
     let updated: User[];
     if (index >= 0) {
       updated = [...users];
-      updated[index] = user;
+      updated[index] = { ...updated[index], ...user };
     } else {
       updated = [user, ...users];
     }
     setLocal(STORAGE_KEYS.USERS, updated);
     
-    // Background sync to Firestore if enabled
+    // 3. Background sync to Firestore if enabled
     const { db, isReady } = getFirebaseInstance();
     if (isReady && db) {
       try {

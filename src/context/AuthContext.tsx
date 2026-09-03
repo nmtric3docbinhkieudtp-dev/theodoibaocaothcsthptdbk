@@ -81,7 +81,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     // Check password if set, otherwise accept default '123456' or 'dbk@2026'
-    const userPass = foundUser.password || '123456';
+    const creds = StorageService.getUserCredentials();
+    const userPass = creds[foundUser.id]?.password || foundUser.password || '123456';
     if (cleanPass && cleanPass !== userPass && cleanPass !== '123456' && cleanPass !== 'dbk@2026' && cleanPass !== 'dbk@2025') {
       return {
         success: false, 
@@ -103,9 +104,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const changePassword = (newPassword: string): boolean => {
     if (!newPassword.trim() || newPassword.length < 4) return false;
+    const cleanPass = newPassword.trim();
+    StorageService.saveUserCredential(currentUser.id, {
+      password: cleanPass,
+      hasChangedPassword: true,
+      mustChangePassword: false
+    });
     const updated: User = { 
       ...currentUser, 
-      password: newPassword.trim(),
+      password: cleanPass,
       hasChangedPassword: true,
       mustChangePassword: false
     };

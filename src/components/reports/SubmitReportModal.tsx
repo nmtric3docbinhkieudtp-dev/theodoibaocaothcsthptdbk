@@ -40,12 +40,14 @@ interface SubmitReportModalProps {
   isOpen: boolean;
   onClose: () => void;
   defaultPeriodId?: string;
+  onOpenCreatePeriod?: () => void;
 }
 
 export const SubmitReportModal: React.FC<SubmitReportModalProps> = ({
   isOpen,
   onClose,
-  defaultPeriodId
+  defaultPeriodId,
+  onOpenCreatePeriod
 }) => {
   const { currentUser, isPrincipal, isAdmin } = useAuth();
   const { periods, submitReport } = useReports();
@@ -340,12 +342,40 @@ export const SubmitReportModal: React.FC<SubmitReportModalProps> = ({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Soạn Thảo & Tạo Báo Cáo Mới"
-      subtitle={`Người tạo: ${currentUser.name} (${currentUser.roleTitle} - ${currentUser.departmentName})`}
+      title="Soạn Thảo & Nộp Báo Cáo"
+      subtitle={`Người nộp: ${currentUser.name} (${currentUser.roleTitle} - ${currentUser.departmentName})`}
       maxWidth={activeTab === 'homeroom' || activeTab === 'custom_form' ? '5xl' : '4xl'}
     >
       <div className="space-y-4">
         
+        {/* Admin Guidance Banner */}
+        {(isAdmin || isPrincipal) && (
+          <div className="p-3.5 rounded-2xl bg-amber-50 border border-amber-300 text-amber-950 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-2xs">
+            <div className="flex items-start gap-2.5">
+              <School className="w-5 h-5 text-amber-700 shrink-0 mt-0.5" />
+              <div className="text-xs">
+                <div className="font-extrabold text-amber-900 text-xs sm:text-sm">
+                  Quý Thầy/Cô là Ban Giám Hiệu / Quản Trị Hệ Thống
+                </div>
+                <div className="text-[11px] text-amber-800 mt-0.5 leading-relaxed">
+                  Để <strong>tạo biểu mẫu chuẩn và ban hành yêu cầu báo cáo kèm ấn định thời hạn chót (Deadline)</strong> cho giáo viên, nhân viên nộp, vui lòng bấm vào nút bên cạnh:
+                </div>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                onClose();
+                if (onOpenCreatePeriod) onOpenCreatePeriod();
+              }}
+              className="px-3.5 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-black text-xs shrink-0 shadow-xs cursor-pointer transition active:scale-98 flex items-center gap-1.5"
+            >
+              <Clock className="w-4 h-4" />
+              <span>Tạo Mẫu & Ấn Định Thời Gian</span>
+            </button>
+          </div>
+        )}
+
         {/* Period Selector & Ad-hoc Option */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 bg-slate-50 p-3.5 rounded-2xl border border-slate-200/80">
           <div>

@@ -14,15 +14,25 @@ import { AdminReportsExport } from './components/admin/AdminReportsExport';
 import { SubmitReportModal } from './components/reports/SubmitReportModal';
 import { ReportDetailModal } from './components/reports/ReportDetailModal';
 import { ForceChangePasswordModal } from './components/auth/ForceChangePasswordModal';
+import { CreatePeriodModal } from './components/periods/CreatePeriodModal';
+import { StorageService } from './services/storage';
 import { ReportSubmission } from './types';
 
 const MainLayout: React.FC = () => {
-  const { isAuthenticated, currentUser } = useAuth();
+  const { isAuthenticated, currentUser, isAdmin, isPrincipal } = useAuth();
   const [activeView, setActiveView] = useState<NavTab>('dashboard');
   const [isSubmitModalOpen, setIsSubmitModalOpen] = useState(false);
+  const [isCreatePeriodModalOpen, setIsCreatePeriodModalOpen] = useState(false);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
-  const [dismissedFirstTimeUserIds, setDismissedFirstTimeUserIds] = useState<Record<string, boolean>>({});
+  const [dismissedFirstTimeUserIds, setDismissedFirstTimeUserIds] = useState<Record<string, boolean>>(() => {
+    try {
+      const saved = localStorage.getItem('dbk_dismissed_pwd_modal');
+      return saved ? JSON.parse(saved) : {};
+    } catch {
+      return {};
+    }
+  });
   const [selectedSubmission, setSelectedSubmission] = useState<ReportSubmission | null>(null);
   const [defaultPeriodForSubmit, setDefaultPeriodForSubmit] = useState<string | undefined>(undefined);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
@@ -33,23 +43,38 @@ const MainLayout: React.FC = () => {
   }
 
   // Check if first-time mandatory password change is required and not dismissed
+  const creds = StorageService.getUserCredentials();
+  const userCred = currentUser ? creds[currentUser.id] : null;
+  const hasChangedPassword = Boolean(currentUser?.hasChangedPassword || userCred?.hasChangedPassword);
+  const currentPassword = userCred?.password || currentUser?.password;
+
   const isFirstTimePasswordRequired = Boolean(
     currentUser &&
     !dismissedFirstTimeUserIds[currentUser.id] &&
-    !currentUser.hasChangedPassword &&
-    (!currentUser.password || currentUser.password === '123456' || currentUser.mustChangePassword)
+    !hasChangedPassword &&
+    (!currentPassword || currentPassword === '123456' || currentUser.mustChangePassword || userCred?.mustChangePassword)
   );
 
   const handleClosePasswordModal = () => {
     setIsChangePasswordOpen(false);
     if (currentUser) {
-      setDismissedFirstTimeUserIds(prev => ({ ...prev, [currentUser.id]: true }));
+      setDismissedFirstTimeUserIds(prev => {
+        const next = { ...prev, [currentUser.id]: true };
+        try {
+          localStorage.setItem('dbk_dismissed_pwd_modal', JSON.stringify(next));
+        } catch {}
+        return next;
+      });
     }
   };
 
   const handleOpenSubmit = (periodId?: string) => {
     setDefaultPeriodForSubmit(periodId);
     setIsSubmitModalOpen(true);
+  };
+
+  const handleOpenCreatePeriod = () => {
+    setIsCreatePeriodModalOpen(true);
   };
 
   const handleOpenReportDetail = (submission: ReportSubmission) => {
@@ -59,7 +84,11 @@ const MainLayout: React.FC = () => {
 
   const handleNavigate = (tab: NavTab) => {
     if (tab === 'submit') {
-      handleOpenSubmit();
+      if (isAdmin || isPrincipal) {
+        handleOpenCreatePeriod();
+      } else {
+        handleOpenSubmit();
+      }
     } else {
       setActiveView(tab);
     }
@@ -71,6 +100,7 @@ const MainLayout: React.FC = () => {
       {/* Top High-Density Header */}
       <Header
         onOpenSubmit={() => handleOpenSubmit()}
+        onOpenCreatePeriod={handleOpenCreatePeriod}
         onOpenReportDetail={handleOpenReportDetail}
         onToggleMobileMenu={() => setIsMobileSidebarOpen(true)}
         onNavigate={handleNavigate}
@@ -82,6 +112,7 @@ const MainLayout: React.FC = () => {
         activeView={activeView}
         onNavigate={handleNavigate}
         onOpenSubmit={() => handleOpenSubmit()}
+        onOpenCreatePeriod={handleOpenCreatePeriod}
         isMobileOpen={isMobileSidebarOpen}
         onCloseMobile={() => setIsMobileSidebarOpen(false)}
       />
@@ -92,6 +123,7 @@ const MainLayout: React.FC = () => {
           {activeView === 'dashboard' && (
             <Dashboard
               onOpenSubmit={(periodId) => handleOpenSubmit(periodId)}
+              onOpenCreatePeriod={handleOpenCreatePeriod}
               onOpenReportDetail={handleOpenReportDetail}
               onNavigate={handleNavigate}
             />
@@ -137,6 +169,16 @@ const MainLayout: React.FC = () => {
         isOpen={isSubmitModalOpen}
         onClose={() => setIsSubmitModalOpen(false)}
         defaultPeriodId={defaultPeriodForSubmit}
+        onOpenCreatePeriod={handleOpenCreatePeriod}
+      />
+
+      <CreatePeriodModal
+        isOpen={isCreatePeriodModalOpen}
+        onClose={() => setIsCreatePeriodModalOpen(false)}
+        onSuccess={(periodTitle) => {
+          setIsCreatePeriodModalOpen(false);
+          setActiveView('periods');
+        }}
       />
 
       <ReportDetailModal
