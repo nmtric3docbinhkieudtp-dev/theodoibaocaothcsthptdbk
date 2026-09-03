@@ -1,5 +1,5 @@
 import mammoth from 'mammoth';
-import { CustomFormField, CustomDynamicTable, PeriodFormTemplate } from '../types';
+import { CustomFormField, CustomDynamicTable } from '../types';
 
 export interface ParsedTemplateResult {
   title: string;
@@ -11,24 +11,277 @@ export interface ParsedTemplateResult {
 }
 
 /**
+ * Clean cell or label text: strips HTML tags, markdown bold/italic, backslashes, dotted/underline blanks.
+ */
+export function cleanRawText(str: string): string {
+  if (!str) return '';
+  return str
+    .replace(/<br\s*\/?>/gi, ' ')
+    .replace(/<\/p>/gi, ' ')
+    .replace(/<[^>]+>/g, '') // remove HTML tags
+    .replace(/\*\*/g, '') // remove markdown bold
+    .replace(/\*/g, '') // remove markdown italic
+    .replace(/__/g, '')
+    .replace(/\\-/g, '-') // escaped hyphens \-
+    .replace(/\\([#*_`])/g, '$1') // escaped chars
+    .replace(/^[\\#*\-•+\s]+/, '') // leading bullets, backslashes, hashes
+    .replace(/[\.]{3,}/g, '') // trailing or inline dotted lines e.g. .............
+    .replace(/[—_]{3,}/g, '') // underline blanks e.g. _________
+    .trim();
+}
+
+/**
+ * Check if a table row is a markdown divider row (e.g. | :-: | :-: | or |---|---|)
+ */
+function isTableDivider(segments: string[]): boolean {
+  if (segments.length === 0) return false;
+  return segments.every(cell => {
+    const s = cell.trim().replace(/[-:|\s]/g, '');
+    return s.length === 0;
+  });
+}
+
+/**
+ * Checks if a line is a markdown table row (starts/ends with pipe or has multiple pipes)
+ */
+function isTableRowLine(line: string): boolean {
+  const trimmed = line.trim();
+  if (trimmed.startsWith('|') && trimmed.endsWith('|')) return true;
+  if (trimmed.includes('|') && trimmed.split('|').length >= 3) return true;
+  return false;
+}
+
+/**
  * Parses plain text / markdown / docx raw content into structured web form fields and data tables.
  */
 export function parseFormContent(text: string, fileName?: string): ParsedTemplateResult {
-  const lines = text.split(/\r?\n/).map(l => l.trim());
-  
-  let title = '';
-  let description = '';
+  const rawLines = text.split(/\r?\n/);
+  const lines = rawLines.map(l => l.trim());
+
   const fields: CustomFormField[] = [];
   const tables: CustomDynamicTable[] = [];
 
-  // Determine Title from first non-empty lines or filename
-  for (const line of lines) {
+  // Pass 1: Identify Table blocks and their preceding title lines
+  const tableTitleLineIndices = new Set<number>();
+  const tableLineIndices = new Set<number>();
+
+  for (let i = 0; i < lines.length; i++) {
+    if (isTableRowLine(lines[i])) {
+      tableLineIndices.add(i);
+      // If this is the first row of a table, find preceding line for table title
+      if (i > 0 && !isTableRowLine(lines[i - 1])) {
+        // Look back up to 3 non-empty lines for table title
+        for (let back = i - 1; back >= Math.max(0, i - 4); back--) {
+          if (lines[back]) {
+            tableTitleLineIndices.add(back);
+            break;
+          }
+        }
+      }
+    }
+  }
+
+  // Pass 2: Extract Tables
+  let inTable = false;
+  let currentTableHeaders: string[] = [];
+  let currentTableRows: Record<string, string>[] = [];
+  let currentTableTitle = 'Bảng số liệu thống kê';
+
+  const finishCurrentTable = () => {
+    if (currentTableHeaders.length > 0) {
+      // Ensure there is at least 1 row
+      const finalRows = currentTableRows.length > 0 ? currentTableRows : [
+        currentTableHeaders.reduce((acc, h, idx) => ({ ...acc, [h]: idx === 0 ? '1' : '' }), {})
+      ];
+
+      tables.push({
+        id: 'tbl-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6),
+        title: currentTableTitle,
+        headers: currentTableHeaders,
+        rows: finalRows
+      });
+    }
+    inTable = false;
+    currentTableHeaders = [];
+    currentTableRows = [];
+    currentTableTitle = 'Bảng số liệu thống kê';
+  };
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+
+    if (isTableRowLine(line)) {
+      // Extract segments between pipes
+      const rawSegments = line.split('|');
+      // Trim and drop empty outer segments if string starts/ends with pipe
+      let segments = rawSegments.map(s => s.trim());
+      if (line.startsWith('|') && segments.length > 0 && segments[0] === '') {
+        segments.shift();
+      }
+      if (line.endsWith('|') && segments.length > 0 && segments[segments.length - 1] === '') {
+        segments.pop();
+      }
+
+      // Check if divider line (| :-: | :-: |)
+      if (isTableDivider(segments)) {
+        continue;
+      }
+
+      if (!inTable) {
+        inTable = true;
+        // Determine title from preceding line if recorded
+        for (let back = i - 1; back >= Math.max(0, i - 4); back--) {
+          if (lines[back]) {
+            const candidateTitle = cleanRawText(lines[back]).replace(/[:]+$/, '');
+            if (candidateTitle.length >= 3) {
+              currentTableTitle = candidateTitle;
+            }
+            break;
+          }
+        }
+
+        // Clean headers
+        currentTableHeaders = segments.map((h, hIdx) => {
+          const cleaned = cleanRawText(h);
+          return cleaned || `Cột ${hIdx + 1}`;
+        });
+        currentTableRows = [];
+      } else {
+        // Data row
+        const rowObj: Record<string, string> = {};
+        currentTableHeaders.forEach((h, hIdx) => {
+          const rawVal = segments[hIdx] !== undefined ? segments[hIdx] : '';
+          rowObj[h] = cleanRawText(rawVal);
+        });
+
+        // Even if some columns are empty, preserve the row (e.g. TT or item name is filled)
+        const hasSomeContent = Object.values(rowObj).some(v => v !== '');
+        if (hasSomeContent) {
+          currentTableRows.push(rowObj);
+        }
+      }
+    } else {
+      if (inTable) {
+        finishCurrentTable();
+      }
+    }
+  }
+
+  if (inTable) {
+    finishCurrentTable();
+  }
+
+  // Pass 3: Extract Form Fields from non-table and non-table-title lines
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
     if (!line) continue;
-    // Strip markdown header hashes or bullets
-    const cleanLine = line.replace(/^[#*\-•\d.]+\s*/, '').trim();
-    if (cleanLine.length > 5 && !title) {
-      title = cleanLine;
-      break;
+    if (tableLineIndices.has(i)) continue; // Table row
+    if (tableTitleLineIndices.has(i)) continue; // Used as table title
+
+    // Checkbox items: e.g. [ ] Hoàn thành, - [x] Đã nộp
+    const isCheckbox = line.match(/^(\[[\sxX]?\]|- \[[xX\s]?\]|☑|☐)\s*(.+)/);
+    if (isCheckbox) {
+      fields.push({
+        id: 'fld-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6),
+        label: cleanRawText(isCheckbox[2]),
+        type: 'checkbox',
+        required: false
+      });
+      continue;
+    }
+
+    // Check if line contains a question, prompt, or colon
+    // e.g. "\- Số học sinh chưa ra lớp đến thời điểm ngày 07/9/2026:"
+    // e.g. "Họ và tên lớp trưởng: 2"
+    // e.g. "1. Số lượng học sinh..."
+    const hasColon = line.includes(':');
+    const hasUnderline = /[\.]{3,}|_{3,}/.test(line);
+    const hasNumbering = /^(\d+[\.\)]|[IVXLCDM]+[\.\)]|[-*•\\])\s+/.test(line);
+
+    if (hasColon || hasUnderline || hasNumbering) {
+      let rawLabel = line;
+      let rawVal = '';
+
+      if (hasColon) {
+        const colonIdx = line.indexOf(':');
+        rawLabel = line.slice(0, colonIdx);
+        rawVal = line.slice(colonIdx + 1).trim();
+      }
+
+      // If rawVal is empty and next line is a single answer (e.g. "2" or short text)
+      if (!rawVal && i + 1 < lines.length && lines[i + 1]) {
+        const nextLine = lines[i + 1].trim();
+        if (
+          !isTableRowLine(nextLine) && 
+          !tableTitleLineIndices.has(i + 1) && 
+          !nextLine.includes(':') && 
+          nextLine.length <= 40 &&
+          !/^(\d+[\.\)]|[IVXLCDM]+[\.\)])/.test(nextLine)
+        ) {
+          rawVal = nextLine;
+          i++; // Skip the answer line since it belongs to this field
+        }
+      }
+
+      const cleanLabel = cleanRawText(rawLabel);
+
+      // Skip formal boilerplate lines like "CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM", "TRƯỜNG..."
+      if (
+        cleanLabel.length >= 2 &&
+        !['CỘNG HÒA', 'ĐỘC LẬP', 'TRƯỜNG THCS', 'BÁO CÁO TỔNG HỢP'].some(skip => cleanLabel.toUpperCase().includes(skip))
+      ) {
+        let type: CustomFormField['type'] = 'text';
+        const lower = cleanLabel.toLowerCase();
+
+        if (
+          lower.includes('số học sinh') ||
+          lower.includes('số lượng') ||
+          lower.includes('sĩ số') ||
+          lower.includes('kinh phí') ||
+          lower.includes('tỷ lệ') ||
+          lower.includes('tổng số') ||
+          lower.includes('điểm') ||
+          lower.includes('năm sinh')
+        ) {
+          type = 'number';
+        } else if (
+          lower.includes('nội dung') ||
+          lower.includes('đánh giá') ||
+          lower.includes('ưu điểm') ||
+          lower.includes('hạn chế') ||
+          lower.includes('kiến nghị') ||
+          lower.includes('nguyên nhân') ||
+          lower.includes('kế hoạch') ||
+          lower.includes('nhận xét') ||
+          lower.includes('chi tiết') ||
+          lower.includes('lý do')
+        ) {
+          type = 'textarea';
+        }
+
+        fields.push({
+          id: 'fld-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6),
+          label: cleanLabel,
+          type,
+          placeholder: rawVal ? `Giá trị mặc định: ${rawVal}` : `Nhập ${cleanLabel.toLowerCase()}...`,
+          required: lower.includes('bắt buộc') || lower.includes('*')
+        });
+      }
+    }
+  }
+
+  // Pass 4: Determine sensible Title
+  let title = '';
+  // Check if first non-empty line was a clean title (doesn't end with ':' and not a table title)
+  for (let i = 0; i < Math.min(5, lines.length); i++) {
+    const l = lines[i];
+    if (!l) continue;
+    if (!tableLineIndices.has(i) && !tableTitleLineIndices.has(i) && !l.includes(':')) {
+      const cleaned = cleanRawText(l);
+      if (cleaned.length >= 6 && !cleaned.toUpperCase().includes('CỘNG HÒA')) {
+        title = cleaned;
+        break;
+      }
     }
   }
 
@@ -36,161 +289,18 @@ export function parseFormContent(text: string, fileName?: string): ParsedTemplat
     title = fileName.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ');
   }
 
-  // Parse lines for sections, questions, tables, and criteria
-  let inMarkdownTable = false;
-  let currentTableHeaders: string[] = [];
-  let currentTableRows: Record<string, string>[] = [];
-  let currentTableTitle = 'Bảng dữ liệu tổng hợp';
-
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
-    if (!line) {
-      if (inMarkdownTable && currentTableHeaders.length > 0) {
-        tables.push({
-          id: 'tbl-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6),
-          title: currentTableTitle,
-          headers: currentTableHeaders,
-          rows: currentTableRows.length > 0 ? currentTableRows : [
-            currentTableHeaders.reduce((acc, h, idx) => ({ ...acc, [h]: idx === 0 ? '1' : '' }), {})
-          ]
-        });
-        inMarkdownTable = false;
-        currentTableHeaders = [];
-        currentTableRows = [];
-      }
-      continue;
-    }
-
-    // Detect Markdown table row: e.g. | STT | Họ tên | Lớp | Kết quả |
-    if (line.startsWith('|') && line.endsWith('|')) {
-      const segments = line.split('|').map(s => s.trim()).filter((_, idx, arr) => idx > 0 && idx < arr.length - 1);
-      
-      // Ignore markdown table divider line |---|---|
-      if (segments.every(s => s.replace(/[-:]/g, '').length === 0)) {
-        continue;
-      }
-
-      if (!inMarkdownTable) {
-        inMarkdownTable = true;
-        currentTableHeaders = segments;
-        currentTableRows = [];
-      } else {
-        const rowObj: Record<string, string> = {};
-        currentTableHeaders.forEach((h, idx) => {
-          rowObj[h] = segments[idx] || '';
-        });
-        currentTableRows.push(rowObj);
-      }
-      continue;
-    } else if (inMarkdownTable) {
-      // Finished markdown table
-      if (currentTableHeaders.length > 0) {
-        tables.push({
-          id: 'tbl-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6),
-          title: currentTableTitle,
-          headers: currentTableHeaders,
-          rows: currentTableRows.length > 0 ? currentTableRows : [
-            currentTableHeaders.reduce((acc, h, idx) => ({ ...acc, [h]: idx === 0 ? '1' : '' }), {})
-          ]
-        });
-      }
-      inMarkdownTable = false;
-      currentTableHeaders = [];
-      currentTableRows = [];
-    }
-
-    // Detect explicitly labeled tables: e.g. "Bảng 1: Danh sách học sinh", "Bảng theo dõi..."
-    if (line.match(/^(Bảng|Biểu mẫu số|Danh sách|Ma trận)\s*[\d.:\-]/i)) {
-      currentTableTitle = line.replace(/^[#*]+\s*/, '').trim();
-    }
-
-    // Detect field indicators:
-    // 1. Lines with colon: "1. Số lượng học sinh tham gia:", "- Kinh phí thực hiện:", "Họ và tên GV:"
-    // 2. Lines with underline placeholders: "Lớp: .........." or "Sĩ số: ____________"
-    // 3. Numbered criteria: "1. Đánh giá ưu điểm", "2. Tồn tại, hạn chế", "3. Đề xuất kiến nghị"
-    // 4. Checklist items: "[ ] Đã kiểm tra nề nếp", "- [x] Hoàn thành"
-    
-    const isCheckbox = line.match(/^(\[[\sxX]?\]|- \[[xX\s]?\]|☑|☐)\s*(.+)/);
-    if (isCheckbox) {
-      fields.push({
-        id: 'fld-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6),
-        label: isCheckbox[2].trim(),
-        type: 'checkbox',
-        required: false
-      });
-      continue;
-    }
-
-    const isQuestionOrCriterion = line.match(/^(\d+[\.\)]|[IVXLCDM]+[\.\)]|[-*•]|Câu \d+:|Mục \d+:)?\s*([^:_\n]{3,80})(:|[\.]{3,}|_{3,}|$)/);
-    
-    if (isQuestionOrCriterion && !line.startsWith('#') && line.length < 150) {
-      const rawLabel = isQuestionOrCriterion[2]?.trim() || line;
-      
-      // Filter out general headers or very short labels
-      if (rawLabel.length >= 3 && !['CỘNG HÒA', 'ĐỘC LẬP', 'TRƯỜNG THCS', 'BÁO CÁO', 'BIÊN BẢN'].some(skip => rawLabel.toUpperCase().includes(skip))) {
-        
-        let type: CustomFormField['type'] = 'text';
-        const lower = rawLabel.toLowerCase();
-
-        if (lower.includes('số lượng') || lower.includes('sĩ số') || lower.includes('kinh phí') || lower.includes('tỷ lệ') || lower.includes('tổng số') || lower.includes('điểm')) {
-          type = 'number';
-        } else if (lower.includes('nội dung') || lower.includes('đánh giá') || lower.includes('ưu điểm') || lower.includes('hạn chế') || lower.includes('kiến nghị') || lower.includes('nguyên nhân') || lower.includes('kế hoạch') || lower.includes('nhận xét') || lower.includes('chi tiết')) {
-          type = 'textarea';
-        }
-
-        fields.push({
-          id: 'fld-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6),
-          label: rawLabel,
-          type,
-          placeholder: `Nhập ${rawLabel.toLowerCase()}...`,
-          required: lower.includes('bắt buộc') || lower.includes('*')
-        });
-      }
-    }
-  }
-
-  // Handle remaining table if any
-  if (inMarkdownTable && currentTableHeaders.length > 0) {
-    tables.push({
-      id: 'tbl-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6),
-      title: currentTableTitle,
-      headers: currentTableHeaders,
-      rows: currentTableRows.length > 0 ? currentTableRows : [
-        currentTableHeaders.reduce((acc, h, idx) => ({ ...acc, [h]: idx === 0 ? '1' : '' }), {})
-      ]
-    });
-  }
-
-  // If no fields or tables could be detected, generate default structural sections
-  if (fields.length === 0 && tables.length === 0) {
-    const meaningfulParagraphs = lines.filter(l => l.length > 10 && !l.toUpperCase().includes('CỘNG HÒA') && !l.toUpperCase().includes('TRƯỜNG'));
-    
-    if (meaningfulParagraphs.length > 0) {
-      meaningfulParagraphs.slice(0, 8).forEach((para, idx) => {
-        const shortLabel = para.slice(0, 60).replace(/^[#*\-•\d.]+\s*/, '').trim();
-        fields.push({
-          id: 'fld-' + Date.now() + '-' + idx,
-          label: shortLabel || `Mục ${idx + 1}`,
-          type: para.length > 40 ? 'textarea' : 'text',
-          placeholder: 'Nhập nội dung tương ứng...'
-        });
-      });
+  if (!title) {
+    if (text.toLowerCase().includes('chưa ra lớp') || text.toLowerCase().includes('học sinh')) {
+      title = 'Báo Cáo Thống Kê Học Sinh Chưa Ra Lớp & Thành Tích Thi Đua';
     } else {
-      // Fallback standard fields
-      fields.push(
-        { id: 'fld-1', label: '1. Mục đích / Nội dung trọng tâm', type: 'text', required: true },
-        { id: 'fld-2', label: '2. Số liệu / Thống kê kết quả', type: 'number' },
-        { id: 'fld-3', label: '3. Đánh giá ưu điểm và kết quả đạt được', type: 'textarea' },
-        { id: 'fld-4', label: '4. Khó khăn, tồn tại và nguyên nhân', type: 'textarea' },
-        { id: 'fld-5', label: '5. Đề xuất, kiến nghị với Ban Giám Hiệu', type: 'textarea' }
-      );
+      title = 'Biểu Mẫu Báo Cáo Chuẩn Web';
     }
   }
 
-  // Recommend audience
+  // Audience inference
   let recommendedAudience: ParsedTemplateResult['recommendedAudience'] = 'all';
   const fullLower = text.toLowerCase();
-  if (fullLower.includes('chủ nhiệm') || fullLower.includes('gvcn') || fullLower.includes('sĩ số lớp') || fullLower.includes('học sinh vắng')) {
+  if (fullLower.includes('chưa ra lớp') || fullLower.includes('chủ nhiệm') || fullLower.includes('gvcn') || fullLower.includes('sĩ số lớp')) {
     recommendedAudience = 'homeroom_teachers';
   } else if (fullLower.includes('tổ trưởng') || fullLower.includes('chuyên môn tổ') || fullLower.includes('sinh hoạt tổ')) {
     recommendedAudience = 'dept_heads_only';
@@ -199,8 +309,8 @@ export function parseFormContent(text: string, fileName?: string): ParsedTemplat
   }
 
   return {
-    title: title || 'Biểu mẫu báo cáo chuẩn hóa',
-    description: `Biểu mẫu được tạo tự động từ tệp ${fileName || 'đính kèm'}, bao gồm ${fields.length} trường nhập liệu và ${tables.length} bảng số liệu.`,
+    title,
+    description: `Biểu mẫu chuẩn Web gồm ${fields.length} trường thông tin và ${tables.length} bảng số liệu.`,
     fields,
     tables,
     fullRawText: text,

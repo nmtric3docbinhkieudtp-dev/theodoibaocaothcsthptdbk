@@ -30,6 +30,28 @@ const STORAGE_KEYS = {
 };
 
 // Safe LocalStorage helpers
+export function cleanFirestorePayload<T>(obj: T): T {
+  if (obj === undefined) {
+    return null as any;
+  }
+  if (obj === null) {
+    return null as any;
+  }
+  if (Array.isArray(obj)) {
+    return obj.map(item => cleanFirestorePayload(item)) as any;
+  }
+  if (typeof obj === 'object') {
+    const res: Record<string, any> = {};
+    for (const [k, v] of Object.entries(obj)) {
+      if (v !== undefined) {
+        res[k] = cleanFirestorePayload(v);
+      }
+    }
+    return res as T;
+  }
+  return obj;
+}
+
 export function getLocal<T>(key: string, defaultValue: T): T {
   try {
     const item = localStorage.getItem(key);
@@ -112,7 +134,12 @@ export const StorageService = {
     // Background sync to Firestore if enabled
     const { db, isReady } = getFirebaseInstance();
     if (isReady && db) {
-      setDoc(doc(db, 'users', user.id), user).catch(err => console.warn('Firestore user save err:', err));
+      try {
+        const sanitized = cleanFirestorePayload(user);
+        setDoc(doc(db, 'users', user.id), sanitized).catch(err => console.warn('Firestore user save err:', err));
+      } catch (e) {
+        console.warn('Sync user error:', e);
+      }
     }
     return updated;
   },
@@ -143,7 +170,12 @@ export const StorageService = {
 
     const { db, isReady } = getFirebaseInstance();
     if (isReady && db) {
-      setDoc(doc(db, 'departments', dept.id), dept).catch(err => console.warn('Firestore dept save err:', err));
+      try {
+        const sanitized = cleanFirestorePayload(dept);
+        setDoc(doc(db, 'departments', dept.id), sanitized).catch(err => console.warn('Firestore dept save err:', err));
+      } catch (e) {
+        console.warn('Sync dept error:', e);
+      }
     }
     return updated;
   },
@@ -168,7 +200,12 @@ export const StorageService = {
 
     const { db, isReady } = getFirebaseInstance();
     if (isReady && db) {
-      setDoc(doc(db, 'periods', period.id), period).catch(err => console.warn('Firestore period save err:', err));
+      try {
+        const sanitized = cleanFirestorePayload(period);
+        setDoc(doc(db, 'periods', period.id), sanitized).catch(err => console.warn('Firestore period save err:', err));
+      } catch (e) {
+        console.warn('Sync period error:', e);
+      }
     }
     return updated;
   },
@@ -218,7 +255,12 @@ export const StorageService = {
 
     const { db, isReady } = getFirebaseInstance();
     if (isReady && db) {
-      setDoc(doc(db, 'submissions', submission.id), submission).catch(err => console.warn('Firestore submission save err:', err));
+      try {
+        const sanitized = cleanFirestorePayload(submission);
+        setDoc(doc(db, 'submissions', submission.id), sanitized).catch(err => console.warn('Firestore submission save err:', err));
+      } catch (e) {
+        console.warn('Sync submission error:', e);
+      }
     }
     return updated;
   },

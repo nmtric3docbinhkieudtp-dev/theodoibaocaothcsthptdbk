@@ -265,24 +265,27 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       departmentId: currentUser.departmentId,
       departmentName: currentUser.departmentName,
       isHomeroomReport: data.isHomeroomReport ?? (period?.targetAudience === 'homeroom_teachers' || currentUser.isHomeroomTeacher),
-      homeroomClass: data.homeroomClass || currentUser.homeroomClass,
-      homeroomStudentCount: data.homeroomStudentCount || currentUser.homeroomStudentCount,
-      homeroomCampus: data.homeroomCampus || currentUser.homeroomCampus,
+      homeroomClass: data.homeroomClass || currentUser.homeroomClass || undefined,
+      homeroomStudentCount: data.homeroomStudentCount || currentUser.homeroomStudentCount || undefined,
+      homeroomCampus: data.homeroomCampus || currentUser.homeroomCampus || undefined,
       title: data.title,
       content: data.content,
-      structuredData: data.structuredData,
+      structuredData: data.structuredData || undefined,
       attachments: data.attachments || [],
       status: isDraft ? 'draft' : 'submitted',
       submittedAt: isDraft ? null : now.toISOString(),
       updatedAt: now.toISOString(),
       isLate,
       lateDurationMinutes: isLate ? lateMinutes : undefined,
-      lateExplanation: data.lateExplanation,
+      lateExplanation: data.lateExplanation || undefined,
       reviewHistory: [],
       version: 1
     };
 
-    const updated = StorageService.saveSubmission(newSub);
+    // Remove any undefined keys to strictly comply with Firestore and state rules
+    const cleanSub: ReportSubmission = JSON.parse(JSON.stringify(newSub));
+
+    const updated = StorageService.saveSubmission(cleanSub);
     setSubmissions(updated);
 
     // Notify Department Head if submitted

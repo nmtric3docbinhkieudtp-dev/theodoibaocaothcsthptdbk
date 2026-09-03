@@ -192,8 +192,8 @@ export const AdminReportsExport: React.FC = () => {
           <div className="text-xs font-bold text-slate-800">
             Xem trước bảng dữ liệu trích xuất ({filteredSubmissions.length} dòng)
           </div>
-          <div className="text-[11px] text-slate-400 italic">
-            File Excel sẽ bao gồm 3 Sheet: Báo cáo tổng hợp, Tiến độ theo tổ, Danh sách trễ hạn
+          <div className="text-[11px] text-slate-500 font-medium">
+            File Excel tự động tổng hợp: Báo cáo chung, Tiến độ theo tổ, Danh sách trễ hạn, Chi tiết biểu mẫu & Bảng số liệu từ tất cả người nộp
           </div>
         </div>
 

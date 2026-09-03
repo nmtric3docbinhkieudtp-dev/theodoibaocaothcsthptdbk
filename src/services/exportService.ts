@@ -103,6 +103,143 @@ export const ExportService = {
     const wsLate = XLSX.utils.json_to_sheet(lateData);
     XLSX.utils.book_append_sheet(wb, wsLate, 'Danh Sách Nộp Trễ');
 
+    // 4. Custom Dynamic Tables Sheets (Aggregating all rows submitted by all teachers)
+    // Group all tables across submissions by table title
+    const tableGroups = new Map<string, {
+      title: string;
+      headers: string[];
+      rows: Array<{
+        sub: ReportSubmission;
+        row: Record<string, string>;
+      }>;
+    }>();
+
+    submissions.forEach(sub => {
+      const customTables = sub.structuredData?.customTables || [];
+      customTables.forEach(tbl => {
+        const titleKey = tbl.title.trim() || 'Bảng số liệu tổng hợp';
+        if (!tableGroups.has(titleKey)) {
+          tableGroups.set(titleKey, {
+            title: titleKey,
+            headers: [...tbl.headers],
+            rows: []
+          });
+        }
+        const group = tableGroups.get(titleKey)!;
+        // Merge any additional headers if different
+        tbl.headers.forEach(h => {
+          if (!group.headers.includes(h)) {
+            group.headers.push(h);
+          }
+        });
+
+        // Add rows with teacher context
+        (tbl.rows || []).forEach(row => {
+          // Check if row is not completely empty
+          const hasData = Object.values(row).some(v => v !== undefined && v !== '');
+          if (hasData) {
+            group.rows.push({ sub, row });
+          }
+        });
+      });
+    });
+
+    // Create a sheet for each dynamic table group
+    tableGroups.forEach((group, titleKey) => {
+      if (group.rows.length > 0) {
+        const sheetRows = group.rows.map((item, rIdx) => {
+          const rowData: Record<string, any> = {
+            'STT': rIdx + 1,
+            'Người Nộp': item.sub.authorName,
+            'Lớp / Tổ': item.sub.homeroomClass || item.sub.departmentName,
+            'Đợt Báo Cáo': item.sub.periodTitle
+          };
+
+          // Map table headers
+          group.headers.forEach(h => {
+            rowData[h] = item.row[h] || '';
+          });
+
+          rowData['Thời Gian Nộp'] = item.sub.submittedAt ? new Date(item.sub.submittedAt).toLocaleDateString('vi-VN') : '';
+          return rowData;
+        });
+
+        const wsDynamicTable = XLSX.utils.json_to_sheet(sheetRows);
+        // Clean sheet name (Excel limit max 31 chars, no invalid chars : \ / ? * [ ])
+        const cleanSheetName = titleKey
+          .replace(/[\\/?*[\]:]/g, '')
+          .substring(0, 31);
+
+        // Ensure unique sheet name
+        let finalSheetName = cleanSheetName;
+        let counter = 1;
+        while (wb.SheetNames.includes(finalSheetName)) {
+          finalSheetName = `${cleanSheetName.substring(0, 28)}_${counter++}`;
+        }
+
+        XLSX.utils.book_append_sheet(wb, wsDynamicTable, finalSheetName);
+      }
+    });
+
+    // 5. Custom Form Fields Aggregation Sheet
+    // If any submissions have customFieldValues
+    const subsWithFields = submissions.filter(s => s.structuredData?.customFieldValues);
+    if (subsWithFields.length > 0) {
+      // Collect all unique field labels
+      const fieldLabelsMap = new Map<string, string>(); // fieldId -> label
+      subsWithFields.forEach(s => {
+        (s.structuredData?.template?.fields || []).forEach(f => {
+          fieldLabelsMap.set(f.id, f.label);
+        });
+      });
+
+      const fieldRows = subsWithFields.map((s, idx) => {
+        const rowData: Record<string, any> = {
+          'STT': idx + 1,
+          'Người Nộp': s.authorName,
+          'Lớp / Tổ': s.homeroomClass || s.departmentName,
+          'Đợt Báo Cáo': s.periodTitle
+        };
+
+        fieldLabelsMap.forEach((label, fieldId) => {
+          const val = s.structuredData?.customFieldValues?.[fieldId];
+          rowData[label] = val !== undefined && val !== null ? val : '';
+        });
+
+        rowData['Thời Gian Nộp'] = s.submittedAt ? new Date(s.submittedAt).toLocaleDateString('vi-VN') : '';
+        return rowData;
+      });
+
+      const wsFields = XLSX.utils.json_to_sheet(fieldRows);
+      XLSX.utils.book_append_sheet(wb, wsFields, 'Tổng Hợp Trường Dữ Liệu');
+    }
+
+    // 6. Absent Students Sheet (Homeroom Minutes)
+    const absentStudentRows: any[] = [];
+    submissions.forEach(sub => {
+      const minutes = sub.structuredData?.homeroomMinutes;
+      if (minutes?.absentStudents && minutes.absentStudents.length > 0) {
+        minutes.absentStudents.forEach((student, sIdx) => {
+          absentStudentRows.push({
+            'STT': absentStudentRows.length + 1,
+            'Lớp': minutes.className || sub.homeroomClass || '-',
+            'Giáo Viên Chủ Nhiệm': minutes.teacherName || sub.authorName,
+            'Họ và Tên Học Sinh': student.studentName || '',
+            'Lớp Năm Học Trước': student.previousClass || '',
+            'Nơi Ở Hiện Nay': student.currentAddress || '',
+            'Số ĐT Học Sinh': student.studentPhone || '',
+            'Số ĐT Phụ Huynh': student.parentPhone || '',
+            'Lý Do Chưa Ra Lớp': student.reason || 'Chưa rõ lý do'
+          });
+        });
+      }
+    });
+
+    if (absentStudentRows.length > 0) {
+      const wsAbsent = XLSX.utils.json_to_sheet(absentStudentRows);
+      XLSX.utils.book_append_sheet(wb, wsAbsent, 'Tổng Hợp Học Sinh Vắng');
+    }
+
     // Generate and trigger download
     const dateStr = new Date().toISOString().split('T')[0];
     const fullFileName = `${fileNamePrefix}_${dateStr}.xlsx`;
