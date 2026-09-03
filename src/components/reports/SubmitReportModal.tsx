@@ -118,6 +118,11 @@ export const SubmitReportModal: React.FC<SubmitReportModalProps> = ({
       if (!title || title.includes('Báo cáo') || title.includes('Biên bản')) {
         setTitle(`Biên bản tập trung học sinh đầu năm học 2026 – 2027 - Lớp ${currentUser.homeroomClass || ''} - ${currentUser.name}`);
       }
+    } else if (currentPeriod?.formTemplate && ((currentPeriod.formTemplate.fields && currentPeriod.formTemplate.fields.length > 0) || (currentPeriod.formTemplate.tables && currentPeriod.formTemplate.tables.length > 0))) {
+      setActiveTab('custom_form');
+      if (!title) {
+        setTitle(`${currentPeriod.title} - ${currentUser.name}`);
+      }
     } else {
       if (activeTab === 'homeroom') {
         setActiveTab('text');
@@ -130,7 +135,7 @@ export const SubmitReportModal: React.FC<SubmitReportModalProps> = ({
         }
       }
     }
-  }, [selectedPeriodId, isHomeroomPeriod]);
+  }, [selectedPeriodId, isHomeroomPeriod, currentPeriod]);
 
   // Check if current submission is past deadline
   const isPastDeadline = currentPeriod 
@@ -275,6 +280,11 @@ export const SubmitReportModal: React.FC<SubmitReportModalProps> = ({
 
     if (!finalContent.trim() && attachments.length === 0 && !homeroomData) {
       alert('Vui lòng nhập nội dung báo cáo, điền biểu mẫu hoặc đính kèm ít nhất 1 tệp tin!');
+      return;
+    }
+
+    if (isPastDeadline && !isDraft && !lateExplanation.trim()) {
+      alert('⚠️ Đợt báo cáo này đã quá hạn nộp ấn định của Ban Giám Hiệu. Thầy/Cô bắt buộc phải nhập lý do giải trình nộp trễ hạn để Ban Giám Hiệu xem xét kiểm duyệt.');
       return;
     }
 
@@ -439,7 +449,7 @@ export const SubmitReportModal: React.FC<SubmitReportModalProps> = ({
               }`}
             >
               <Layers className="w-4 h-4 text-emerald-600" />
-              <span>2. Bộ Biểu Mẫu & Bảng Số Liệu Tùy Biến</span>
+              <span>2. Biểu Mẫu Nhập Liệu BGH</span>
               {(customFields.length > 0 || customTables.length > 0) && (
                 <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-emerald-100 text-emerald-800 font-bold">
                   {customFields.length + customTables.length}
@@ -475,16 +485,6 @@ export const SubmitReportModal: React.FC<SubmitReportModalProps> = ({
               <span>4. Đính Kèm Tệp ({attachments.length})</span>
             </button>
           </div>
-
-          <button
-            type="button"
-            onClick={() => setIsImportModalOpen(true)}
-            className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-2xs cursor-pointer active:scale-98 shrink-0"
-            title="Tải lên tệp .docx, .txt, .md mẫu để hệ thống tự động bóc tách và tạo form chuẩn trên web"
-          >
-            <UploadCloud className="w-3.5 h-3.5" />
-            <span>Tạo Form Tự Động Từ Tệp (.docx/.txt/.md)</span>
-          </button>
         </div>
 
         {/* 1. TEXT EDITOR TAB */}
@@ -584,6 +584,7 @@ export const SubmitReportModal: React.FC<SubmitReportModalProps> = ({
             onApplyParsedTitle={(newTitle) => {
               if (!title.trim()) setTitle(newTitle);
             }}
+            readOnlyStructure={true}
           />
         )}
 

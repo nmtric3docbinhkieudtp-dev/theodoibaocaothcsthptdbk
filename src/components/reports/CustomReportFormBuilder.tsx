@@ -29,6 +29,7 @@ interface CustomReportFormBuilderProps {
   fieldValues: Record<string, any>;
   onFieldValueChange: (fieldId: string, value: any) => void;
   onApplyParsedTitle?: (title: string) => void;
+  readOnlyStructure?: boolean;
 }
 
 export const CustomReportFormBuilder: React.FC<CustomReportFormBuilderProps> = ({
@@ -38,7 +39,8 @@ export const CustomReportFormBuilder: React.FC<CustomReportFormBuilderProps> = (
   onTablesChange,
   fieldValues,
   onFieldValueChange,
-  onApplyParsedTitle
+  onApplyParsedTitle,
+  readOnlyStructure = false
 }) => {
   const [activeTab, setActiveTab] = useState<'fill' | 'design'>('fill');
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
@@ -169,51 +171,55 @@ export const CustomReportFormBuilder: React.FC<CustomReportFormBuilderProps> = (
         <div>
           <h4 className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
             <Layers className="w-4 h-4 text-emerald-600" />
-            <span>Bộ Thiết Kế & Nhập Biểu Mẫu Tùy Biến (Custom Form & Table Builder)</span>
+            <span>{readOnlyStructure ? 'Biểu Mẫu Nhập Liệu Theo Mẫu BGH Ban Hành' : 'Bộ Thiết Kế & Nhập Biểu Mẫu Tùy Biến (Custom Form & Table Builder)'}</span>
           </h4>
           <p className="text-[11px] text-slate-500">
-            Tự do tạo các trường câu hỏi, chỉ tiêu số liệu và bảng biểu trực quan theo nhu cầu
+            {readOnlyStructure 
+              ? 'Thầy/Cô vui lòng điền đầy đủ các thông tin và bổ sung các dòng số liệu theo yêu cầu dưới đây' 
+              : 'Tự do tạo các trường câu hỏi, chỉ tiêu số liệu và bảng biểu trực quan theo nhu cầu'}
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-1.5">
-          <button
-            type="button"
-            onClick={() => setIsImportModalOpen(true)}
-            className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs"
-            title="Tải lên tệp .docx, .txt, hoặc .md để hệ thống tự động bóc tách và tạo Form biểu mẫu chuẩn trên Web"
-          >
-            <UploadCloud className="w-3.5 h-3.5" />
-            <span>Tạo Form Tự Động Từ Tệp (.docx/.txt/.md)</span>
-          </button>
+        {!readOnlyStructure && (
+          <div className="flex flex-wrap items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => setIsImportModalOpen(true)}
+              className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs"
+              title="Tải lên tệp .docx, .txt, hoặc .md để hệ thống tự động bóc tách và tạo Form biểu mẫu chuẩn trên Web"
+            >
+              <UploadCloud className="w-3.5 h-3.5" />
+              <span>Tạo Form Tự Động Từ Tệp (.docx/.txt/.md)</span>
+            </button>
 
-          <div className="flex items-center gap-1 bg-white p-1 rounded-xl border border-slate-200 shadow-2xs">
-            <button
-              type="button"
-              onClick={() => setActiveTab('fill')}
-              className={`px-3 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
-                activeTab === 'fill' 
-                  ? 'bg-emerald-600 text-white shadow-2xs' 
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              <Edit3 className="w-3.5 h-3.5" />
-              <span>Điền Biểu Mẫu ({fields.length + tables.length})</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab('design')}
-              className={`px-3 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
-                activeTab === 'design' 
-                  ? 'bg-emerald-600 text-white shadow-2xs' 
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span>Thêm Trường / Bảng</span>
-            </button>
+            <div className="flex items-center gap-1 bg-white p-1 rounded-xl border border-slate-200 shadow-2xs">
+              <button
+                type="button"
+                onClick={() => setActiveTab('fill')}
+                className={`px-3 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
+                  activeTab === 'fill' 
+                    ? 'bg-emerald-600 text-white shadow-2xs' 
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <Edit3 className="w-3.5 h-3.5" />
+                <span>Điền Biểu Mẫu ({fields.length + tables.length})</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('design')}
+                className={`px-3 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
+                  activeTab === 'design' 
+                    ? 'bg-emerald-600 text-white shadow-2xs' 
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Thêm Trường / Bảng</span>
+              </button>
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* DESIGN TAB: Add New Custom Field or Table */}
@@ -340,29 +346,35 @@ export const CustomReportFormBuilder: React.FC<CustomReportFormBuilderProps> = (
                 <Sparkles className="w-6 h-6" />
               </div>
               <div>
-                <p className="text-xs font-bold text-slate-800">Chưa có trường hoặc bảng tùy biến nào</p>
+                <p className="text-xs font-bold text-slate-800">
+                  {readOnlyStructure ? 'Đợt báo cáo này không có biểu mẫu tùy biến bổ sung' : 'Chưa có trường hoặc bảng tùy biến nào'}
+                </p>
                 <p className="text-[11px] text-slate-500 mt-0.5 max-w-md mx-auto">
-                  Thầy/Cô có thể tự thiết kế thủ công từng mục hoặc tải lên tệp (.docx, .txt, .md) để tạo Form web tự động.
+                  {readOnlyStructure 
+                    ? 'Thầy/Cô chuyển sang tab "Soạn Thảo Văn Bản Báo Cáo" hoặc "Biên Bản GVCN" để hoàn tất báo cáo.'
+                    : 'Thầy/Cô có thể tự thiết kế thủ công từng mục hoặc tải lên tệp (.docx, .txt, .md) để tạo Form web tự động.'}
                 </p>
               </div>
-              <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
-                <button
-                  type="button"
-                  onClick={() => setIsImportModalOpen(true)}
-                  className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs"
-                >
-                  <UploadCloud className="w-3.5 h-3.5" />
-                  <span>Tải Tệp Mẫu Lên (.docx / .txt / .md)</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setActiveTab('design')}
-                  className="px-3.5 py-2 rounded-xl border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>Thiết Kế Thủ Công</span>
-                </button>
-              </div>
+              {!readOnlyStructure && (
+                <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => setIsImportModalOpen(true)}
+                    className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs"
+                  >
+                    <UploadCloud className="w-3.5 h-3.5" />
+                    <span>Tải Tệp Mẫu Lên (.docx / .txt / .md)</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('design')}
+                    className="px-3.5 py-2 rounded-xl border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Thiết Kế Thủ Công</span>
+                  </button>
+                </div>
+              )}
             </div>
           ) : null}
 
@@ -370,7 +382,7 @@ export const CustomReportFormBuilder: React.FC<CustomReportFormBuilderProps> = (
           {fields.length > 0 && (
             <div className="bg-white p-4 rounded-xl border border-slate-200 space-y-3">
               <h5 className="text-xs font-bold text-slate-800 flex items-center justify-between">
-                <span>Các Trường Dữ Liệu ({fields.length})</span>
+                <span>Các Trường Dữ Liệu Theo Mẫu BGH ({fields.length})</span>
                 <span className="text-[10px] text-slate-400 font-normal">Điền thông tin trực tiếp vào bên dưới</span>
               </h5>
 
@@ -381,14 +393,16 @@ export const CustomReportFormBuilder: React.FC<CustomReportFormBuilderProps> = (
                       <label className="block text-xs font-bold text-slate-800">
                         {field.label} {field.required && <span className="text-rose-500">*</span>}
                       </label>
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveField(field.id)}
-                        className="text-slate-400 hover:text-rose-600 p-0.5 rounded transition"
-                        title="Xóa trường này"
-                      >
-                        <Trash2 className="w-3 h-3" />
-                      </button>
+                      {!readOnlyStructure && (
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveField(field.id)}
+                          className="text-slate-400 hover:text-rose-600 p-0.5 rounded transition"
+                          title="Xóa trường này"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      )}
                     </div>
 
                     {field.type === 'text' && (
@@ -458,14 +472,16 @@ export const CustomReportFormBuilder: React.FC<CustomReportFormBuilderProps> = (
                     <span>Thêm Hàng</span>
                   </button>
 
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveTable(table.id)}
-                    className="p-1 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer"
-                    title="Xóa bảng này"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
+                  {!readOnlyStructure && (
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveTable(table.id)}
+                      className="p-1 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer"
+                      title="Xóa bảng này"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  )}
                 </div>
               </div>
 

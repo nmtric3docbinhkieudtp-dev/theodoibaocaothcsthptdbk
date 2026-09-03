@@ -25,8 +25,7 @@ import {
 } from 'lucide-react';
 import { ReportPeriod, ReportType, UserRole, TargetAudienceType, PeriodFormTemplate } from '../../types';
 import { getAudienceLabel, getRequiredUsersForPeriod } from '../../utils/reportFilters';
-import { ImportFormFromDocModal } from '../common/ImportFormFromDocModal';
-import { ParsedTemplateResult } from '../../utils/formFileParser';
+import { CreatePeriodModal } from './CreatePeriodModal';
 
 interface PeriodManagementProps {
   onOpenSubmit: (periodId?: string) => void;
@@ -63,120 +62,18 @@ export const PeriodManagement: React.FC<PeriodManagementProps> = ({
     }, 4000);
   };
 
-  // Form State
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [academicYear, setAcademicYear] = useState('2026-2027');
-  const [semester, setSemester] = useState<'HK1' | 'HK2' | 'Ca_Nam'>('HK1');
-  const [deadline, setDeadline] = useState('');
-  const [reportType, setReportType] = useState<ReportType>('hybrid');
-  const [targetAudience, setTargetAudience] = useState<TargetAudienceType>('all');
-  const [isRequired, setIsRequired] = useState(true);
-  const [selectedDepts, setSelectedDepts] = useState<string[]>(['all']);
-  
-  // Smart File Import State
-  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
-  const [importedTemplate, setImportedTemplate] = useState<PeriodFormTemplate | null>(null);
+  const [initialAudience, setInitialAudience] = useState<TargetAudienceType>('all');
 
   const handleOpenCreate = (presetAudience?: TargetAudienceType) => {
-    setTitle('');
-    setDescription('');
-    setAcademicYear('2026-2027');
-    setSemester('HK1');
-    const nextWeek = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-    setDeadline(nextWeek.toISOString().slice(0, 16));
-    setReportType('hybrid');
-    setTargetAudience(presetAudience || 'all');
-    setIsRequired(true);
-    setSelectedDepts(['all']);
     setEditingPeriod(null);
-    setImportedTemplate(null);
-    setIsCreateModalOpen(true);
-  };
-
-  const handleApplyParsedToPeriod = (parsed: ParsedTemplateResult) => {
-    setTitle(parsed.title || 'Báo cáo theo biểu mẫu quy định');
-    setDescription(
-      `Biểu mẫu trực tuyến chuẩn Web gồm ${parsed.fields.length} trường thông tin và ${parsed.tables.length} bảng biểu số liệu. Thầy/Cô điền trực tiếp vào form trên hệ thống.`
-    );
-    setAcademicYear('2026-2027');
-    setSemester('HK1');
-    const nextWeek = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-    setDeadline(nextWeek.toISOString().slice(0, 16));
-    setReportType('hybrid');
-    setTargetAudience('all');
-    setIsRequired(true);
-    setSelectedDepts(['all']);
-    setEditingPeriod(null);
-    setImportedTemplate({
-      fields: parsed.fields,
-      tables: parsed.tables,
-      defaultTemplateContent: parsed.fullRawText
-    });
+    setInitialAudience(presetAudience || 'all');
     setIsCreateModalOpen(true);
   };
 
   const handleOpenEdit = (p: ReportPeriod) => {
     setEditingPeriod(p);
-    setTitle(p.title);
-    setDescription(p.description);
-    setAcademicYear(p.academicYear);
-    setSemester(p.semester as any);
-    setDeadline(new Date(p.deadline).toISOString().slice(0, 16));
-    setReportType(p.reportType);
-    setTargetAudience(p.targetAudience || 'all');
-    setIsRequired(p.isRequired);
-    setSelectedDepts(p.targetDepartmentIds || ['all']);
+    setInitialAudience(p.targetAudience || 'all');
     setIsCreateModalOpen(true);
-  };
-
-  const handleSave = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!title.trim() || !deadline) {
-      showToast('⚠️ Vui lòng nhập đầy đủ tiêu đề và hạn chót!');
-      return;
-    }
-
-    const deadlineIso = new Date(deadline).toISOString();
-    const isPast = new Date(deadline).getTime() < Date.now();
-
-    if (editingPeriod) {
-      updatePeriod(editingPeriod.id, {
-        title,
-        description,
-        academicYear,
-        semester,
-        deadline: deadlineIso,
-        reportType,
-        targetAudience,
-        isRequired,
-        targetDepartmentIds: selectedDepts,
-        status: isPast ? 'closed' : 'active'
-      });
-      showToast(`Đã cập nhật đợt báo cáo "${title}" thành công!`);
-    } else {
-      createPeriod({
-        title,
-        description,
-        academicYear,
-        semester,
-        startDate: new Date().toISOString(),
-        deadline: deadlineIso,
-        reportType,
-        targetAudience,
-        isRequired,
-        targetDepartmentIds: selectedDepts,
-        targetRoles: ['teacher', 'dept_head'],
-        status: isPast ? 'closed' : 'active',
-        createdBy: 'Ban Giám Hiệu',
-        defaultTemplateContent: importedTemplate?.defaultTemplateContent,
-        formTemplate: importedTemplate || undefined
-      });
-      showToast(`Đã ban hành đợt báo cáo mới "${title}" thành công!`);
-    }
-
-    setImportedTemplate(null);
-    setIsCreateModalOpen(false);
   };
 
   const confirmSingleDelete = async () => {
@@ -259,7 +156,7 @@ export const PeriodManagement: React.FC<PeriodManagementProps> = ({
 
             <button
               id="btn-create-period-from-file"
-              onClick={() => setIsImportModalOpen(true)}
+              onClick={() => handleOpenCreate('all')}
               className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-xs transition active:scale-98 cursor-pointer"
               title="Tải lên tệp .docx, .txt hoặc .md có sẵn để hệ thống tự động bóc tách và tạo đợt báo cáo kèm Form web chuẩn"
             >
@@ -269,11 +166,7 @@ export const PeriodManagement: React.FC<PeriodManagementProps> = ({
 
             <button
               id="btn-create-gvcn-period"
-              onClick={() => {
-                handleOpenCreate('homeroom_teachers');
-                setTitle('Báo cáo công tác Giáo viên chủ nhiệm (GVCN) tháng ');
-                setDescription('Dành cho 53 Giáo viên chủ nhiệm: Cập nhật sĩ số học sinh, nề nếp chuyên cần, các trường hợp khó khăn và kế hoạch phối hợp phụ huynh.');
-              }}
+              onClick={() => handleOpenCreate('homeroom_teachers')}
               className="px-3.5 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-xs transition active:scale-98 cursor-pointer"
               title="Tạo nhanh đợt báo cáo chỉ dành riêng cho 53 GVCN"
             >
@@ -287,7 +180,7 @@ export const PeriodManagement: React.FC<PeriodManagementProps> = ({
               className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-xs transition active:scale-98 cursor-pointer"
             >
               <Plus className="w-4 h-4" />
-              <span>Tạo Đợt Báo Cáo Chung</span>
+              <span>Tạo Đợt Báo Cáo Mới</span>
             </button>
           </div>
         )}
@@ -324,22 +217,18 @@ export const PeriodManagement: React.FC<PeriodManagementProps> = ({
           {canManagePeriods && (
             <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
               <button
-                onClick={() => setIsImportModalOpen(true)}
+                onClick={() => handleOpenCreate('all')}
                 className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 text-white font-bold text-xs flex items-center gap-2 shadow-xs cursor-pointer"
               >
                 <UploadCloud className="w-4 h-4" />
                 <span>Tạo Đợt Báo Cáo Từ Tệp Mẫu (.docx/.txt/.md)</span>
               </button>
               <button
-                onClick={() => {
-                  handleOpenCreate('homeroom_teachers');
-                  setTitle('Biên bản tập trung học sinh đầu năm học 2026 – 2027 (GVCN)');
-                  setDescription('Dành riêng cho 53 Giáo viên chủ nhiệm: Lập Biên bản tập trung học sinh đầu năm, thống kê năng khiếu, phân công ban cán sự và báo cáo danh sách học sinh vắng.');
-                }}
+                onClick={() => handleOpenCreate('homeroom_teachers')}
                 className="px-4 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs flex items-center gap-2 shadow-xs cursor-pointer"
               >
                 <GraduationCap className="w-4 h-4" />
-                <span>Tạo Đợt Báo Cáo GVCN</span>
+                <span>Tạo Đợt Báo Cáo GVCN (53 Lớp)</span>
               </button>
               <button
                 onClick={() => handleOpenCreate('all')}
@@ -593,235 +482,18 @@ export const PeriodManagement: React.FC<PeriodManagementProps> = ({
         </div>
       </Modal>
 
-      {/* Create / Edit Period Modal */}
-      <Modal
+      {/* Create / Edit Period Modal with smart File Import, Deadline Presets & Enforcement */}
+      <CreatePeriodModal
         isOpen={isCreateModalOpen}
-        onClose={() => setIsCreateModalOpen(false)}
-        title={editingPeriod ? 'Chỉnh Sửa Đợt Báo Cáo' : 'Tạo Đợt Báo Cáo Mới'}
-        subtitle="Hệ thống quản lý báo cáo trường THCS & THPT Đốc Binh Kiều"
-        maxWidth="2xl"
-      >
-        <form onSubmit={handleSave} className="space-y-4">
-          {importedTemplate && (
-            <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-950 flex items-start justify-between gap-3 shadow-2xs">
-              <div className="flex items-start gap-2.5">
-                <Sparkles className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                <div>
-                  <div className="font-bold text-emerald-900">
-                    ✨ Đã liên kết Form Biểu Mẫu Chuẩn Web Tự Động
-                  </div>
-                  <div className="text-[11px] text-emerald-800 mt-0.5">
-                    Hệ thống đã tự động cấu hình <strong>{importedTemplate.fields?.length || 0} trường thông tin</strong> và <strong>{importedTemplate.tables?.length || 0} bảng dữ liệu</strong> từ tệp tải lên. Người nộp sẽ thấy ngay form trực tuyến này để nhập liệu.
-                  </div>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setImportedTemplate(null)}
-                className="text-[11px] font-bold text-rose-600 hover:text-rose-800 underline shrink-0 cursor-pointer"
-              >
-                Gỡ bỏ mẫu
-              </button>
-            </div>
-          )}
-
-          <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">
-              Tên Đợt Báo Cáo <span className="text-rose-500">*</span>
-            </label>
-            <input
-              type="text"
-              required
-              placeholder="Ví dụ: Báo cáo công tác Giáo viên chủ nhiệm tháng 9..."
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              className="w-full text-xs sm:text-sm px-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-emerald-500 font-medium"
-            />
-          </div>
-
-          {/* Target Audience Selector (GVCN vs Toàn trường vs Khác) */}
-          <div className="p-3.5 rounded-xl bg-amber-50/70 border border-amber-200/80 space-y-2">
-            <label className="block text-xs font-bold text-amber-950 flex items-center justify-between">
-              <span className="flex items-center gap-1.5">
-                <GraduationCap className="w-4 h-4 text-amber-700" />
-                Đối tượng thực hiện báo cáo <span className="text-rose-500">*</span>
-              </span>
-              <span className="text-[11px] font-semibold text-amber-800">
-                {targetAudience === 'homeroom_teachers' ? 'Chỉ 53 Giáo viên chủ nhiệm mới thấy' : 'Theo phạm vi đã chọn'}
-              </span>
-            </label>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => setTargetAudience('homeroom_teachers')}
-                className={`p-2.5 rounded-xl border text-left flex items-start gap-2.5 transition cursor-pointer ${
-                  targetAudience === 'homeroom_teachers'
-                    ? 'bg-amber-500 text-white border-amber-600 shadow-xs'
-                    : 'bg-white text-slate-700 border-amber-200 hover:bg-amber-100/50'
-                }`}
-              >
-                <GraduationCap className={`w-5 h-5 shrink-0 mt-0.5 ${targetAudience === 'homeroom_teachers' ? 'text-white' : 'text-amber-600'}`} />
-                <div>
-                  <div className="font-bold text-xs">Chỉ Giáo viên chủ nhiệm (GVCN)</div>
-                  <div className={`text-[11px] ${targetAudience === 'homeroom_teachers' ? 'text-amber-100' : 'text-slate-500'}`}>
-                    53 lớp (14 THPT + 24 ĐBK + 15 Tân Kiều). Người khác không thấy.
-                  </div>
-                </div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setTargetAudience('all')}
-                className={`p-2.5 rounded-xl border text-left flex items-start gap-2.5 transition cursor-pointer ${
-                  targetAudience === 'all'
-                    ? 'bg-emerald-600 text-white border-emerald-700 shadow-xs'
-                    : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
-                }`}
-              >
-                <School className={`w-5 h-5 shrink-0 mt-0.5 ${targetAudience === 'all' ? 'text-white' : 'text-emerald-600'}`} />
-                <div>
-                  <div className="font-bold text-xs">Toàn trường (120 Cán bộ - GV - NV)</div>
-                  <div className={`text-[11px] ${targetAudience === 'all' ? 'text-emerald-100' : 'text-slate-500'}`}>
-                    Tất cả cán bộ giáo viên, nhân viên 7 tổ toàn trường.
-                  </div>
-                </div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setTargetAudience('dept_heads_only')}
-                className={`p-2 rounded-xl border text-left flex items-start gap-2 transition cursor-pointer ${
-                  targetAudience === 'dept_heads_only'
-                    ? 'bg-blue-600 text-white border-blue-700 shadow-xs'
-                    : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
-                }`}
-              >
-                <Users className={`w-4 h-4 shrink-0 mt-0.5 ${targetAudience === 'dept_heads_only' ? 'text-white' : 'text-blue-600'}`} />
-                <div>
-                  <div className="font-bold text-xs">Chỉ Tổ trưởng & Tổ phó</div>
-                  <div className={`text-[11px] ${targetAudience === 'dept_heads_only' ? 'text-blue-100' : 'text-slate-500'}`}>
-                    15 thầy/cô lãnh đạo các tổ chuyên môn.
-                  </div>
-                </div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setTargetAudience('teachers_only')}
-                className={`p-2 rounded-xl border text-left flex items-start gap-2 transition cursor-pointer ${
-                  targetAudience === 'teachers_only'
-                    ? 'bg-purple-600 text-white border-purple-700 shadow-xs'
-                    : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
-                }`}
-              >
-                <Users className={`w-4 h-4 shrink-0 mt-0.5 ${targetAudience === 'teachers_only' ? 'text-white' : 'text-purple-600'}`} />
-                <div>
-                  <div className="font-bold text-xs">Giáo viên giảng dạy (106 GV)</div>
-                  <div className={`text-[11px] ${targetAudience === 'teachers_only' ? 'text-purple-100' : 'text-slate-500'}`}>
-                    6 tổ chuyên môn (không bao gồm tổ Văn phòng).
-                  </div>
-                </div>
-              </button>
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">
-              Mô tả & Hướng dẫn thực hiện
-            </label>
-            <textarea
-              rows={3}
-              placeholder="Nêu rõ yêu cầu nội dung cần nộp, lưu ý các biểu mẫu đính kèm..."
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              className="w-full text-xs p-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-emerald-500"
-            />
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">
-                Năm học
-              </label>
-              <input
-                type="text"
-                value={academicYear}
-                onChange={(e) => setAcademicYear(e.target.value)}
-                className="w-full text-xs px-3 py-2 rounded-xl border border-slate-300"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">
-                Học kỳ
-              </label>
-              <select
-                value={semester}
-                onChange={(e) => setSemester(e.target.value as any)}
-                className="w-full text-xs px-3 py-2 rounded-xl border border-slate-300 bg-white"
-              >
-                <option value="HK1">Học kỳ I</option>
-                <option value="HK2">Học kỳ II</option>
-                <option value="Ca_Nam">Cả Năm</option>
-              </select>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">
-                Thời hạn chót (Deadline) <span className="text-rose-500">*</span>
-              </label>
-              <input
-                type="datetime-local"
-                required
-                value={deadline}
-                onChange={(e) => setDeadline(e.target.value)}
-                className="w-full text-xs px-3 py-2 rounded-xl border border-slate-300 font-bold text-slate-900"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">
-                Loại hình báo cáo
-              </label>
-              <select
-                value={reportType}
-                onChange={(e) => setReportType(e.target.value as any)}
-                className="w-full text-xs px-3 py-2 rounded-xl border border-slate-300 bg-white"
-              >
-                <option value="hybrid">Kết hợp (Nhập văn bản + Tệp đính kèm)</option>
-                <option value="with_attachment">Bắt buộc có tệp đính kèm</option>
-                <option value="text_only">Chỉ nhập văn bản trực tiếp</option>
-              </select>
-            </div>
-          </div>
-
-          <div className="pt-4 border-t border-slate-100 flex items-center justify-end gap-2">
-            <button
-              type="button"
-              onClick={() => setIsCreateModalOpen(false)}
-              className="px-4 py-2 rounded-xl border border-slate-300 text-xs font-semibold text-slate-700 hover:bg-slate-50 cursor-pointer"
-            >
-              Hủy
-            </button>
-            <button
-              type="submit"
-              className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-xs cursor-pointer"
-            >
-              {editingPeriod ? 'Lưu Thay Đổi' : 'Ban Hành Đợt Báo Cáo'}
-            </button>
-          </div>
-        </form>
-      </Modal>
-
-      {/* Smart Form Parser Modal from File (.docx, .txt, .md) */}
-      <ImportFormFromDocModal
-        isOpen={isImportModalOpen}
-        onClose={() => setIsImportModalOpen(false)}
-        onApplyParsedForm={handleApplyParsedToPeriod}
-        mode="create_period"
+        onClose={() => {
+          setIsCreateModalOpen(false);
+          setEditingPeriod(null);
+        }}
+        editingPeriod={editingPeriod}
+        initialAudience={initialAudience}
+        onSuccess={(periodTitle) => {
+          showToast(`Đã lưu đợt báo cáo "${periodTitle}" thành công!`);
+        }}
       />
 
     </div>
