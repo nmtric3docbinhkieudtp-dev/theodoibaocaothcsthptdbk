@@ -1,4 +1,4 @@
-import { HomeroomMeetingMinutesData, AbsentStudentItem, TalentAchievementItem, ClassCadreItem } from '../types';
+import { HomeroomMeetingMinutesData, AbsentStudentItem, TalentAchievementItem, ClassCadreItem, CustomFormField, CustomDynamicTable } from '../types';
 
 /**
  * Tạo văn bản hoàn chỉnh cho Biên bản tập trung học sinh đầu năm học 2026-2027
@@ -320,6 +320,153 @@ export function exportAbsentStudentsToExcel(
   const link = document.createElement('a');
   link.href = url;
   link.download = `DS_Hoc_Sinh_Vang_Lop_${className}_${academicYear}.csv`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
+/**
+ * Xuất báo cáo biểu mẫu tùy biến (Custom Report Form & Tables) ra tệp Word (.doc) quy chuẩn hành chính
+ */
+export function exportCustomReportToWord({
+  title,
+  authorName,
+  authorRole,
+  departmentOrClass,
+  academicYear = '2026 – 2027',
+  fields = [],
+  fieldValues = {},
+  tables = [],
+  notes = '',
+  fileName
+}: {
+  title: string;
+  authorName: string;
+  authorRole?: string;
+  departmentOrClass?: string;
+  academicYear?: string;
+  fields: CustomFormField[];
+  fieldValues: Record<string, any>;
+  tables: CustomDynamicTable[];
+  notes?: string;
+  fileName?: string;
+}) {
+  const fieldsRows = fields.filter(f => fieldValues[f.id] !== undefined && fieldValues[f.id] !== '').map((f) => {
+    let valStr = String(fieldValues[f.id]);
+    if (f.type === 'checkbox') valStr = fieldValues[f.id] ? 'Đã hoàn thành / Đạt chuẩn' : 'Chưa hoàn thành';
+    return `
+      <tr>
+        <td style="border: 1px solid #000; padding: 6px; font-weight: bold; width: 40%; background-color: #fafafa;">${f.label}</td>
+        <td style="border: 1px solid #000; padding: 6px;">${valStr}</td>
+      </tr>
+    `;
+  }).join('');
+
+  const tablesHtml = tables.map((t, tIdx) => {
+    const headerHtml = t.headers.map(h => `<th style="border: 1px solid #000; background-color: #f2f2f2; padding: 6px; text-align: center;">${h}</th>`).join('');
+    const rowsHtml = t.rows.map(r => {
+      const cells = t.headers.map(h => `<td style="border: 1px solid #000; padding: 6px;">${r[h] || ''}</td>`).join('');
+      return `<tr>${cells}</tr>`;
+    }).join('');
+
+    return `
+      <div style="font-weight: bold; font-size: 12pt; margin-top: 14px; margin-bottom: 6px;">
+        ${tIdx + 1}. ${t.title}
+      </div>
+      <table style="width: 100%; border-collapse: collapse; margin-bottom: 12px; font-size: 12pt;">
+        <thead><tr>${headerHtml}</tr></thead>
+        <tbody>${rowsHtml}</tbody>
+      </table>
+    `;
+  }).join('');
+
+  const today = new Date();
+  const dateStr = `Đốc Binh Kiều, ngày ${today.getDate()} tháng ${today.getMonth() + 1} năm ${today.getFullYear()}`;
+
+  const htmlContent = `
+    <!DOCTYPE html>
+    <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+    <head>
+      <meta charset="utf-8">
+      <title>${title}</title>
+      <style>
+        body { font-family: 'Times New Roman', Times, serif; font-size: 13pt; line-height: 1.4; color: #000; }
+        table.meta-header { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
+        table.meta-header td { vertical-align: top; text-align: center; }
+        .main-title { text-align: center; font-size: 15pt; font-weight: bold; margin-top: 15px; margin-bottom: 15px; text-transform: uppercase; }
+        .section-title { font-size: 13pt; font-weight: bold; margin-top: 16px; margin-bottom: 8px; }
+      </style>
+    </head>
+    <body>
+      <table class="meta-header">
+        <tr>
+          <td style="width: 45%;">
+            <div>SỞ GDĐT TỈNH ĐỒNG THÁP</div>
+            <div style="font-weight: bold;">TRƯỜNG THCS-THPT ĐỐC BINH KIỀU</div>
+            <div style="margin-top: 2px;">***</div>
+          </td>
+          <td style="width: 55%;">
+            <div style="font-weight: bold;">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</div>
+            <div style="font-weight: bold; text-decoration: underline;">Độc lập - Tự do - Hạnh phúc</div>
+            <div style="margin-top: 5px; font-style: italic; font-size: 11pt;">${dateStr}</div>
+          </td>
+        </tr>
+      </table>
+
+      <div class="main-title">
+        ${title}<br>
+        <span style="font-size: 12pt; font-weight: normal; font-style: italic;">Năm học: ${academicYear}</span>
+      </div>
+
+      <div style="margin-bottom: 14px; font-size: 12.5pt;">
+        <p style="margin: 4px 0;">- Người thực hiện báo cáo: <strong>${authorName}</strong></p>
+        <p style="margin: 4px 0;">- Chức danh / Tổ: <strong>${authorRole || ''} - ${departmentOrClass || ''}</strong></p>
+        <p style="margin: 4px 0;">- Đơn vị: Trường THCS-THPT Đốc Binh Kiều</p>
+      </div>
+
+      ${fieldsRows ? `
+        <div class="section-title">I. THÔNG TIN & CHỈ TIÊU BÁO CÁO:</div>
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 16px; font-size: 12pt;">
+          <tbody>${fieldsRows}</tbody>
+        </table>
+      ` : ''}
+
+      ${tablesHtml ? `
+        <div class="section-title">II. CÁC BẢNG SỐ LIỆU THỐNG KÊ CHI TIẾT:</div>
+        ${tablesHtml}
+      ` : ''}
+
+      ${notes ? `
+        <div class="section-title">III. ĐÁNH GIÁ, THUẬN LỢI, KHÓ KHĂN & KIẾN NGHỊ:</div>
+        <div style="font-size: 12pt; white-space: pre-line; line-height: 1.5; margin-bottom: 16px; text-align: justify;">
+          ${notes}
+        </div>
+      ` : ''}
+
+      <table style="width: 100%; margin-top: 25px; border-collapse: collapse;">
+        <tr>
+          <td style="width: 50%; text-align: center; vertical-align: top;"></td>
+          <td style="width: 50%; text-align: center; vertical-align: top;">
+            <div style="font-weight: bold; font-size: 12.5pt;">NGƯỜI LẬP BÁO CÁO</div>
+            <div style="font-style: italic; font-size: 11pt;">(Ký và ghi rõ họ tên)</div>
+            <div style="height: 60px;"></div>
+            <div style="font-weight: bold; font-size: 12.5pt;">${authorName}</div>
+          </td>
+        </tr>
+      </table>
+    </body>
+    </html>
+  `;
+
+  const blob = new Blob(['\uFEFF' + htmlContent], {
+    type: 'application/msword;charset=utf-8'
+  });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  const safeName = (fileName || title).replace(/[^a-zA-Z0-9_àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđĐ ]/gi, '_');
+  link.download = `${safeName}.doc`;
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);

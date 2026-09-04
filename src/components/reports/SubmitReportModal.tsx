@@ -1,179 +1,168 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { useAuth } from '../../context/AuthContext';
-import { useReports } from '../../context/ReportContext';
+import React, { useState, useEffect, useRef } from 'react';
 import { Modal } from '../common/Modal';
+import { useReports } from '../../context/ReportContext';
+import { useAuth } from '../../context/AuthContext';
 import { 
+  Send, 
+  Paperclip, 
+  Trash2, 
   FileText, 
   UploadCloud, 
-  File, 
-  Trash2, 
-  Paperclip, 
   AlertTriangle, 
+  Clock, 
   CheckCircle2, 
-  Send, 
-  Save, 
-  FileSpreadsheet, 
-  FileCode,
-  Image as ImageIcon,
-  HelpCircle,
-  Clock,
   Sparkles,
-  GraduationCap,
-  School,
-  Users,
-  ClipboardList,
   Layers,
+  Save,
+  GraduationCap,
+  CalendarRange,
+  School,
+  FileSpreadsheet,
+  Image as ImageIcon,
+  FileCode,
+  Download,
   BookOpen,
-  PlusCircle,
-  Table as TableIcon
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
-import { ReportPeriod, ReportAttachment, HomeroomMeetingMinutesData, CustomFormField, CustomDynamicTable } from '../../types';
-import { isUserEligibleForPeriod, getAudienceLabel } from '../../utils/reportFilters';
+import confetti from 'canvas-confetti';
+import { 
+  ReportAttachment, 
+  HomeroomMeetingMinutesData, 
+  CustomFormField, 
+  CustomDynamicTable 
+} from '../../types';
 import { HomeroomMeetingMinutesForm } from './HomeroomMeetingMinutesForm';
 import { CustomReportFormBuilder } from './CustomReportFormBuilder';
-import { OFFICIAL_REPORT_TEMPLATES, ReportTemplateOption } from '../../utils/reportTemplates';
 import { ImportFormFromDocModal } from '../common/ImportFormFromDocModal';
 import { ParsedTemplateResult } from '../../utils/formFileParser';
-import confetti from 'canvas-confetti';
 
 interface SubmitReportModalProps {
   isOpen: boolean;
   onClose: () => void;
   defaultPeriodId?: string;
-  onOpenCreatePeriod?: () => void;
 }
 
 export const SubmitReportModal: React.FC<SubmitReportModalProps> = ({
   isOpen,
   onClose,
-  defaultPeriodId,
-  onOpenCreatePeriod
+  defaultPeriodId
 }) => {
-  const { currentUser, isPrincipal, isAdmin } = useAuth();
   const { periods, submitReport } = useReports();
+  const { currentUser } = useAuth();
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  // STRICT FILTERING: Only show periods the current user is eligible for!
-  const eligiblePeriods = periods.filter(p => {
-    if (isPrincipal || isAdmin) return true;
-    return isUserEligibleForPeriod(currentUser, p);
-  });
-
-  const activePeriods = eligiblePeriods.filter(p => p.status === 'active');
-  const [selectedPeriodId, setSelectedPeriodId] = useState<string>('');
-  
-  const [title, setTitle] = useState('');
+  const [selectedPeriodId, setSelectedPeriodId] = useState<string>(defaultPeriodId || '');
   const [content, setContent] = useState('');
   const [attachments, setAttachments] = useState<ReportAttachment[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [lateExplanation, setLateExplanation] = useState('');
-  const [activeTab, setActiveTab] = useState<'text' | 'custom_form' | 'homeroom' | 'file'>('text');
-  
-  // Structured Data states
+  const [isDragOver, setIsDragOver] = useState(false);
+  const [isAttachmentsOpen, setIsAttachmentsOpen] = useState(false);
+
+  // Homeroom minutes specific state
   const [homeroomData, setHomeroomData] = useState<HomeroomMeetingMinutesData | null>(null);
+
+  // Custom form template state
   const [customFields, setCustomFields] = useState<CustomFormField[]>([]);
   const [customTables, setCustomTables] = useState<CustomDynamicTable[]>([]);
   const [customFieldValues, setCustomFieldValues] = useState<Record<string, any>>({});
-  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
-  
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isDragOver, setIsDragOver] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [customNotes, setCustomNotes] = useState('');
 
-  // Set initial period
+  // Active periods filtering
+  const activePeriods = periods.filter(p => p.status === 'active');
+  const eligiblePeriods = periods.filter(p => {
+    if (currentUser.role === 'admin' || currentUser.role === 'principal') return true;
+    if (p.targetAudience === 'all') return true;
+    if (p.targetAudience === 'homeroom_teachers' && currentUser.isHomeroomTeacher) return true;
+    if (p.targetAudience === 'dept_heads_only' && currentUser.role === 'dept_head') return true;
+    if (p.targetAudience === 'teachers_only' && (currentUser.role === 'teacher' || currentUser.role === 'dept_head')) return true;
+    if (p.targetAudience === 'staff_only' && (currentUser.roleTitle.includes('Nhân viên') || currentUser.departmentId === 'van_phong')) return true;
+    return false;
+  }).sort((a, b) => {
+    if (a.status === 'active' && b.status !== 'active') return -1;
+    if (a.status !== 'active' && b.status === 'active') return 1;
+    return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
+  });
+
+  // Sync selected period
   useEffect(() => {
     if (defaultPeriodId) {
       setSelectedPeriodId(defaultPeriodId);
-    } else if (activePeriods.length > 0) {
-      if (!selectedPeriodId || (!eligiblePeriods.some(p => p.id === selectedPeriodId) && selectedPeriodId !== 'adhoc')) {
-        setSelectedPeriodId(activePeriods[0].id);
-      }
     } else if (eligiblePeriods.length > 0) {
       if (!selectedPeriodId || (!eligiblePeriods.some(p => p.id === selectedPeriodId) && selectedPeriodId !== 'adhoc')) {
-        setSelectedPeriodId(eligiblePeriods[0].id);
+        const firstActive = eligiblePeriods.find(p => p.status === 'active') || eligiblePeriods[0];
+        setSelectedPeriodId(firstActive.id);
       }
     } else {
       setSelectedPeriodId('adhoc');
     }
-  }, [defaultPeriodId, eligiblePeriods, activePeriods]);
+  }, [defaultPeriodId, eligiblePeriods]);
 
   const currentPeriod = selectedPeriodId === 'adhoc' ? null : periods.find(p => p.id === selectedPeriodId);
-  const isHomeroomPeriod = currentPeriod?.targetAudience === 'homeroom_teachers' || currentPeriod?.id === 'period-gvcn-1';
 
-  // If period has formTemplate or defaultTemplateContent, load them
+  // Determine mode automatically based on selected period
+  // Only the specific historical student gathering minutes uses the 10-table legacy minutes form
+  const isSpecificLegacyHomeroomMinutes = Boolean(
+    (currentPeriod?.id === 'period-gvcn-1' || currentPeriod?.title?.toLowerCase().trim() === 'biên bản tập trung học sinh đầu năm') &&
+    !currentPeriod?.formTemplate?.fields?.length &&
+    !currentPeriod?.formTemplate?.tables?.length
+  );
+
+  const hasFormTemplate = Boolean(
+    (currentPeriod?.formTemplate?.fields && currentPeriod.formTemplate.fields.length > 0) ||
+    (currentPeriod?.formTemplate?.tables && currentPeriod.formTemplate.tables.length > 0) ||
+    customFields.length > 0 ||
+    customTables.length > 0
+  );
+
+  // Load period form template if available
   useEffect(() => {
     if (currentPeriod) {
-      if (currentPeriod.defaultTemplateContent && !content) {
+      if (currentPeriod.defaultTemplateContent) {
         setContent(currentPeriod.defaultTemplateContent);
+      } else {
+        setContent('');
       }
-      if (currentPeriod.formTemplate?.fields && customFields.length === 0) {
+      if (currentPeriod.formTemplate?.fields) {
         setCustomFields(currentPeriod.formTemplate.fields);
+      } else {
+        setCustomFields([]);
       }
-      if (currentPeriod.formTemplate?.tables && customTables.length === 0) {
+      if (currentPeriod.formTemplate?.tables) {
         setCustomTables(currentPeriod.formTemplate.tables);
+      } else {
+        setCustomTables([]);
       }
-    }
-  }, [currentPeriod]);
-
-  // Adjust default tab and title based on period
-  useEffect(() => {
-    if (isHomeroomPeriod) {
-      setActiveTab('homeroom');
-      if (!title || title.includes('Báo cáo') || title.includes('Biên bản')) {
-        setTitle(`Biên bản tập trung học sinh đầu năm học 2026 – 2027 - Lớp ${currentUser.homeroomClass || ''} - ${currentUser.name}`);
-      }
-    } else if (currentPeriod?.formTemplate && ((currentPeriod.formTemplate.fields && currentPeriod.formTemplate.fields.length > 0) || (currentPeriod.formTemplate.tables && currentPeriod.formTemplate.tables.length > 0))) {
-      setActiveTab('custom_form');
-      if (!title) {
-        setTitle(`${currentPeriod.title} - ${currentUser.name}`);
-      }
+      setCustomFieldValues({});
     } else {
-      if (activeTab === 'homeroom') {
-        setActiveTab('text');
-      }
-      if (!title) {
-        if (selectedPeriodId === 'adhoc') {
-          setTitle(`Báo cáo công tác - ${currentUser.name} (${currentUser.departmentName})`);
-        } else if (currentPeriod) {
-          setTitle(`${currentPeriod.title} - ${currentUser.name}`);
-        }
-      }
+      setCustomFields([]);
+      setCustomTables([]);
+      setCustomFieldValues({});
+      setContent('');
     }
-  }, [selectedPeriodId, isHomeroomPeriod, currentPeriod]);
+  }, [selectedPeriodId]);
 
   // Check if current submission is past deadline
   const isPastDeadline = currentPeriod 
     ? new Date(currentPeriod.deadline).getTime() < Date.now() 
     : false;
 
+  // Auto-generate title based on user, role, and period
+  const getAutoTitle = () => {
+    if (isSpecificLegacyHomeroomMinutes) {
+      return `Biên bản tập trung học sinh đầu năm - Lớp ${currentUser.homeroomClass || ''} - ${currentUser.name}`;
+    }
+    if (currentPeriod) {
+      const classSuffix = currentUser.isHomeroomTeacher && currentUser.homeroomClass ? ` - Lớp ${currentUser.homeroomClass}` : '';
+      return `${currentPeriod.title}${classSuffix} - ${currentUser.name}`;
+    }
+    return `Báo cáo công tác - ${currentUser.name} (${currentUser.departmentName})`;
+  };
+
   const handleHomeroomChange = (data: HomeroomMeetingMinutesData, generatedText: string) => {
     setHomeroomData(data);
     setContent(generatedText);
-    if (!title || title.startsWith('Biên bản tập trung')) {
-      setTitle(`Biên bản tập trung học sinh đầu năm học 2026 – 2027 - Lớp ${data.className || currentUser.homeroomClass || ''} - ${data.teacherName || currentUser.name}`);
-    }
-  };
-
-  const handleApplyTemplate = (tpl: ReportTemplateOption) => {
-    if (content && !confirm('Việc áp dụng mẫu mới sẽ thay thế nội dung soạn thảo hiện tại. Bạn có chắc chắn muốn áp dụng?')) {
-      return;
-    }
-    setTitle(tpl.defaultTitle);
-    setContent(tpl.content);
-  };
-
-  const handleInsertSection = (sectionText: string) => {
-    setContent(prev => (prev ? prev + '\n\n' + sectionText : sectionText));
-  };
-
-  const handleApplyParsedForm = (parsed: ParsedTemplateResult) => {
-    setCustomFields(parsed.fields);
-    setCustomTables(parsed.tables);
-    if (!title.trim() && parsed.title) {
-      setTitle(parsed.title);
-    }
-    if (!content.trim() && parsed.fullRawText) {
-      setContent(parsed.fullRawText);
-    }
-    setActiveTab('custom_form');
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -200,18 +189,8 @@ export const SubmitReportModal: React.FC<SubmitReportModalProps> = ({
               id: 'att-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6),
               name: file.name,
               size: file.size,
-              type: file.type || file.name.split('.').pop() || 'file',
-              url: (reader.result as string) || URL.createObjectURL(file),
-              uploadedAt: new Date().toISOString()
-            });
-          };
-          reader.onerror = () => {
-            resolve({
-              id: 'att-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6),
-              name: file.name,
-              size: file.size,
-              type: file.type || file.name.split('.').pop() || 'file',
-              url: URL.createObjectURL(file),
+              type: file.type || file.name.split('.').pop() || 'unknown',
+              url: typeof reader.result === 'string' ? reader.result : '',
               uploadedAt: new Date().toISOString()
             });
           };
@@ -221,8 +200,8 @@ export const SubmitReportModal: React.FC<SubmitReportModalProps> = ({
             id: 'att-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6),
             name: file.name,
             size: file.size,
-            type: file.type || file.name.split('.').pop() || 'file',
-            url: URL.createObjectURL(file),
+            type: file.type || file.name.split('.').pop() || 'unknown',
+            url: '',
             uploadedAt: new Date().toISOString()
           });
         }
@@ -258,14 +237,11 @@ export const SubmitReportModal: React.FC<SubmitReportModalProps> = ({
   };
 
   const handleSubmit = async (isDraft = false) => {
-    if (!title.trim()) {
-      alert('Vui lòng nhập tên/tiêu đề báo cáo!');
-      return;
-    }
+    const autoTitle = getAutoTitle();
 
     // Build synthesized content if text content is blank but custom fields/tables are filled
     let finalContent = content;
-    if (!finalContent.trim() && (customFields.length > 0 || customTables.length > 0)) {
+    if (hasFormTemplate) {
       const fieldSummaries = customFields.map(f => {
         const val = customFieldValues[f.id];
         return `- ${f.label}: ${val === undefined || val === '' ? '(Chưa nhập)' : val}`;
@@ -277,11 +253,11 @@ export const SubmitReportModal: React.FC<SubmitReportModalProps> = ({
         }).join('\n');
       }).join('\n');
 
-      finalContent = `BÁO CÁO THEO BIỂU MẪU ĐIỆN TỬ:\n${fieldSummaries}\n${tableSummaries}`;
+      finalContent = `BÁO CÁO THEO BIỂU MẪU ĐIỆN TỬ:\n${fieldSummaries}\n${tableSummaries}\n\nĐÁNH GIÁ & KIẾN NGHỊ:\n${customNotes || '(Không có)'}`;
     }
 
     if (!finalContent.trim() && attachments.length === 0 && !homeroomData) {
-      alert('Vui lòng nhập nội dung báo cáo, điền biểu mẫu hoặc đính kèm ít nhất 1 tệp tin!');
+      alert('Vui lòng nhập thông tin vào biểu mẫu, soạn thảo nội dung hoặc đính kèm ít nhất 1 tệp tin minh chứng!');
       return;
     }
 
@@ -291,7 +267,7 @@ export const SubmitReportModal: React.FC<SubmitReportModalProps> = ({
     }
 
     const structuredDataPayload: any = {};
-    if (isHomeroomPeriod && homeroomData) {
+    if (isSpecificLegacyHomeroomMinutes && homeroomData) {
       structuredDataPayload.homeroomMinutes = homeroomData;
     }
     if (customFields.length > 0) {
@@ -301,12 +277,15 @@ export const SubmitReportModal: React.FC<SubmitReportModalProps> = ({
     if (customTables.length > 0) {
       structuredDataPayload.customTables = customTables;
     }
+    if (customNotes) {
+      structuredDataPayload.customNotes = customNotes;
+    }
 
     setIsSubmitting(true);
     try {
       await submitReport({
         periodId: selectedPeriodId === 'adhoc' ? 'adhoc-' + Date.now() : selectedPeriodId,
-        title,
+        title: autoTitle,
         content: finalContent,
         structuredData: Object.keys(structuredDataPayload).length > 0 ? structuredDataPayload : undefined,
         attachments,
@@ -323,14 +302,14 @@ export const SubmitReportModal: React.FC<SubmitReportModalProps> = ({
       }
 
       onClose();
-      // Reset form
-      setTitle('');
+      // Reset
       setContent('');
       setAttachments([]);
       setLateExplanation('');
       setCustomFields([]);
       setCustomTables([]);
       setCustomFieldValues({});
+      setCustomNotes('');
     } catch (e: any) {
       alert('Lỗi nộp báo cáo: ' + e.message);
     } finally {
@@ -342,49 +321,21 @@ export const SubmitReportModal: React.FC<SubmitReportModalProps> = ({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Soạn Thảo & Nộp Báo Cáo"
-      subtitle={`Người nộp: ${currentUser.name} (${currentUser.roleTitle} - ${currentUser.departmentName})`}
-      maxWidth={activeTab === 'homeroom' || activeTab === 'custom_form' ? '5xl' : '4xl'}
+      title="Nộp Báo Cáo"
+      subtitle={`Người nộp: ${currentUser.name} (${currentUser.roleTitle} - ${currentUser.departmentName}${currentUser.isHomeroomTeacher ? ` - Lớp ${currentUser.homeroomClass}` : ''})`}
+      maxWidth={isSpecificLegacyHomeroomMinutes || hasFormTemplate ? '5xl' : '4xl'}
     >
       <div className="space-y-4">
         
-        {/* Admin Guidance Banner */}
-        {(isAdmin || isPrincipal) && (
-          <div className="p-3.5 rounded-2xl bg-amber-50 border border-amber-300 text-amber-950 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-2xs">
-            <div className="flex items-start gap-2.5">
-              <School className="w-5 h-5 text-amber-700 shrink-0 mt-0.5" />
-              <div className="text-xs">
-                <div className="font-extrabold text-amber-900 text-xs sm:text-sm">
-                  Quý Thầy/Cô là Ban Giám Hiệu / Quản Trị Hệ Thống
-                </div>
-                <div className="text-[11px] text-amber-800 mt-0.5 leading-relaxed">
-                  Để <strong>tạo biểu mẫu chuẩn và ban hành yêu cầu báo cáo kèm ấn định thời hạn chót (Deadline)</strong> cho giáo viên, nhân viên nộp, vui lòng bấm vào nút bên cạnh:
-                </div>
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={() => {
-                onClose();
-                if (onOpenCreatePeriod) onOpenCreatePeriod();
-              }}
-              className="px-3.5 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-black text-xs shrink-0 shadow-xs cursor-pointer transition active:scale-98 flex items-center gap-1.5"
-            >
-              <Clock className="w-4 h-4" />
-              <span>Tạo Mẫu & Ấn Định Thời Gian</span>
-            </button>
-          </div>
-        )}
-
-        {/* Period Selector & Ad-hoc Option */}
+        {/* TOP SELECTOR & DEADLINE BANNER */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 bg-slate-50 p-3.5 rounded-2xl border border-slate-200/80">
           <div>
             <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center justify-between">
               <span>Đợt Báo Cáo / Phạm Vi Nộp <span className="text-rose-500">*</span></span>
-              {isHomeroomPeriod && (
+              {currentPeriod?.targetAudience === 'homeroom_teachers' && (
                 <span className="text-[10px] font-bold text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full flex items-center gap-1">
                   <GraduationCap className="w-3.5 h-3.5" />
-                  Mẫu Báo Cáo GVCN
+                  Dành Cho 53 GVCN
                 </span>
               )}
             </label>
@@ -402,7 +353,7 @@ export const SubmitReportModal: React.FC<SubmitReportModalProps> = ({
                 ))}
               </optgroup>
               <optgroup label="Tùy chọn tạo báo cáo độc lập">
-                <option value="adhoc">🌟 Báo cáo Đột xuất / Tự do (Tạo theo yêu cầu riêng)</option>
+                <option value="adhoc">🌟 Báo cáo Đột xuất / Tự do (Không theo đợt)</option>
               </optgroup>
             </select>
           </div>
@@ -413,7 +364,7 @@ export const SubmitReportModal: React.FC<SubmitReportModalProps> = ({
                 <Sparkles className="w-4 h-4 text-blue-600 shrink-0" />
                 <div>
                   <div className="font-bold">Báo cáo Đột xuất / Tự do</div>
-                  <div className="text-[11px] opacity-80">Báo cáo không ràng buộc thời hạn, gửi trực tiếp tới BGH và lưu trữ hồ sơ.</div>
+                  <div className="text-[11px] opacity-80">Báo cáo không ràng buộc thời hạn, gửi trực tiếp tới BGH.</div>
                 </div>
               </div>
             ) : currentPeriod ? (
@@ -438,241 +389,139 @@ export const SubmitReportModal: React.FC<SubmitReportModalProps> = ({
           </div>
         </div>
 
-        {/* Title Input */}
-        <div>
-          <label className="block text-xs font-bold text-slate-700 mb-1">
-            Tên / Tiêu Đề Báo Cáo <span className="text-rose-500">*</span>
-          </label>
-          <input
-            id="input-report-title"
-            type="text"
-            placeholder="Ví dụ: Báo cáo công tác chuyên môn tháng 9 / Biên bản tập trung học sinh đầu năm..."
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            className="w-full text-xs sm:text-sm px-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden font-medium"
-          />
-        </div>
-
-        {/* 4 MODE TABS + SMART FORM GENERATOR BUTTON */}
-        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-1">
-          <div className="flex overflow-x-auto gap-2 text-xs">
-            <button
-              type="button"
-              onClick={() => setActiveTab('text')}
-              className={`pb-2 px-3 font-bold transition flex items-center gap-1.5 whitespace-nowrap cursor-pointer ${
-                activeTab === 'text'
-                  ? 'border-b-2 border-emerald-600 text-emerald-700'
-                  : 'text-slate-500 hover:text-slate-800'
-              }`}
-            >
-              <FileText className="w-4 h-4" />
-              <span>1. Soạn Thảo Văn Bản Báo Cáo</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setActiveTab('custom_form')}
-              className={`pb-2 px-3 font-bold transition flex items-center gap-1.5 whitespace-nowrap cursor-pointer ${
-                activeTab === 'custom_form'
-                  ? 'border-b-2 border-emerald-600 text-emerald-700'
-                  : 'text-slate-500 hover:text-slate-800'
-              }`}
-            >
-              <Layers className="w-4 h-4 text-emerald-600" />
-              <span>2. Biểu Mẫu Nhập Liệu BGH</span>
-              {(customFields.length > 0 || customTables.length > 0) && (
-                <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-emerald-100 text-emerald-800 font-bold">
-                  {customFields.length + customTables.length}
-                </span>
-              )}
-            </button>
-
-            {isHomeroomPeriod && (
-              <button
-                type="button"
-                onClick={() => setActiveTab('homeroom')}
-                className={`pb-2 px-3 font-bold transition flex items-center gap-1.5 whitespace-nowrap cursor-pointer ${
-                  activeTab === 'homeroom'
-                    ? 'border-b-2 border-emerald-600 text-emerald-700'
-                    : 'text-slate-500 hover:text-slate-800'
-                }`}
-              >
-                <ClipboardList className="w-4 h-4 text-amber-600" />
-                <span>3. Biên Bản Tập Trung Học Sinh (GVCN)</span>
-              </button>
-            )}
-
-            <button
-              type="button"
-              onClick={() => setActiveTab('file')}
-              className={`pb-2 px-3 font-bold transition flex items-center gap-1.5 whitespace-nowrap cursor-pointer ${
-                activeTab === 'file'
-                  ? 'border-b-2 border-emerald-600 text-emerald-700'
-                  : 'text-slate-500 hover:text-slate-800'
-              }`}
-            >
-              <Paperclip className="w-4 h-4" />
-              <span>4. Đính Kèm Tệp ({attachments.length})</span>
-            </button>
+        {/* PRIMARY REPORT INPUT INTERFACE (AUTOMATICALLY SELECTED BASED ON PERIOD) */}
+        {isSpecificLegacyHomeroomMinutes ? (
+          /* HOMEROOM MINUTES FORM (HISTORICAL MEETING MINUTES) */
+          <div className="border border-slate-200 rounded-2xl p-1 bg-white shadow-2xs">
+            <HomeroomMeetingMinutesForm
+              currentUser={currentUser}
+              initialData={homeroomData || undefined}
+              onChange={handleHomeroomChange}
+            />
           </div>
-        </div>
-
-        {/* 1. TEXT EDITOR TAB */}
-        {activeTab === 'text' && (
-          <div className="space-y-3">
-            
-            {/* Template Selector & Quick Section Buttons */}
-            <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-2.5">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                  <BookOpen className="w-3.5 h-3.5 text-emerald-600" />
-                  <span>Áp dụng mẫu báo cáo chuẩn trường học:</span>
-                </span>
-
-                <div className="flex flex-wrap items-center gap-1.5">
-                  {OFFICIAL_REPORT_TEMPLATES.map((tpl) => (
-                    <button
-                      key={tpl.id}
-                      type="button"
-                      onClick={() => handleApplyTemplate(tpl)}
-                      className="text-[11px] font-semibold text-slate-700 hover:text-emerald-800 bg-white hover:bg-emerald-50 px-2.5 py-1 rounded-lg border border-slate-200 hover:border-emerald-300 transition cursor-pointer shadow-2xs"
-                      title={tpl.description}
-                    >
-                      {tpl.title.split('(')[0]}
-                    </button>
-                  ))}
+        ) : hasFormTemplate ? (
+          /* MULTI-SECTION DYNAMIC FORM & TABLE BUILDER (4 SECTIONS: I. INFO, II. TABLES, III. NOTES, IV. PREVIEW/WORD) */
+          <div className="border border-slate-200 rounded-2xl p-3 bg-white shadow-2xs">
+            <CustomReportFormBuilder
+              fields={customFields}
+              tables={customTables}
+              onFieldsChange={setCustomFields}
+              onTablesChange={setCustomTables}
+              fieldValues={customFieldValues}
+              onFieldValueChange={(fId, val) => setCustomFieldValues(prev => ({ ...prev, [fId]: val }))}
+              readOnlyStructure={true}
+              formTitle={currentPeriod?.title || 'Báo Cáo Biểu Mẫu Trực Tuyến'}
+              authorName={currentUser.name}
+              authorRole={currentUser.roleTitle}
+              departmentOrClass={currentUser.departmentName}
+              academicYear={currentPeriod?.academicYear || '2026 – 2027'}
+              notes={customNotes}
+              onNotesChange={setCustomNotes}
+            />
+          </div>
+        ) : (
+          /* STANDARD / SIMPLE REPORT FORM CREATED BY BGH */
+          <div className="space-y-4 bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-2xs">
+            {/* INSTRUCTIONS / REQUIREMENTS FROM BGH (PROMINENT CALLOUT) */}
+            {currentPeriod?.description ? (
+              <div className="bg-gradient-to-r from-emerald-50/90 via-teal-50/80 to-emerald-50/90 border border-emerald-200/90 rounded-2xl p-4 text-emerald-950 space-y-2 shadow-2xs">
+                <div className="flex items-center gap-2 font-bold text-xs sm:text-sm text-emerald-900">
+                  <Sparkles className="w-4 h-4 text-emerald-700 shrink-0" />
+                  <span>Yêu Cầu & Hướng Dẫn Thực Hiện Từ Ban Giám Hiệu</span>
+                </div>
+                <div className="text-xs sm:text-sm text-emerald-950/90 whitespace-pre-line leading-relaxed pl-3 border-l-2 border-emerald-500 font-normal">
+                  {currentPeriod.description}
                 </div>
               </div>
+            ) : null}
 
-              {/* Quick Section Inserts */}
-              <div className="pt-2 border-t border-slate-200/70 flex flex-wrap items-center gap-1.5">
-                <span className="text-[10px] font-bold text-slate-500 uppercase">Chèn nhanh đề mục:</span>
-                <button
-                  type="button"
-                  onClick={() => handleInsertSection('1. TÌNH HÌNH & MỤC TIÊU THỰC HIỆN:\n- ...')}
-                  className="text-[10px] font-medium bg-white hover:bg-slate-100 text-slate-700 px-2 py-0.5 rounded-md border border-slate-200 cursor-pointer"
-                >
-                  + 1. Tình hình
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleInsertSection('2. KẾT QUẢ ĐẠT ĐƯỢC & SỐ LIỆU THỐNG KÊ:\n- Tổng số: ...\n- Tỷ lệ hoàn thành: ...%')}
-                  className="text-[10px] font-medium bg-white hover:bg-slate-100 text-slate-700 px-2 py-0.5 rounded-md border border-slate-200 cursor-pointer"
-                >
-                  + 2. Kết quả số liệu
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleInsertSection('3. THUẬN LỢI & KHÓ KHĂN:\n- Thuận lợi: ...\n- Khó khăn: ...')}
-                  className="text-[10px] font-medium bg-white hover:bg-slate-100 text-slate-700 px-2 py-0.5 rounded-md border border-slate-200 cursor-pointer"
-                >
-                  + 3. Thuận lợi / Khó khăn
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleInsertSection('4. PHƯƠNG HƯỚNG & KẾ HOẠCH TIẾP THEO:\n- ...')}
-                  className="text-[10px] font-medium bg-white hover:bg-slate-100 text-slate-700 px-2 py-0.5 rounded-md border border-slate-200 cursor-pointer"
-                >
-                  + 4. Phương hướng
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleInsertSection('5. ĐỀ XUẤT, KIẾN NGHỊ VỚI BAN GIÁM HIỆU:\n- Kính đề nghị BGH xem xét: ...')}
-                  className="text-[10px] font-medium bg-white hover:bg-slate-100 text-slate-700 px-2 py-0.5 rounded-md border border-slate-200 cursor-pointer"
-                >
-                  + 5. Kiến nghị BGH
-                </button>
-              </div>
+            <div className="border-b border-slate-100 pb-2 flex items-center justify-between">
+              <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                <FileText className="w-4 h-4 text-emerald-600" />
+                <span>Nội Dung Báo Cáo</span>
+              </span>
+              <span className="text-[11px] text-slate-400">
+                {content.length} ký tự • {content.trim().split(/\s+/).filter(Boolean).length} từ
+              </span>
             </div>
 
             <div>
               <textarea
                 id="textarea-report-content"
-                rows={9}
-                placeholder="Nhập toàn bộ nội dung báo cáo, nhận xét, chỉ tiêu và số liệu chi tiết tại đây..."
+                rows={12}
+                placeholder={currentPeriod?.description ? "Nhập nội dung báo cáo chi tiết theo yêu cầu của Ban Giám Hiệu bên trên..." : "Nhập toàn bộ nội dung báo cáo, tiến độ công việc, số liệu thực hiện, thuận lợi, khó khăn và kiến nghị với BGH..."}
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
-                className="w-full text-xs sm:text-sm p-3.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden font-normal leading-relaxed font-mono"
+                className="w-full text-xs sm:text-sm p-4 rounded-xl border border-slate-300 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden font-normal leading-relaxed text-slate-800 placeholder:text-slate-400"
               />
-              <div className="flex items-center justify-between text-[11px] text-slate-400 mt-1">
-                <span>Bạn có thể kết hợp vừa soạn văn bản vừa thêm biểu mẫu số liệu ở tab 2.</span>
-                <span>{content.length} ký tự • {content.trim().split(/\s+/).filter(Boolean).length} từ</span>
-              </div>
             </div>
           </div>
         )}
 
-        {/* 2. CUSTOM FORM & DYNAMIC TABLE BUILDER TAB */}
-        {activeTab === 'custom_form' && (
-          <CustomReportFormBuilder
-            fields={customFields}
-            tables={customTables}
-            onFieldsChange={setCustomFields}
-            onTablesChange={setCustomTables}
-            fieldValues={customFieldValues}
-            onFieldValueChange={(fId, val) => setCustomFieldValues(prev => ({ ...prev, [fId]: val }))}
-            onApplyParsedTitle={(newTitle) => {
-              if (!title.trim()) setTitle(newTitle);
-            }}
-            readOnlyStructure={true}
-          />
-        )}
-
-        {/* 3. HOMEROOM MINUTES TAB */}
-        {isHomeroomPeriod && activeTab === 'homeroom' && (
-          <HomeroomMeetingMinutesForm
-            currentUser={currentUser}
-            initialData={homeroomData || undefined}
-            onChange={handleHomeroomChange}
-          />
-        )}
-
-        {/* 4. FILE ATTACHMENTS TAB */}
-        {activeTab === 'file' && (
-          <div className="space-y-3">
-            <div
-              onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
-              onDragLeave={() => setIsDragOver(false)}
-              onDrop={handleDrop}
-              onClick={() => fileInputRef.current?.click()}
-              className={`border-2 border-dashed rounded-2xl p-6 text-center cursor-pointer transition ${
-                isDragOver 
-                  ? 'border-emerald-500 bg-emerald-50/50' 
-                  : 'border-slate-300 hover:border-emerald-400 bg-slate-50/50 hover:bg-slate-50'
-              }`}
-            >
-              <input
-                ref={fileInputRef}
-                type="file"
-                multiple
-                accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip,.rar,.png,.jpg,.jpeg"
-                onChange={handleFileChange}
-                className="hidden"
-              />
-              <UploadCloud className="w-10 h-10 text-emerald-600 mx-auto mb-2" />
-              <p className="text-xs sm:text-sm font-semibold text-slate-800">
-                Kéo thả tệp vào đây hoặc <span className="text-emerald-700 underline">bấm để chọn tệp</span>
-              </p>
-              <p className="text-[11px] text-slate-400 mt-1">
-                Hỗ trợ tệp Word (.docx, .doc), Excel (.xlsx, .xls), PowerPoint, PDF, File nén (.zip, .rar), Ảnh minh chứng
-              </p>
+        {/* FILE ATTACHMENTS (COLLAPSIBLE / CONVENIENT ACCESS) */}
+        <div className="border border-slate-200 rounded-2xl bg-white p-3.5 shadow-2xs space-y-3">
+          <div 
+            onClick={() => setIsAttachmentsOpen(!isAttachmentsOpen)}
+            className="flex items-center justify-between cursor-pointer select-none"
+          >
+            <div className="flex items-center gap-2">
+              <Paperclip className="w-4 h-4 text-emerald-600" />
+              <span className="text-xs font-bold text-slate-800">
+                Đính kèm tệp minh chứng (PDF, Word, Excel, Hình ảnh...)
+              </span>
+              {attachments.length > 0 && (
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                  {attachments.length} tệp đã đính kèm
+                </span>
+              )}
             </div>
+            <button type="button" className="text-slate-400 hover:text-slate-600 p-1">
+              {isAttachmentsOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+            </button>
+          </div>
 
-            {attachments.length > 0 && (
-              <div className="space-y-2">
-                <div className="text-xs font-semibold text-slate-600">
-                  Danh sách tệp đã chọn ({attachments.length} tệp):
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          {/* Upload Area (shown when toggled open or if files already attached) */}
+          {(isAttachmentsOpen || attachments.length > 0) && (
+            <div className="space-y-3 pt-2 border-t border-slate-100">
+              <div
+                onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
+                onDragLeave={() => setIsDragOver(false)}
+                onDrop={handleDrop}
+                onClick={() => fileInputRef.current?.click()}
+                className={`border-2 border-dashed rounded-xl p-4 text-center cursor-pointer transition ${
+                  isDragOver 
+                    ? 'border-emerald-500 bg-emerald-50/50' 
+                    : 'border-slate-300 hover:border-emerald-400 bg-slate-50/50 hover:bg-slate-50'
+                }`}
+              >
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  multiple
+                  accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip,.rar,.png,.jpg,.jpeg"
+                  onChange={handleFileChange}
+                  className="hidden"
+                />
+                <UploadCloud className="w-6 h-6 text-emerald-600 mx-auto mb-1" />
+                <p className="text-xs font-semibold text-slate-800">
+                  Kéo thả tệp vào đây hoặc <span className="text-emerald-700 underline">bấm để chọn tệp</span>
+                </p>
+                <p className="text-[10px] text-slate-400 mt-0.5">
+                  Hỗ trợ tệp Word (.docx, .doc), Excel (.xlsx, .xls), PDF, PowerPoint, Ảnh minh chứng
+                </p>
+              </div>
+
+              {attachments.length > 0 && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
                   {attachments.map((att) => (
                     <div
                       key={att.id}
-                      className="flex items-center justify-between p-2.5 rounded-xl border border-slate-200 bg-white shadow-2xs"
+                      className="flex items-center justify-between p-2 rounded-xl border border-slate-200 bg-slate-50 shadow-2xs"
                     >
                       <div className="flex items-center gap-2 min-w-0">
                         {getFileIcon(att.name)}
                         <div className="min-w-0">
-                          <div className="text-xs font-bold text-slate-800 truncate max-w-[170px]" title={att.name}>
+                          <div className="text-xs font-bold text-slate-800 truncate max-w-[200px]" title={att.name}>
                             {att.name}
                           </div>
                           <div className="text-[10px] text-slate-400">
@@ -683,39 +532,39 @@ export const SubmitReportModal: React.FC<SubmitReportModalProps> = ({
                       <button
                         type="button"
                         onClick={(e) => { e.stopPropagation(); removeAttachment(att.id); }}
-                        className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer"
+                        className="p-1 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer"
                         title="Xóa tệp"
                       >
-                        <Trash2 className="w-4 h-4" />
+                        <Trash2 className="w-3.5 h-3.5" />
                       </button>
                     </div>
                   ))}
                 </div>
-              </div>
-            )}
-          </div>
-        )}
+              )}
+            </div>
+          )}
+        </div>
 
-        {/* Late explanation box if past deadline */}
+        {/* LATE EXPLANATION IF PAST DEADLINE */}
         {isPastDeadline && (
-          <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 space-y-1">
+          <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200 space-y-1.5 shadow-2xs">
             <label className="text-xs font-bold text-amber-900 flex items-center gap-1.5">
               <AlertTriangle className="w-4 h-4 text-amber-700" />
-              <span>Giải trình lý do nộp trễ hạn:</span>
+              <span>Giải trình lý do nộp trễ hạn <span className="text-rose-500">*</span>:</span>
             </label>
             <input
               id="input-late-explanation"
               type="text"
-              placeholder="Ví dụ: Sự cố đường truyền, bận công tác kiểm tra đột xuất..."
+              placeholder="Ví dụ: Sự cố đường truyền mạng, hoàn tất hồ sơ phối hợp phụ huynh đột xuất..."
               value={lateExplanation}
               onChange={(e) => setLateExplanation(e.target.value)}
-              className="w-full text-xs px-3 py-2 rounded-xl bg-white border border-amber-300 focus:ring-2 focus:ring-amber-500 focus:outline-hidden"
+              className="w-full text-xs px-3 py-2 rounded-xl bg-white border border-amber-300 focus:ring-2 focus:ring-amber-500 focus:outline-hidden font-medium"
             />
           </div>
         )}
 
-        {/* Footer actions */}
-        <div className="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3">
+        {/* FOOTER ACTION BUTTONS */}
+        <div className="pt-3 border-t border-slate-200 flex flex-wrap items-center justify-between gap-3">
           <button
             type="button"
             onClick={onClose}
@@ -740,23 +589,15 @@ export const SubmitReportModal: React.FC<SubmitReportModalProps> = ({
               id="btn-submit-report-modal"
               disabled={isSubmitting}
               onClick={() => handleSubmit(false)}
-              className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-2 shadow-xs transition active:scale-98 cursor-pointer"
+              className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-2 shadow-xs transition active:scale-98 cursor-pointer"
             >
               <Send className="w-4 h-4" />
-              <span>{isSubmitting ? 'Đang gửi...' : 'Gửi Báo Cáo Lên Ban Giám Hiệu'}</span>
+              <span>{isSubmitting ? 'Đang gửi...' : 'Gửi Báo Cáo'}</span>
             </button>
           </div>
         </div>
 
       </div>
-
-      {/* Smart Form Parser Modal from File (.docx, .txt, .md) */}
-      <ImportFormFromDocModal
-        isOpen={isImportModalOpen}
-        onClose={() => setIsImportModalOpen(false)}
-        onApplyParsedForm={handleApplyParsedForm}
-        mode="fill_submission"
-      />
     </Modal>
   );
 };

@@ -119,15 +119,23 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             let hasNewCreds = false;
             credsSnap.docs.forEach(docSnap => {
               const data = docSnap.data();
-              if (data && data.password && (!localCreds[docSnap.id] || localCreds[docSnap.id].password !== data.password)) {
-                localCreds[docSnap.id] = {
-                  userId: docSnap.id,
-                  password: data.password,
-                  hasChangedPassword: data.hasChangedPassword ?? true,
-                  mustChangePassword: data.mustChangePassword ?? false,
-                  updatedAt: data.updatedAt || new Date().toISOString()
-                };
-                hasNewCreds = true;
+              if (data && data.password) {
+                if (data.hasChangedPassword) {
+                  try {
+                    localStorage.setItem(`dbk_pwd_changed_${docSnap.id}`, 'true');
+                    localStorage.setItem(`dbk_pwd_dismissed_${docSnap.id}`, 'true');
+                  } catch {}
+                }
+                if (!localCreds[docSnap.id] || localCreds[docSnap.id].password !== data.password) {
+                  localCreds[docSnap.id] = {
+                    userId: docSnap.id,
+                    password: data.password,
+                    hasChangedPassword: data.hasChangedPassword ?? true,
+                    mustChangePassword: data.mustChangePassword ?? false,
+                    updatedAt: data.updatedAt || new Date().toISOString()
+                  };
+                  hasNewCreds = true;
+                }
               }
             });
             if (hasNewCreds) {
@@ -207,6 +215,11 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         unsubscribePeriods = onSnapshot(collection(db, 'periods'), (snapshot) => {
           if (!snapshot.empty) {
             const list: ReportPeriod[] = snapshot.docs.map(d => d.data() as ReportPeriod);
+            list.sort((a, b) => {
+              if (a.status === 'active' && b.status !== 'active') return -1;
+              if (a.status !== 'active' && b.status === 'active') return 1;
+              return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
+            });
             setPeriods(list);
             setLocal('dbk_periods_data', list);
           } else {

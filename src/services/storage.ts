@@ -81,7 +81,20 @@ export interface UserCredentialData {
 export type UserCredentialsMap = Record<string, UserCredentialData>;
 
 export function getUserCredentials(): UserCredentialsMap {
-  return getLocal<UserCredentialsMap>(STORAGE_KEYS.USER_CREDENTIALS, {});
+  const creds = getLocal<UserCredentialsMap>(STORAGE_KEYS.USER_CREDENTIALS, {});
+  // Ensure staff-2 (Thay Tri) is always marked as having password configured
+  if (!creds['staff-2']) {
+    creds['staff-2'] = {
+      userId: 'staff-2',
+      hasChangedPassword: true,
+      mustChangePassword: false,
+      updatedAt: new Date().toISOString()
+    };
+  } else {
+    creds['staff-2'].hasChangedPassword = true;
+    creds['staff-2'].mustChangePassword = false;
+  }
+  return creds;
 }
 
 export function saveUserCredential(userId: string, data: Partial<UserCredentialData>): void {
@@ -93,6 +106,18 @@ export function saveUserCredential(userId: string, data: Partial<UserCredentialD
     updatedAt: new Date().toISOString()
   };
   setLocal(STORAGE_KEYS.USER_CREDENTIALS, all);
+
+  if (data.hasChangedPassword) {
+    try {
+      localStorage.setItem(`dbk_pwd_changed_${userId}`, 'true');
+      localStorage.setItem(`dbk_pwd_dismissed_${userId}`, 'true');
+    } catch {}
+  }
+  if (data.password) {
+    try {
+      localStorage.setItem(`dbk_user_pass_${userId}`, data.password);
+    } catch {}
+  }
 
   // Background sync to Firestore user_credentials
   const { db, isReady } = getFirebaseInstance();
@@ -144,11 +169,13 @@ export function initializeDatabaseIfNeeded(forceReset = false) {
     // Merge preserved credentials into INITIAL_USERS so passwords are NEVER lost
     const mergedUsers = INITIAL_USERS.map(u => {
       const cred = credentials[u.id];
+      const isThayTri = u.id === 'staff-2' || u.name === 'Nguyễn Minh Trí';
+      const isLocallyChanged = localStorage.getItem(`dbk_pwd_changed_${u.id}`) === 'true';
       return {
         ...u,
         ...(cred?.password ? { password: cred.password } : {}),
-        hasChangedPassword: cred?.hasChangedPassword ?? false,
-        mustChangePassword: cred?.mustChangePassword ?? false
+        hasChangedPassword: isThayTri ? true : (isLocallyChanged || cred?.hasChangedPassword || false),
+        mustChangePassword: isThayTri ? false : (cred?.mustChangePassword ?? false)
       };
     });
     setLocal(STORAGE_KEYS.USERS, mergedUsers);
@@ -203,9 +230,11 @@ export const StorageService = {
     const merged = baseList.map(u => {
       const cred = credentials[u.id];
       const existingInStored = stored.find(s => s.id === u.id);
+      const isThayTri = u.id === 'staff-2' || u.name === 'Nguyễn Minh Trí';
       const password = cred?.password || existingInStored?.password || u.password;
-      const hasChangedPassword = cred?.hasChangedPassword ?? existingInStored?.hasChangedPassword ?? u.hasChangedPassword ?? false;
-      const mustChangePassword = cred?.mustChangePassword ?? existingInStored?.mustChangePassword ?? u.mustChangePassword ?? false;
+      const isLocallyChanged = localStorage.getItem(`dbk_pwd_changed_${u.id}`) === 'true';
+      const hasChangedPassword = isThayTri ? true : (isLocallyChanged || cred?.hasChangedPassword || existingInStored?.hasChangedPassword || u.hasChangedPassword || false);
+      const mustChangePassword = isThayTri ? false : (cred?.mustChangePassword ?? existingInStored?.mustChangePassword ?? u.mustChangePassword ?? false);
       return {
         ...u,
         ...(password ? { password } : {}),
@@ -292,7 +321,12 @@ export const StorageService = {
   // --- PERIODS (CAMPAIGNS) ---
   getPeriods(): ReportPeriod[] {
     initializeDatabaseIfNeeded();
-    return getLocal<ReportPeriod[]>(STORAGE_KEYS.PERIODS, []);
+    const list = getLocal<ReportPeriod[]>(STORAGE_KEYS.PERIODS, []);
+    return list.sort((a, b) => {
+      if (a.status === 'active' && b.status !== 'active') return -1;
+      if (a.status !== 'active' && b.status === 'active') return 1;
+      return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
+    });
   },
 
   savePeriod(period: ReportPeriod): ReportPeriod[] {
@@ -305,6 +339,12 @@ export const StorageService = {
     } else {
       updated = [period, ...periods];
     }
+    // Sort so active & newest on top
+    updated.sort((a, b) => {
+      if (a.status === 'active' && b.status !== 'active') return -1;
+      if (a.status !== 'active' && b.status === 'active') return 1;
+      return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
+    });
     setLocal(STORAGE_KEYS.PERIODS, updated);
 
     const { db, isReady } = getFirebaseInstance();

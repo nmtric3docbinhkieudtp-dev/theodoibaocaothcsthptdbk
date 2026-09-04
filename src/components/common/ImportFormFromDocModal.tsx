@@ -15,7 +15,7 @@ import {
   ArrowRight,
   HelpCircle
 } from 'lucide-react';
-import { extractTextFromFile, parseFormContent, ParsedTemplateResult } from '../../utils/formFileParser';
+import { extractTextFromFile, parseFormContent, parseTemplateFile, ParsedTemplateResult } from '../../utils/formFileParser';
 import { CustomFormField, CustomDynamicTable, ReportPeriod, TargetAudienceType } from '../../types';
 
 interface ImportFormFromDocModalProps {
@@ -65,11 +65,7 @@ export const ImportFormFromDocModal: React.FC<ImportFormFromDocModalProps> = ({
     setFileSize(file.size);
 
     try {
-      const text = await extractTextFromFile(file);
-      if (!text || text.trim().length === 0) {
-        throw new Error('Tệp không có nội dung văn bản hoặc không thể đọc định dạng này.');
-      }
-      const result = parseFormContent(text, file.name);
+      const result = await parseTemplateFile(file);
       setParsedResult(result);
       if (result.recommendedAudience) {
         setTargetAudience(result.recommendedAudience);

@@ -26,7 +26,7 @@ import {
   CustomFormField, 
   CustomDynamicTable 
 } from '../../types';
-import { extractTextFromFile, parseFormContent, ParsedTemplateResult } from '../../utils/formFileParser';
+import { extractTextFromFile, parseFormContent, parseTemplateFile, ParsedTemplateResult } from '../../utils/formFileParser';
 
 interface CreatePeriodModalProps {
   isOpen: boolean;
@@ -48,6 +48,7 @@ export const CreatePeriodModal: React.FC<CreatePeriodModalProps> = ({
   // Basic info
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
+  const [defaultTemplateContent, setDefaultTemplateContent] = useState('');
   const [academicYear, setAcademicYear] = useState('2026-2027');
   const [semester, setSemester] = useState<'HK1' | 'HK2' | 'Ca_Nam'>('HK1');
   const [reportType, setReportType] = useState<ReportType>('hybrid');
@@ -108,6 +109,7 @@ export const CreatePeriodModal: React.FC<CreatePeriodModalProps> = ({
     if (editingPeriod) {
       setTitle(editingPeriod.title);
       setDescription(editingPeriod.description || '');
+      setDefaultTemplateContent(editingPeriod.defaultTemplateContent || '');
       setAcademicYear(editingPeriod.academicYear || '2026-2027');
       setSemester(editingPeriod.semester as any || 'HK1');
       setReportType(editingPeriod.reportType || 'hybrid');
@@ -129,6 +131,7 @@ export const CreatePeriodModal: React.FC<CreatePeriodModalProps> = ({
       // Fresh new period
       setTitle('');
       setDescription('');
+      setDefaultTemplateContent('');
       setAcademicYear('2026-2027');
       setSemester('HK1');
       setReportType('hybrid');
@@ -151,14 +154,7 @@ export const CreatePeriodModal: React.FC<CreatePeriodModalProps> = ({
     setParseFileName(file.name);
 
     try {
-      const rawText = await extractTextFromFile(file);
-      if (!rawText.trim()) {
-        alert('Tệp trống hoặc không thể đọc nội dung văn bản.');
-        setIsParsingFile(false);
-        return;
-      }
-
-      const parsed: ParsedTemplateResult = parseFormContent(rawText, file.name);
+      const parsed: ParsedTemplateResult = await parseTemplateFile(file);
 
       // If title is currently empty, take the parsed title
       if (!title.trim() && parsed.title) {
@@ -263,7 +259,7 @@ export const CreatePeriodModal: React.FC<CreatePeriodModalProps> = ({
         targetDepartmentIds: selectedDepts,
         status: isPast ? 'closed' : 'active',
         formTemplate: importedTemplate || editingPeriod.formTemplate,
-        defaultTemplateContent: importedTemplate?.defaultTemplateContent || editingPeriod.defaultTemplateContent
+        defaultTemplateContent: defaultTemplateContent || importedTemplate?.defaultTemplateContent || editingPeriod.defaultTemplateContent
       });
       if (onSuccess) onSuccess(title);
     } else {
@@ -281,7 +277,7 @@ export const CreatePeriodModal: React.FC<CreatePeriodModalProps> = ({
         targetRoles: ['teacher', 'dept_head'],
         status: isPast ? 'closed' : 'active',
         createdBy: 'Ban Giám Hiệu',
-        defaultTemplateContent: importedTemplate?.defaultTemplateContent,
+        defaultTemplateContent: defaultTemplateContent || importedTemplate?.defaultTemplateContent || undefined,
         formTemplate: importedTemplate || undefined
       });
       if (onSuccess) onSuccess(title);
@@ -638,17 +634,34 @@ export const CreatePeriodModal: React.FC<CreatePeriodModalProps> = ({
         </div>
 
         {/* 5. Description & Instructions */}
-        <div>
-          <label className="block text-xs font-bold text-slate-700 mb-1">
-            Mô Tả & Hướng Dẫn Thực Hiện
-          </label>
-          <textarea
-            rows={2}
-            placeholder="Nêu rõ yêu cầu nội dung cần báo cáo, các quy định lưu ý cho Thầy/Cô khi điền..."
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            className="w-full text-xs p-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-emerald-500"
-          />
+        <div className="space-y-3">
+          <div>
+            <label className="block text-xs font-bold text-slate-700 mb-1">
+              Mô Tả & Hướng Dẫn Thực Hiện Của Ban Giám Hiệu
+            </label>
+            <textarea
+              rows={2}
+              placeholder="Nêu rõ yêu cầu nội dung cần báo cáo, các quy định lưu ý cho Thầy/Cô khi điền..."
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              className="w-full text-xs p-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-emerald-500"
+            />
+          </div>
+
+          {/* Optional Starter Outline / Template Content for Teachers */}
+          <div>
+            <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center justify-between">
+              <span>Khung Sườn / Mẫu Soạn Sẵn Gợi Ý Cho Giáo Viên (Tùy chọn)</span>
+              <span className="text-[10px] text-slate-400 font-normal">Sẽ tự động hiển thị trong khung soạn thảo khi giáo viên mở nộp</span>
+            </label>
+            <textarea
+              rows={3}
+              placeholder="Ví dụ:&#10;1. Thuận lợi, khó khăn trong tuần/tháng:&#10;2. Danh sách học sinh cần quan tâm:&#10;3. Kiến nghị, đề xuất với Ban Giám Hiệu:"
+              value={defaultTemplateContent}
+              onChange={(e) => setDefaultTemplateContent(e.target.value)}
+              className="w-full text-xs p-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-emerald-500 font-mono text-[11px]"
+            />
+          </div>
         </div>
 
         {/* 6. Academic Year & Semester */}

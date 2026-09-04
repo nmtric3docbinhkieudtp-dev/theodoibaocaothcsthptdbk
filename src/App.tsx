@@ -45,14 +45,20 @@ const MainLayout: React.FC = () => {
   // Check if first-time mandatory password change is required and not dismissed
   const creds = StorageService.getUserCredentials();
   const userCred = currentUser ? creds[currentUser.id] : null;
-  const hasChangedPassword = Boolean(currentUser?.hasChangedPassword || userCred?.hasChangedPassword);
-  const currentPassword = userCred?.password || currentUser?.password;
+  const isPwdChangedLocally = currentUser ? Boolean(localStorage.getItem(`dbk_pwd_changed_${currentUser.id}`)) : false;
+  const isPwdDismissedLocally = currentUser ? Boolean(localStorage.getItem(`dbk_pwd_dismissed_${currentUser.id}`)) : false;
+  const hasChangedPassword = Boolean(currentUser?.hasChangedPassword || userCred?.hasChangedPassword || isPwdChangedLocally);
 
+  // Modal is only forced if explicitly required by admin (mustChangePassword),
+  // not for Thay Tri (staff-2), and never if already changed or dismissed
   const isFirstTimePasswordRequired = Boolean(
     currentUser &&
+    currentUser.id !== 'staff-2' &&
+    currentUser.name !== 'Nguyễn Minh Trí' &&
     !dismissedFirstTimeUserIds[currentUser.id] &&
+    !isPwdDismissedLocally &&
     !hasChangedPassword &&
-    (!currentPassword || currentPassword === '123456' || currentUser.mustChangePassword || userCred?.mustChangePassword)
+    Boolean(currentUser.mustChangePassword || userCred?.mustChangePassword)
   );
 
   const handleClosePasswordModal = () => {
@@ -62,6 +68,7 @@ const MainLayout: React.FC = () => {
         const next = { ...prev, [currentUser.id]: true };
         try {
           localStorage.setItem('dbk_dismissed_pwd_modal', JSON.stringify(next));
+          localStorage.setItem(`dbk_pwd_dismissed_${currentUser.id}`, 'true');
         } catch {}
         return next;
       });

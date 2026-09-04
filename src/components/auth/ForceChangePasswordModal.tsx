@@ -77,6 +77,9 @@ export const ForceChangePasswordModal: React.FC<ForceChangePasswordModalProps> =
     try {
       const ok = changePassword(cleanNew);
       if (ok) {
+        localStorage.setItem(`dbk_pwd_changed_${currentUser.id}`, 'true');
+        localStorage.setItem(`dbk_pwd_dismissed_${currentUser.id}`, 'true');
+        localStorage.setItem(`dbk_user_pass_${currentUser.id}`, cleanNew);
         setSuccessMsg('Đổi mật khẩu thành công! Mật khẩu cá nhân của Thầy/Cô đã được kích hoạt an toàn.');
         setTimeout(() => {
           if (onClose) onClose();
@@ -91,6 +94,11 @@ export const ForceChangePasswordModal: React.FC<ForceChangePasswordModalProps> =
     }
   };
 
+  const handleDismiss = () => {
+    localStorage.setItem(`dbk_pwd_dismissed_${currentUser.id}`, 'true');
+    if (onClose) onClose();
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-xs animate-fadeIn">
       <div className="w-full max-w-lg bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden text-slate-900 relative">
@@ -101,7 +109,7 @@ export const ForceChangePasswordModal: React.FC<ForceChangePasswordModalProps> =
           {onClose && (
             <button
               type="button"
-              onClick={onClose}
+              onClick={handleDismiss}
               className="absolute top-4 right-4 p-2 rounded-full bg-black/20 hover:bg-black/40 text-white/90 hover:text-white transition cursor-pointer z-10"
               title="Đóng / Để sau"
               aria-label="Đóng cửa sổ đổi mật khẩu"
@@ -235,7 +243,7 @@ export const ForceChangePasswordModal: React.FC<ForceChangePasswordModalProps> =
               {onClose && (
                 <button
                   type="button"
-                  onClick={onClose}
+                  onClick={handleDismiss}
                   className="px-4 py-2.5 rounded-xl border border-slate-300 text-slate-700 font-bold text-xs hover:bg-slate-100 transition cursor-pointer"
                 >
                   Để sau
