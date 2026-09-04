@@ -21,7 +21,8 @@ import {
   School,
   RefreshCw,
   FolderX,
-  UploadCloud
+  UploadCloud,
+  FileSpreadsheet
 } from 'lucide-react';
 import { ReportPeriod, ReportType, UserRole, TargetAudienceType, PeriodFormTemplate } from '../../types';
 import { getAudienceLabel, getRequiredUsersForPeriod } from '../../utils/reportFilters';
@@ -29,10 +30,12 @@ import { CreatePeriodModal } from './CreatePeriodModal';
 
 interface PeriodManagementProps {
   onOpenSubmit: (periodId?: string) => void;
+  onOpenConsolidation?: (periodId?: string) => void;
 }
 
 export const PeriodManagement: React.FC<PeriodManagementProps> = ({
-  onOpenSubmit
+  onOpenSubmit,
+  onOpenConsolidation
 }) => {
   const { isPrincipal, isAdmin, canManagePeriods, allUsers = [] } = useAuth();
   const { 
@@ -173,6 +176,19 @@ export const PeriodManagement: React.FC<PeriodManagementProps> = ({
               <GraduationCap className="w-4 h-4" />
               <span>Tạo Đợt Báo Cáo GVCN (53 Lớp)</span>
             </button>
+
+            {onOpenConsolidation && (
+              <button
+                id="btn-open-consolidation-top"
+                type="button"
+                onClick={() => onOpenConsolidation('all')}
+                className="px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs flex items-center gap-1.5 shadow-xs transition active:scale-98 cursor-pointer"
+                title="Tổng hợp chi tiết kết quả báo cáo của 53 lớp / toàn trường"
+              >
+                <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
+                <span>Tổng Hợp Số Liệu 53 Lớp</span>
+              </button>
+            )}
 
             <button
               id="btn-create-period"
@@ -331,13 +347,27 @@ export const PeriodManagement: React.FC<PeriodManagementProps> = ({
 
                 {/* Actions Footer */}
                 <div className="mt-4 pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2">
-                  <button
-                    onClick={() => onOpenSubmit(period.id)}
-                    className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-1 cursor-pointer"
-                  >
-                    <Send className="w-3.5 h-3.5" />
-                    <span>Nộp báo cáo</span>
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => onOpenSubmit(period.id)}
+                      className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-1 cursor-pointer"
+                    >
+                      <Send className="w-3.5 h-3.5" />
+                      <span>Nộp báo cáo</span>
+                    </button>
+
+                    {onOpenConsolidation && (
+                      <button
+                        type="button"
+                        onClick={() => onOpenConsolidation(period.id)}
+                        className="px-3 py-1.5 rounded-lg bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-200 text-xs font-bold flex items-center gap-1 cursor-pointer"
+                        title="Tổng hợp chi tiết kết quả báo cáo của đợt này"
+                      >
+                        <FileSpreadsheet className="w-3.5 h-3.5 text-teal-700" />
+                        <span>Tổng Hợp Số Liệu</span>
+                      </button>
+                    )}
+                  </div>
 
                   <div className="flex items-center gap-1.5">
                     <button

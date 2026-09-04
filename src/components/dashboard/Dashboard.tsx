@@ -19,7 +19,8 @@ import {
   GraduationCap,
   School,
   Users,
-  Plus
+  Plus,
+  FileSpreadsheet
 } from 'lucide-react';
 import { ReportPeriod, ReportSubmission } from '../../types';
 import { isUserEligibleForPeriod, getAudienceLabel } from '../../utils/reportFilters';
@@ -28,6 +29,7 @@ interface DashboardProps {
   onOpenSubmit: (periodId?: string) => void;
   onOpenCreatePeriod?: () => void;
   onOpenReportDetail: (submission: ReportSubmission) => void;
+  onOpenConsolidation?: (periodId?: string) => void;
   onNavigate?: (tab: any) => void;
   onNavigateTab?: (tab: any) => void;
 }
@@ -36,6 +38,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
   onOpenSubmit,
   onOpenCreatePeriod,
   onOpenReportDetail,
+  onOpenConsolidation,
   onNavigate,
   onNavigateTab
 }) => {
@@ -129,14 +132,28 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
           <div className="flex flex-wrap items-center gap-3">
             {isAdmin || isPrincipal ? (
-              <button
-                id="btn-dash-create-period"
-                onClick={onOpenCreatePeriod || (() => handleNav('periods'))}
-                className="px-4 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs sm:text-sm flex items-center gap-2 shadow-md hover:shadow-lg transition active:scale-98 cursor-pointer ring-2 ring-amber-300/40"
-              >
-                <Plus className="w-4 h-4" />
-                <span>Ban Hành Yêu Cầu & Đặt Deadline</span>
-              </button>
+              <>
+                <button
+                  id="btn-dash-create-period"
+                  onClick={onOpenCreatePeriod || (() => handleNav('periods'))}
+                  className="px-4 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs sm:text-sm flex items-center gap-2 shadow-md hover:shadow-lg transition active:scale-98 cursor-pointer ring-2 ring-amber-300/40"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Ban Hành Yêu Cầu & Đặt Deadline</span>
+                </button>
+
+                {onOpenConsolidation && (
+                  <button
+                    id="btn-dash-consolidation"
+                    onClick={() => onOpenConsolidation()}
+                    className="px-4 py-2.5 rounded-xl bg-teal-400 hover:bg-teal-300 text-slate-950 font-black text-xs sm:text-sm flex items-center gap-2 shadow-md hover:shadow-lg transition active:scale-98 cursor-pointer ring-2 ring-teal-300/40"
+                    title="Xem bảng tổng hợp danh sách học sinh chưa ra lớp, sĩ số 53 lớp và xuất Excel/Word"
+                  >
+                    <FileSpreadsheet className="w-4 h-4" />
+                    <span>Tổng Hợp Số Liệu 53 Lớp</span>
+                  </button>
+                )}
+              </>
             ) : (
               <button
                 id="btn-dash-submit-report"

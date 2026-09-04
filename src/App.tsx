@@ -15,6 +15,7 @@ import { SubmitReportModal } from './components/reports/SubmitReportModal';
 import { ReportDetailModal } from './components/reports/ReportDetailModal';
 import { ForceChangePasswordModal } from './components/auth/ForceChangePasswordModal';
 import { CreatePeriodModal } from './components/periods/CreatePeriodModal';
+import { PeriodConsolidationModal } from './components/reports/PeriodConsolidationModal';
 import { StorageService } from './services/storage';
 import { ReportSubmission } from './types';
 
@@ -24,6 +25,8 @@ const MainLayout: React.FC = () => {
   const [isSubmitModalOpen, setIsSubmitModalOpen] = useState(false);
   const [isCreatePeriodModalOpen, setIsCreatePeriodModalOpen] = useState(false);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [isConsolidationModalOpen, setIsConsolidationModalOpen] = useState(false);
+  const [consolidationPeriodId, setConsolidationPeriodId] = useState<string | undefined>(undefined);
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
   const [dismissedFirstTimeUserIds, setDismissedFirstTimeUserIds] = useState<Record<string, boolean>>(() => {
     try {
@@ -89,6 +92,11 @@ const MainLayout: React.FC = () => {
     setIsDetailModalOpen(true);
   };
 
+  const handleOpenConsolidation = (periodId?: string) => {
+    setConsolidationPeriodId(periodId);
+    setIsConsolidationModalOpen(true);
+  };
+
   const handleNavigate = (tab: NavTab) => {
     if (tab === 'submit') {
       if (isAdmin || isPrincipal) {
@@ -132,6 +140,7 @@ const MainLayout: React.FC = () => {
               onOpenSubmit={(periodId) => handleOpenSubmit(periodId)}
               onOpenCreatePeriod={handleOpenCreatePeriod}
               onOpenReportDetail={handleOpenReportDetail}
+              onOpenConsolidation={handleOpenConsolidation}
               onNavigate={handleNavigate}
             />
           )}
@@ -140,6 +149,7 @@ const MainLayout: React.FC = () => {
             <ReportList
               onOpenSubmit={() => handleOpenSubmit()}
               onOpenDetail={handleOpenReportDetail}
+              onOpenConsolidation={() => handleOpenConsolidation()}
             />
           )}
 
@@ -152,6 +162,7 @@ const MainLayout: React.FC = () => {
           {activeView === 'periods' && (
             <PeriodManagement
               onOpenSubmit={(periodId) => handleOpenSubmit(periodId)}
+              onOpenConsolidation={handleOpenConsolidation}
             />
           )}
 
@@ -166,7 +177,9 @@ const MainLayout: React.FC = () => {
           )}
 
           {activeView === 'export' && (
-            <AdminReportsExport />
+            <AdminReportsExport
+              onOpenConsolidation={handleOpenConsolidation}
+            />
           )}
         </main>
       </div>
@@ -195,6 +208,16 @@ const MainLayout: React.FC = () => {
           setSelectedSubmission(null);
         }}
         submission={selectedSubmission}
+      />
+
+      {/* Period Consolidation & 53 Homeroom Classes Full Dashboard Modal */}
+      <PeriodConsolidationModal
+        isOpen={isConsolidationModalOpen}
+        onClose={() => {
+          setIsConsolidationModalOpen(false);
+          setConsolidationPeriodId(undefined);
+        }}
+        defaultPeriodId={consolidationPeriodId}
       />
 
       {/* Mandatory First-Time or Manual Password Change Modal */}

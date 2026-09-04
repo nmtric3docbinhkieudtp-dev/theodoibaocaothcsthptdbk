@@ -31,12 +31,14 @@ interface ReportListProps {
   onOpenReportDetail?: (submission: ReportSubmission) => void;
   onOpenDetail?: (submission: ReportSubmission) => void;
   onOpenSubmit: (periodId?: string) => void;
+  onOpenConsolidation?: () => void;
 }
 
 export const ReportList: React.FC<ReportListProps> = ({
   onOpenReportDetail,
   onOpenDetail,
-  onOpenSubmit
+  onOpenSubmit,
+  onOpenConsolidation
 }) => {
   const handleDetail = (sub: ReportSubmission) => {
     if (onOpenDetail) onOpenDetail(sub);
@@ -247,6 +249,18 @@ export const ReportList: React.FC<ReportListProps> = ({
               <LayoutGrid className="w-4 h-4" />
             </button>
           </div>
+
+          {onOpenConsolidation && (
+            <button
+              type="button"
+              onClick={onOpenConsolidation}
+              className="px-3.5 py-2 rounded-xl bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-300 font-bold text-xs flex items-center gap-1.5 transition cursor-pointer shadow-2xs"
+              title="Tổng hợp chi tiết kết quả báo cáo của 53 lớp / toàn trường"
+            >
+              <FileSpreadsheet className="w-3.5 h-3.5 text-teal-700" />
+              <span>Tổng Hợp Số Liệu 53 Lớp</span>
+            </button>
+          )}
 
           <button
             onClick={() => onOpenSubmit()}

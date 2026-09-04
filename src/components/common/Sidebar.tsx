@@ -147,8 +147,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
     },
     {
       id: 'export',
-      label: 'Xuất Báo Cáo Tổng Hợp',
-      icon: FileSpreadsheet
+      label: 'Tổng Hợp & Xuất 53 Lớp',
+      icon: FileSpreadsheet,
+      badge: '53 Lớp',
+      badgeColor: 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
     }
   ];
 
