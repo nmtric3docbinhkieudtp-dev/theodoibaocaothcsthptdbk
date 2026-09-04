@@ -5,7 +5,9 @@ import {
   HomeroomMeetingMinutesData, 
   AbsentStudentItem, 
   TalentAchievementItem, 
-  ClassCadreItem 
+  ClassCadreItem,
+  CustomFormField,
+  CustomDynamicTable
 } from '../types';
 import { HOMEROOM_ROSTER_53 } from '../data/staffRoster';
 
@@ -76,25 +78,67 @@ export interface ConsolidatedFeedback {
   notes: string;
 }
 
+export interface ConsolidatedDynamicTableRow {
+  stt: number;
+  className: string;
+  campus: string;
+  grade: number;
+  authorName: string;
+  departmentName: string;
+  submittedAt: string;
+  submissionId: string;
+  data: Record<string, string>;
+}
+
 export interface ConsolidatedDynamicTable {
   id: string;
   title: string;
   headers: string[];
-  rows: Array<{
-    stt: number;
-    authorName: string;
-    className: string;
-    departmentName: string;
-    data: Record<string, string>;
-  }>;
+  rows: ConsolidatedDynamicTableRow[];
+  totalRows: number;
+  classesCount: number;
+}
+
+export interface ConsolidatedFieldColumn {
+  id: string;
+  label: string;
+  type: string;
+}
+
+export interface ConsolidatedFieldRow {
+  stt: number;
+  className: string;
+  campus: string;
+  grade: number;
+  authorName: string;
+  departmentName: string;
+  submittedAt: string | null;
+  values: Record<string, any>;
+  hasSubmitted: boolean;
+}
+
+export interface ConsolidatedFieldMatrix {
+  columns: ConsolidatedFieldColumn[];
+  rows: ConsolidatedFieldRow[];
+  numericTotals: Record<string, number>;
 }
 
 export interface PeriodConsolidationResult {
   period: ReportPeriod | null;
+  periodTitle: string;
+  targetAudienceLabel: string;
   totalHomeroomClasses: number;
   submittedCount: number;
   pendingCount: number;
   completionRate: number;
+
+  // Primary dynamic table & all dynamic tables
+  primaryTable: ConsolidatedDynamicTable | null;
+  dynamicTables: ConsolidatedDynamicTable[];
+  totalDynamicRows: number;
+
+  // Dynamic field matrix
+  fieldMatrix: ConsolidatedFieldMatrix;
 
   // Aggregate totals
   totalEnrolledStudents: number;
@@ -104,13 +148,72 @@ export interface PeriodConsolidationResult {
   totalAbsentStudents: number;
   overallAttendanceRate: number;
 
-  // Data sets
+  // Homeroom & meeting specifics
   classStats: ConsolidatedClassStat[];
   absentStudents: ConsolidatedStudent[];
   talents: ConsolidatedTalent[];
   cadres: ConsolidatedCadre[];
   feedbacks: ConsolidatedFeedback[];
-  dynamicTables: ConsolidatedDynamicTable[];
+}
+
+/**
+ * Trích xuất bảng Markdown từ văn bản tự do nếu GVCN gõ dạng Markdown table
+ */
+function extractMarkdownTablesFromText(text: string): Array<{ title: string; headers: string[]; rows: Record<string, string>[] }> {
+  if (!text || !text.includes('|')) return [];
+  const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+  const result: Array<{ title: string; headers: string[]; rows: Record<string, string>[] }> = [];
+
+  let currentTitle = 'Bảng dữ liệu trích xuất từ nội dung';
+  let tableLines: string[] = [];
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (line.startsWith('#') || (line.endsWith(':') && !line.includes('|'))) {
+      currentTitle = line.replace(/^[#\s*]+/, '').replace(/:$/, '').trim();
+      continue;
+    }
+    if (line.includes('|')) {
+      tableLines.push(line);
+    } else if (tableLines.length >= 2) {
+      // Process tableLines
+      const parsed = parseMarkdownTable(tableLines, currentTitle);
+      if (parsed) result.push(parsed);
+      tableLines = [];
+    }
+  }
+
+  if (tableLines.length >= 2) {
+    const parsed = parseMarkdownTable(tableLines, currentTitle);
+    if (parsed) result.push(parsed);
+  }
+
+  return result;
+}
+
+function parseMarkdownTable(lines: string[], title: string): { title: string; headers: string[]; rows: Record<string, string>[] } | null {
+  if (lines.length < 2) return null;
+  const headerLine = lines[0];
+  const headers = headerLine.split('|').map(h => h.trim()).filter(Boolean);
+  if (headers.length === 0) return null;
+
+  // Skip separator line if present (e.g. |---|---|)
+  const dataLines = lines.slice(1).filter(l => !l.replace(/[|\s-:]/g, '').length ? false : true);
+  const rows: Record<string, string>[] = [];
+
+  for (const dl of dataLines) {
+    const cells = dl.split('|').map(c => c.trim()).filter((_, idx, arr) => !(idx === 0 && dl.startsWith('|') && _ === '') && !(idx === arr.length - 1 && dl.endsWith('|') && _ === ''));
+    if (cells.length > 0) {
+      const rowObj: Record<string, string> = {};
+      headers.forEach((h, hIdx) => {
+        rowObj[h] = cells[hIdx] || '';
+      });
+      rows.push(rowObj);
+    }
+  }
+
+  if (rows.length === 0) return null;
+  return { title, headers, rows };
 }
 
 /**
@@ -125,6 +228,13 @@ export function aggregatePeriodReportData(
   const periodSubs = period 
     ? submissions.filter(s => s.periodId === period.id) 
     : submissions;
+
+  const periodTitle = period?.title || 'Báo Cáo Tổng Hợp Toàn Trường';
+  const targetAudienceLabel = period?.targetAudience === 'homeroom_teachers' 
+    ? '53 Giáo viên chủ nhiệm' 
+    : period?.targetAudience === 'dept_heads_only'
+    ? 'Tổ trưởng chuyên môn'
+    : 'Cán bộ, Giáo viên, Nhân viên';
 
   // Map submissions theo lớp hoặc theo tác giả
   const subByClassMap = new Map<string, ReportSubmission>();
@@ -146,21 +256,21 @@ export function aggregatePeriodReportData(
   const cadres: ConsolidatedCadre[] = [];
   const feedbacks: ConsolidatedFeedback[] = [];
 
-  // Tổng hợp thống kê 53 lớp chủ nhiệm
+  // 1. Thống kê 53 lớp chủ nhiệm
   const classStats: ConsolidatedClassStat[] = HOMEROOM_ROSTER_53.map((hr, idx) => {
     const classKey = hr.className.trim().toUpperCase();
     const sub = subByClassMap.get(classKey);
     const minutes: HomeroomMeetingMinutesData | undefined = sub?.structuredData?.homeroomMinutes;
 
     const hasSubmitted = !!sub && sub.status !== 'draft';
-    const total = minutes?.totalStudents || hr.studentCount || 0;
+    const total = minutes?.totalStudents || sub?.homeroomStudentCount || hr.studentCount || 0;
     const male = minutes?.maleStudents || Math.round(total * 0.48);
     const female = minutes?.femaleStudents || (total - male);
     const absentCount = minutes?.absentStudents?.length ?? (minutes?.absentCount || 0);
     const present = hasSubmitted ? Math.max(0, total - absentCount) : 0;
     const rate = total > 0 && hasSubmitted ? Math.round((present / total) * 100) : 0;
 
-    // Thu thập học sinh vắng nếu lớp này đã nộp
+    // Thu thập học sinh vắng nếu có
     if (minutes?.absentStudents && minutes.absentStudents.length > 0) {
       minutes.absentStudents.forEach(item => {
         if (item.studentName?.trim()) {
@@ -238,16 +348,16 @@ export function aggregatePeriodReportData(
     };
   });
 
-  // Thu thập nội dung báo cáo / phản ánh văn bản từ tất cả các bài nộp
+  // 2. Thu thập nội dung báo cáo văn bản
   periodSubs.forEach((sub, idx) => {
     if (sub.status !== 'draft') {
-      const minutesNotes = sub.structuredData?.homeroomMinutes?.additionalNotes || '';
+      const minutesNotes = sub.structuredData?.homeroomMinutes?.additionalNotes || sub.structuredData?.customNotes || '';
       const textContent = sub.content || '';
       
       feedbacks.push({
         stt: idx + 1,
         authorName: sub.authorName,
-        className: sub.homeroomClass || sub.structuredData?.homeroomMinutes?.className || '-',
+        className: sub.homeroomClass || sub.structuredData?.homeroomMinutes?.className || sub.departmentName || '-',
         departmentName: sub.departmentName,
         submittedAt: sub.submittedAt || '',
         title: sub.title,
@@ -257,12 +367,18 @@ export function aggregatePeriodReportData(
     }
   });
 
-  // Thu thập các bảng số liệu tùy biến (Dynamic Tables)
-  const dynamicTablesMap = new Map<string, ConsolidatedDynamicTable>();
+  // 3. TỔNG HỢP TOÀN BỘ CÁC BẢNG SỐ LIỆU ĐỘNG (Dynamic Tables)
+  // Bóc tách từ formTemplate của đợt, từ customTables trong submissions, và từ markdown tables
+  const dynamicTablesMap = new Map<string, {
+    id: string;
+    title: string;
+    headers: string[];
+    rows: ConsolidatedDynamicTableRow[];
+  }>();
 
-  periodSubs.forEach(sub => {
-    const customTables = sub.structuredData?.customTables || [];
-    customTables.forEach((tbl: any) => {
+  // Đăng ký bảng từ mẫu đợt nếu có
+  if (period?.formTemplate?.tables) {
+    period.formTemplate.tables.forEach(tbl => {
       const titleKey = (tbl.title || 'Bảng số liệu tổng hợp').trim();
       if (!dynamicTablesMap.has(titleKey)) {
         dynamicTablesMap.set(titleKey, {
@@ -272,30 +388,205 @@ export function aggregatePeriodReportData(
           rows: []
         });
       }
-      const tableGroup = dynamicTablesMap.get(titleKey)!;
+    });
+  }
+
+  // Quét qua các bài nộp để lấy dòng dữ liệu
+  periodSubs.forEach(sub => {
+    if (sub.status === 'draft') return;
+
+    // A. Lấy từ structuredData.customTables
+    const customTables: CustomDynamicTable[] = sub.structuredData?.customTables || [];
+    customTables.forEach((tbl) => {
+      const titleKey = (tbl.title || 'Bảng số liệu báo cáo').trim();
+      if (!dynamicTablesMap.has(titleKey)) {
+        dynamicTablesMap.set(titleKey, {
+          id: tbl.id || titleKey,
+          title: titleKey,
+          headers: [...(tbl.headers || [])],
+          rows: []
+        });
+      }
+      const group = dynamicTablesMap.get(titleKey)!;
       // Thêm header nếu thiếu
-      (tbl.headers || []).forEach((h: string) => {
-        if (!tableGroup.headers.includes(h)) {
-          tableGroup.headers.push(h);
-        }
+      (tbl.headers || []).forEach(h => {
+        if (!group.headers.includes(h)) group.headers.push(h);
       });
 
-      (tbl.rows || []).forEach((row: Record<string, string>) => {
-        const hasData = Object.values(row).some(v => v !== undefined && v !== '');
-        if (hasData) {
-          tableGroup.rows.push({
-            stt: tableGroup.rows.length + 1,
-            authorName: sub.authorName,
+      // Tìm thông tin lớp
+      const hrRosterItem = HOMEROOM_ROSTER_53.find(h => h.className === sub.homeroomClass);
+
+      (tbl.rows || []).forEach(row => {
+        const hasValue = Object.values(row).some(v => v !== undefined && String(v).trim() !== '');
+        if (hasValue) {
+          group.rows.push({
+            stt: group.rows.length + 1,
             className: sub.homeroomClass || '-',
+            campus: hrRosterItem?.campus || 'Chưa phân cơ sở',
+            grade: hrRosterItem?.grade || 0,
+            authorName: sub.authorName,
             departmentName: sub.departmentName,
+            submittedAt: sub.submittedAt || '',
+            submissionId: sub.id,
             data: row
           });
         }
       });
     });
+
+    // B. Lấy từ Markdown Tables trong nội dung (nếu giáo viên gõ bảng vào text)
+    if (sub.content && sub.content.includes('|')) {
+      const mdTables = extractMarkdownTablesFromText(sub.content);
+      mdTables.forEach(mdTbl => {
+        const titleKey = mdTbl.title || 'Bảng dữ liệu trích xuất';
+        if (!dynamicTablesMap.has(titleKey)) {
+          dynamicTablesMap.set(titleKey, {
+            id: 'md-' + titleKey,
+            title: titleKey,
+            headers: [...mdTbl.headers],
+            rows: []
+          });
+        }
+        const group = dynamicTablesMap.get(titleKey)!;
+        mdTbl.headers.forEach(h => {
+          if (!group.headers.includes(h)) group.headers.push(h);
+        });
+
+        const hrRosterItem = HOMEROOM_ROSTER_53.find(h => h.className === sub.homeroomClass);
+
+        mdTbl.rows.forEach(row => {
+          group.rows.push({
+            stt: group.rows.length + 1,
+            className: sub.homeroomClass || '-',
+            campus: hrRosterItem?.campus || 'Chưa phân cơ sở',
+            grade: hrRosterItem?.grade || 0,
+            authorName: sub.authorName,
+            departmentName: sub.departmentName,
+            submittedAt: sub.submittedAt || '',
+            submissionId: sub.id,
+            data: row
+          });
+        });
+      });
+    }
   });
 
-  // Tính tổng số liệu
+  // Nếu là đợt có dữ liệu học sinh vắng (biên bản sinh hoạt đầu năm), tự động gộp thành 1 bảng động chuẩn
+  if (absentStudents.length > 0 && !dynamicTablesMap.has('Danh sách học sinh chưa ra lớp')) {
+    const absentTableRows: ConsolidatedDynamicTableRow[] = absentStudents.map((s, idx) => ({
+      stt: idx + 1,
+      className: s.className,
+      campus: s.campus,
+      grade: typeof s.grade === 'number' ? s.grade : parseInt(String(s.grade)) || 0,
+      authorName: s.teacherName,
+      departmentName: 'Chủ nhiệm',
+      submittedAt: s.submittedAt,
+      submissionId: s.submissionId,
+      data: {
+        'Họ và tên học sinh': s.studentName,
+        'Lớp năm học trước': s.previousClass,
+        'Nơi ở hiện nay': s.currentAddress,
+        'Số ĐT học sinh': s.studentPhone,
+        'Số ĐT phụ huynh': s.parentPhone,
+        'Lý do chưa ra lớp': s.reason
+      }
+    }));
+
+    dynamicTablesMap.set('Danh sách học sinh chưa ra lớp', {
+      id: 'table-absent-students',
+      title: 'Danh sách học sinh chưa ra lớp (Tổng hợp toàn trường)',
+      headers: ['Họ và tên học sinh', 'Lớp năm học trước', 'Nơi ở hiện nay', 'Số ĐT học sinh', 'Số ĐT phụ huynh', 'Lý do chưa ra lớp'],
+      rows: absentTableRows
+    });
+  }
+
+  // Định hình danh sách bảng động hoàn chỉnh
+  const dynamicTables: ConsolidatedDynamicTable[] = Array.from(dynamicTablesMap.values()).map(t => {
+    // Sắp xếp các hàng theo Khối và Lớp (6A1 -> 12A8)
+    const sortedRows = [...t.rows].sort((a, b) => {
+      if (a.grade !== b.grade) return a.grade - b.grade;
+      return a.className.localeCompare(b.className);
+    }).map((r, i) => ({ ...r, stt: i + 1 }));
+
+    const uniqueClasses = new Set(sortedRows.map(r => r.className).filter(c => c !== '-'));
+
+    return {
+      id: t.id,
+      title: t.title,
+      headers: t.headers,
+      rows: sortedRows,
+      totalRows: sortedRows.length,
+      classesCount: uniqueClasses.size
+    };
+  });
+
+  const primaryTable = dynamicTables.length > 0 ? dynamicTables[0] : null;
+
+  // 4. TỔNG HỢP MA TRẬN CÁC TRƯỜNG DỮ LIỆU ĐIỆN TỬ (Field Matrix)
+  const fieldColumns: ConsolidatedFieldColumn[] = [];
+  const fieldColumnMap = new Map<string, ConsolidatedFieldColumn>();
+
+  // Thu thập các cột trường nhập từ mẫu đợt
+  if (period?.formTemplate?.fields) {
+    period.formTemplate.fields.forEach(f => {
+      if (f.type !== 'table') {
+        fieldColumnMap.set(f.id, { id: f.id, label: f.label, type: f.type });
+      }
+    });
+  }
+
+  // Thu thập các cột trường nhập từ bài nộp của GV
+  periodSubs.forEach(s => {
+    const fields: CustomFormField[] = s.structuredData?.customFields || [];
+    fields.forEach(f => {
+      if (f.type !== 'table' && !fieldColumnMap.has(f.id)) {
+        fieldColumnMap.set(f.id, { id: f.id, label: f.label, type: f.type });
+      }
+    });
+  });
+
+  fieldColumnMap.forEach(col => fieldColumns.push(col));
+
+  const numericTotals: Record<string, number> = {};
+  fieldColumns.forEach(c => {
+    if (c.type === 'number') numericTotals[c.id] = 0;
+  });
+
+  // Xây dựng ma trận 53 lớp
+  const fieldRows: ConsolidatedFieldRow[] = HOMEROOM_ROSTER_53.map((hr, idx) => {
+    const classKey = hr.className.trim().toUpperCase();
+    const sub = subByClassMap.get(classKey);
+    const hasSubmitted = !!sub && sub.status !== 'draft';
+    const values: Record<string, any> = {};
+
+    fieldColumns.forEach(c => {
+      const val = sub?.structuredData?.customFieldValues?.[c.id];
+      values[c.id] = val !== undefined && val !== null ? val : '';
+      if (c.type === 'number' && typeof val === 'number') {
+        numericTotals[c.id] = (numericTotals[c.id] || 0) + val;
+      }
+    });
+
+    return {
+      stt: idx + 1,
+      className: hr.className,
+      campus: hr.campus,
+      grade: hr.grade,
+      authorName: sub?.authorName || hr.teacherName,
+      departmentName: 'Chủ nhiệm',
+      submittedAt: sub?.submittedAt || null,
+      values,
+      hasSubmitted
+    };
+  });
+
+  const fieldMatrix: ConsolidatedFieldMatrix = {
+    columns: fieldColumns,
+    rows: fieldRows,
+    numericTotals
+  };
+
+  // 5. Tính toán tỷ lệ & số liệu tổng quan
   const submittedClasses = classStats.filter(c => c.hasSubmitted);
   const submittedCount = submittedClasses.length;
   const pendingCount = 53 - submittedCount;
@@ -308,12 +599,20 @@ export function aggregatePeriodReportData(
   const totalAbsent = absentStudents.length;
   const overallAttendanceRate = totalEnrolled > 0 ? Math.round((totalPresent / totalEnrolled) * 100) : 0;
 
+  const totalDynamicRows = dynamicTables.reduce((sum, t) => sum + t.rows.length, 0);
+
   return {
     period,
+    periodTitle,
+    targetAudienceLabel,
     totalHomeroomClasses: 53,
     submittedCount,
     pendingCount,
     completionRate,
+    primaryTable,
+    dynamicTables,
+    totalDynamicRows,
+    fieldMatrix,
     totalEnrolledStudents: totalEnrolled,
     totalMaleStudents: totalMale,
     totalFemaleStudents: totalFemale,
@@ -324,165 +623,288 @@ export function aggregatePeriodReportData(
     absentStudents,
     talents,
     cadres,
-    feedbacks,
-    dynamicTables: Array.from(dynamicTablesMap.values())
+    feedbacks
   };
 }
 
 /**
  * Sinh bộ dữ liệu báo cáo mẫu cho đầy đủ 53 lớp chủ nhiệm
- * Giúp Ban Giám Hiệu kiểm thử xem trước kết quả tổng hợp toàn trường
+ * THÔNG MINH: Tự động phát hiện chủ đề của đợt (Hộ nghèo, Bỏ học, BHYT, hoặc mẫu tùy biến)
+ * để sinh ra đúng danh sách học sinh và số liệu thực tế cho 53 lớp!
  */
 export function generateSample53Submissions(
   periodId: string, 
   periodTitle: string,
-  allUsers: User[]
+  allUsers: User[],
+  targetPeriod?: ReportPeriod | null
 ): ReportSubmission[] {
+  const pTitle = (targetPeriod?.title || periodTitle || '').toLowerCase();
+
+  const isPoorStudentTopic = pTitle.includes('nghèo') || pTitle.includes('khó khăn') || pTitle.includes('chính sách');
+  const isDropoutTopic = pTitle.includes('nghỉ') || pTitle.includes('bỏ học') || pTitle.includes('nguy cơ');
+  const isInsuranceTopic = pTitle.includes('bhyt') || pTitle.includes('bảo hiểm');
+
   const sampleAddresses = [
-    'Ấp 1, Xã Đốc Binh Kiều, Huyện Tháp Mười',
-    'Ấp 2, Xã Đốc Binh Kiều, Huyện Tháp Mười',
-    'Ấp 3, Xã Đốc Binh Kiều, Huyện Tháp Mười',
-    'Ấp 4, Xã Đốc Binh Kiều, Huyện Tháp Mười',
-    'Ấp 5, Xã Đốc Binh Kiều, Huyện Tháp Mười',
-    'Ấp 1, Xã Tân Kiều, Huyện Tháp Mười',
-    'Ấp 2, Xã Tân Kiều, Huyện Tháp Mười',
-    'Ấp 3, Xã Tân Kiều, Huyện Tháp Mười',
+    'Ấp 1, Xã Đốc Binh Kiều, Tháp Mười',
+    'Ấp 2, Xã Đốc Binh Kiều, Tháp Mười',
+    'Ấp 3, Xã Đốc Binh Kiều, Tháp Mười',
+    'Ấp 4, Xã Đốc Binh Kiều, Tháp Mười',
+    'Ấp 1, Xã Tân Kiều, Tháp Mười',
+    'Ấp 2, Xã Tân Kiều, Tháp Mười',
+    'Ấp 3, Xã Tân Kiều, Tháp Mười',
     'Ấp Mỹ Thạnh, Xã Đốc Binh Kiều',
     'Ấp An Thái, Xã Tân Kiều, Tháp Mười',
     'Khóm 2, Thị trấn Mỹ An, Tháp Mười'
   ];
 
-  const sampleAbsentReasons = [
-    'Gia đình đi làm ăn xa tại Bình Dương, chưa về kịp',
-    'Theo cha mẹ đi làm thời vụ tại TP.HCM, dự kiến thứ 2 tuần sau ra lớp',
-    'Bị sốt xuất huyết đang điều trị tại Trung tâm Y tế Huyện Tháp Mười',
-    'Gia đình có việc tang, xin phép vắng có đơn',
-    'Chưa chuẩn bị kịp sách giáo khoa và phương tiện đi lại',
-    'Gia đình khó khăn, có nguy cơ bỏ học đi làm thuê (GVCN đang phối hợp vận động)',
-    'Học sinh có ý định chuyển trường về Tiền Giang gần nhà bà ngoại',
-    'Bị tai nạn giao thông nhẹ, đang bó bột ở chân xin nghỉ 1 tuần',
-    'Điểm giao thông xa, phụ huynh đi làm sớm chưa đưa rước được'
-  ];
-
-  const sampleTalentsPool = [
-    { competition: 'Thi Học sinh Giỏi Toán cấp Tỉnh', prize: 'Nhì', studentName: 'Nguyễn Văn Hào' },
-    { competition: 'Hội khỏe Phù Đổng (Điền kinh 100m)', prize: 'Nhất', studentName: 'Lê Thị Thu Thảo' },
-    { competition: 'Viết thư Quốc tế UPU', prize: 'Ba', studentName: 'Trần Hoàng Nam' },
-    { competition: 'Hùng biện Tiếng Anh cấp Huyện', prize: 'Nhất', studentName: 'Phạm Minh Khang' },
-    { competition: 'Vẽ tranh Cổ động An toàn Giao thông', prize: 'Khuyến khích', studentName: 'Đặng Ngọc Ánh' },
-    { competition: 'Tin học trẻ Tháp Mười', prize: 'Nhì', studentName: 'Võ Quốc Huy' },
-    { competition: 'Bóng đá nam Hội khỏe Phù Đổng', prize: 'Huy chương Vàng', studentName: 'Nguyễn Tấn Đạt' }
-  ];
-
-  const sampleTeacherRequests = [
-    'Phòng học bị thấm dột nhẹ ở dãy lầu 2, kính mong Ban Giám Hiệu chỉ đạo sửa chữa sớm trước mùa mưa.',
-    'Quạt trần phòng học số 3 chạy hơi yếu, cần bảo dưỡng hoặc thay mới để học sinh mát mẻ.',
-    'Lớp có 2 em hoàn cảnh đặc biệt khó khăn mồ côi cha mẹ, đề xuất Đoàn trường hỗ trợ học bổng và tập vở.',
-    'Học sinh ra lớp ngày đầu rất nghiêm túc, tác phong đúng quy định, đồng phục sạch đẹp.',
-    'Kiến nghị nhà trường trang bị thêm rèm che nắng hướng tây phòng học để tránh chói mắt buổi chiều.',
-    'Đã liên hệ với phụ huynh các em vắng, cam kết thứ 2 sẽ có mặt đầy đủ tại trường.',
-    'Cần hỗ trợ máy chiếu di động cho phòng học do máy chiếu cũ mờ đèn hình.'
-  ];
+  const studentFirstNames = ['Nguyễn Văn', 'Trần Thị', 'Lê Hoàng', 'Phạm Quốc', 'Đặng Mỹ', 'Võ Hoài', 'Bùi Thanh', 'Huỳnh Ngọc', 'Mai Anh', 'Đỗ Gia'];
+  const studentLastNames = ['An', 'Bình', 'Châu', 'Dũng', 'Em', 'Giang', 'Hậu', 'Khoa', 'Linh', 'Nghĩa', 'Phúc', 'Tâm', 'Vinh', 'Xuân', 'Tài', 'Thịnh'];
 
   const submissions: ReportSubmission[] = [];
-  const baseTime = new Date('2026-08-28T09:30:00Z');
+  const baseTime = new Date('2026-09-01T08:00:00Z');
 
   HOMEROOM_ROSTER_53.forEach((hr, index) => {
     const user = allUsers.find(u => u.name.trim().toLowerCase() === hr.teacherName.trim().toLowerCase()) 
       || allUsers.find(u => u.homeroomClass === hr.className);
 
+    const submitTime = new Date(baseTime.getTime() + (index * 12 * 60 * 1000)).toISOString();
     const totalStudents = hr.studentCount || 40;
-    const maleStudents = Math.round(totalStudents * (0.45 + (index % 5) * 0.02));
+    const maleStudents = Math.round(totalStudents * (0.46 + (index % 5) * 0.02));
     const femaleStudents = totalStudents - maleStudents;
 
-    // Một số lớp có 1 - 3 học sinh vắng, một số lớp 0 học sinh vắng
-    const absentCount = (index % 4 === 0) ? 0 : ((index % 3 === 0) ? 2 : 1);
-    const absentStudentsList: AbsentStudentItem[] = [];
+    let customTables: CustomDynamicTable[] = [];
+    let customFields: CustomFormField[] = [];
+    let customFieldValues: Record<string, any> = {};
+    let homeroomMinutes: HomeroomMeetingMinutesData | undefined = undefined;
+    let reportContent = '';
 
-    for (let a = 0; a < absentCount; a++) {
-      const studentIdx = (index * 2 + a + 1);
-      const studentFirstNames = ['Trần Văn', 'Nguyễn Thị', 'Lê Hoàng', 'Phạm Quốc', 'Đặng Mỹ', 'Võ Hoài', 'Bùi Thanh', 'Huỳnh Ngọc'];
-      const studentLastNames = ['An', 'Bình', 'Châu', 'Dũng', 'Em', 'Giang', 'Hậu', 'Khoa', 'Linh', 'Nghĩa', 'Phúc', 'Tâm', 'Vinh', 'Xuân'];
-      const sName = `${studentFirstNames[(studentIdx) % studentFirstNames.length]} ${studentLastNames[(studentIdx * 3) % studentLastNames.length]}`;
+    if (isPoorStudentTopic) {
+      // 1. MẪU BÁO CÁO HỌC SINH NGHÈO / CẬN NGHÈO
+      const poorCount = (index % 5 === 0) ? 2 : ((index % 3 === 0) ? 3 : 4);
+      const poorStudentRows: Record<string, string>[] = [];
 
-      absentStudentsList.push({
-        id: `absent-${hr.className}-${a + 1}`,
-        studentName: sName,
-        previousClass: `${hr.grade > 6 ? hr.grade - 1 : 5}${hr.className.replace(/[0-9]/g, '') || 'A1'}`,
-        currentAddress: sampleAddresses[(index + a) % sampleAddresses.length],
-        studentPhone: `09${Math.floor(10000000 + Math.random() * 89999999)}`,
-        parentPhone: `09${Math.floor(10000000 + Math.random() * 89999999)}`,
-        reason: sampleAbsentReasons[(index + a) % sampleAbsentReasons.length]
-      });
-    }
-
-    // Năng khiếu
-    const talentsList: TalentAchievementItem[] = [];
-    if (index % 2 === 0) {
-      const tItem = sampleTalentsPool[index % sampleTalentsPool.length];
-      talentsList.push({
-        id: `talent-${hr.className}-${index}`,
-        competition: tItem.competition,
-        prize: tItem.prize,
-        studentName: `${tItem.studentName} (${hr.className})`,
-        note: 'Tiếp tục bồi dưỡng tham gia kỳ thi năm nay'
-      });
-    }
-
-    // Ban cán sự
-    const cadresList: ClassCadreItem[] = [
-      {
-        id: `cadre-${hr.className}-1`,
-        role: 'Lớp trưởng',
-        studentName: `Nguyễn Hoàng Lớp Trưởng ${hr.className}`,
-        academicPerf: 'Tốt',
-        conductPerf: 'Tốt',
-        phone: `09${Math.floor(10000000 + Math.random() * 89999999)}`
-      },
-      {
-        id: `cadre-${hr.className}-2`,
-        role: 'Lớp phó Học tập',
-        studentName: `Trần Thị Học Tập ${hr.className}`,
-        academicPerf: 'Tốt',
-        conductPerf: 'Tốt',
-        phone: `09${Math.floor(10000000 + Math.random() * 89999999)}`
-      },
-      {
-        id: `cadre-${hr.className}-3`,
-        role: 'Bí thư Chi đoàn / Chi đội',
-        studentName: `Lê Văn Bí Thư ${hr.className}`,
-        academicPerf: 'Khá',
-        conductPerf: 'Tốt',
-        phone: `09${Math.floor(10000000 + Math.random() * 89999999)}`
+      for (let p = 0; p < poorCount; p++) {
+        const sIdx = (index * 3 + p + 1);
+        const sName = `${studentFirstNames[sIdx % studentFirstNames.length]} ${studentLastNames[(sIdx * 2) % studentLastNames.length]}`;
+        const isPoor = (p % 2 === 0);
+        poorStudentRows.push({
+          'STT': String(p + 1),
+          'Họ và tên học sinh': sName,
+          'Ngày sinh': `${10 + (sIdx % 18)}/0${(sIdx % 9) + 1}/20${hr.grade > 9 ? '09' : '12'}`,
+          'Giới tính': p % 2 === 0 ? 'Nam' : 'Nữ',
+          'Diện đối tượng': isPoor ? 'Hộ nghèo' : 'Hộ cận nghèo',
+          'Mã số sổ / CCCD': `HN-${hr.className}-${100 + sIdx}`,
+          'Địa chỉ cư trú': sampleAddresses[(index + p) % sampleAddresses.length],
+          'Đề xuất hỗ trợ': isPoor ? 'Học bổng vượt khó + Miễn BHYT' : 'Hỗ trợ tập vở và gạo đầu năm'
+        });
       }
-    ];
 
-    const meetingData: HomeroomMeetingMinutesData = {
-      academicYear: '2026 – 2027',
-      className: hr.className,
-      teacherName: hr.teacherName,
-      meetingDate: '28',
-      meetingMonth: '8',
-      meetingYear: '2026',
-      timeHour: '07',
-      timeMinute: '30',
-      roomNumber: `P.${index + 1}`,
-      totalStudents,
-      maleStudents,
-      femaleStudents,
-      absentCount: absentStudentsList.length,
-      absentStudents: absentStudentsList,
-      talents: talentsList,
-      cadres: cadresList,
-      additionalNotes: sampleTeacherRequests[index % sampleTeacherRequests.length]
-    };
+      customTables = [{
+        id: 'table-poor-students',
+        title: 'Danh sách học sinh thuộc hộ nghèo, cận nghèo',
+        headers: ['Họ và tên học sinh', 'Ngày sinh', 'Giới tính', 'Diện đối tượng', 'Mã số sổ / CCCD', 'Địa chỉ cư trú', 'Đề xuất hỗ trợ'],
+        rows: poorStudentRows
+      }];
 
-    const submitTime = new Date(baseTime.getTime() + (index * 15 * 60 * 1000)).toISOString();
+      customFields = [
+        { id: 'f_tong_ngheo', label: 'Tổng số học sinh nghèo', type: 'number' },
+        { id: 'f_tong_can_ngheo', label: 'Tổng số học sinh cận nghèo', type: 'number' },
+        { id: 'f_hoan_canh_dac_biet', label: 'Học sinh mồ côi / đặc biệt khó khăn', type: 'number' }
+      ];
+
+      customFieldValues = {
+        'f_tong_ngheo': Math.ceil(poorCount / 2),
+        'f_tong_can_ngheo': Math.floor(poorCount / 2),
+        'f_hoan_canh_dac_biet': index % 4 === 0 ? 1 : 0
+      };
+
+      reportContent = `Kính gửi Ban Giám Hiệu,\n\nLớp ${hr.className} đã tiến hành rà soát hoàn cảnh kinh tế gia đình học sinh đầu năm học. Lớp có tổng cộng ${poorCount} học sinh thuộc diện hộ nghèo và cận nghèo.\nĐề xuất nhà trường và Hội Khuyến học quan tâm hỗ trợ các em để các em an tâm đến trường.`;
+
+    } else if (isDropoutTopic) {
+      // 2. MẪU BÁO CÁO HỌC SINH NGHỈ / BỎ HỌC
+      const dropoutCount = (index % 4 === 0) ? 0 : ((index % 3 === 0) ? 2 : 1);
+      const dropoutRows: Record<string, string>[] = [];
+
+      const reasons = [
+        'Theo cha mẹ đi làm ăn xa tại TP.HCM/Bình Dương',
+        'Gia đình khó khăn, phụ giúp kinh tế gia đình',
+        'Học lực yếu, chán học, ham chơi điện tử',
+        'Bệnh nặng đang điều trị dài ngày tại bệnh viện',
+        'Có ý định chuyển về quê ngoại sinh sống'
+      ];
+
+      for (let d = 0; d < dropoutCount; d++) {
+        const sIdx = (index * 2 + d + 1);
+        const sName = `${studentFirstNames[sIdx % studentFirstNames.length]} ${studentLastNames[(sIdx * 3) % studentLastNames.length]}`;
+        dropoutRows.push({
+          'STT': String(d + 1),
+          'Họ và tên học sinh': sName,
+          'Ngày sinh': `15/0${(d % 8) + 1}/20${hr.grade > 9 ? '09' : '12'}`,
+          'Ngày bắt đầu nghỉ': `0${d + 2}/09/2026`,
+          'Lý do nghỉ / bỏ học': reasons[(index + d) % reasons.length],
+          'Số lần GVCN đến nhà vận động': `${d + 1} lần`,
+          'Kết quả vận động': d === 0 ? 'Phụ huynh hứa tuần sau đưa em trở lại lớp' : 'Gia đình chưa đồng ý, đang nhờ Trưởng ấp phối hợp',
+          'Đề xuất phối hợp': 'Nhờ Đoàn Thanh niên & Ban đại diện CMHS cùng đến vận động'
+        });
+      }
+
+      customTables = [{
+        id: 'table-dropout-students',
+        title: 'Danh sách học sinh nghỉ học, có nguy cơ bỏ học',
+        headers: ['Họ và tên học sinh', 'Ngày sinh', 'Ngày bắt đầu nghỉ', 'Lý do nghỉ / bỏ học', 'Số lần GVCN đến nhà vận động', 'Kết quả vận động', 'Đề xuất phối hợp'],
+        rows: dropoutRows
+      }];
+
+      customFields = [
+        { id: 'f_so_hs_nghi', label: 'Số học sinh đang nghỉ học', type: 'number' },
+        { id: 'f_so_hs_da_van_dong', label: 'Số em đã vận động thành công', type: 'number' }
+      ];
+
+      customFieldValues = {
+        'f_so_hs_nghi': dropoutCount,
+        'f_so_hs_da_van_dong': dropoutCount > 0 ? 1 : 0
+      };
+
+      reportContent = `Kính gửi Ban Giám Hiệu,\n\nBáo cáo tình hình học sinh nghỉ, có nguy cơ bỏ học lớp ${hr.className}. Hiện tại lớp có ${dropoutCount} trường hợp cần lưu ý theo dõi. GVCN đang tích cực phối hợp với gia đình và địa phương để duy trì sĩ số.`;
+
+    } else if (isInsuranceTopic) {
+      // 3. MẪU BÁO CÁO BẢO HIỂM Y TẾ (BHYT)
+      const insuredCount = totalStudents - (index % 4);
+      const sampleRows: Record<string, string>[] = [
+        {
+          'Họ và tên học sinh': `Nguyễn Văn Học Sinh 1 (${hr.className})`,
+          'Mã định danh cá nhân': `08720${hr.grade}001234`,
+          'Thời hạn tham gia': '12 tháng',
+          'Số tiền đóng': '972,000 VNĐ',
+          'Tình trạng thẻ': 'Đã cấp thẻ mới'
+        },
+        {
+          'Họ và tên học sinh': `Trần Thị Học Sinh 2 (${hr.className})`,
+          'Mã định danh cá nhân': `08720${hr.grade}005678`,
+          'Thời hạn tham gia': '12 tháng',
+          'Số tiền đóng': '972,000 VNĐ',
+          'Tình trạng thẻ': 'Gia hạn thẻ cũ'
+        }
+      ];
+
+      customTables = [{
+        id: 'table-insurance',
+        title: 'Danh sách học sinh tham gia BHYT',
+        headers: ['Họ và tên học sinh', 'Mã định danh cá nhân', 'Thời hạn tham gia', 'Số tiền đóng', 'Tình trạng thẻ'],
+        rows: sampleRows
+      }];
+
+      customFields = [
+        { id: 'f_bhyt_da_mua', label: 'Số học sinh đã mua BHYT', type: 'number' },
+        { id: 'f_bhyt_chua_mua', label: 'Số học sinh chưa mua BHYT', type: 'number' }
+      ];
+
+      customFieldValues = {
+        'f_bhyt_da_mua': insuredCount,
+        'f_bhyt_chua_mua': totalStudents - insuredCount
+      };
+
+      reportContent = `Báo cáo tiến độ thu nộp BHYT học sinh lớp ${hr.className}. Tỷ lệ tham gia đạt ${(insuredCount / totalStudents * 100).toFixed(1)}%.`;
+
+    } else if (targetPeriod?.formTemplate?.tables && targetPeriod.formTemplate.tables.length > 0) {
+      // 4. MẪU TÙY BIẾN THEO ĐÚNG TEMPLATE BGH TẠO RA
+      customTables = targetPeriod.formTemplate.tables.map(tbl => {
+        const rows: Record<string, string>[] = [];
+        const rowCount = 2 + (index % 3);
+        for (let r = 0; r < rowCount; r++) {
+          const rowObj: Record<string, string> = {};
+          tbl.headers.forEach((h, hIdx) => {
+            if (h.toLowerCase().includes('họ') || h.toLowerCase().includes('tên')) {
+              rowObj[h] = `${studentFirstNames[(index + r) % studentFirstNames.length]} ${studentLastNames[(index * 2 + r) % studentLastNames.length]}`;
+            } else if (h.toLowerCase().includes('ngày') || h.toLowerCase().includes('sinh')) {
+              rowObj[h] = `1${r + 2}/0${(r % 8) + 1}/20${hr.grade > 9 ? '09' : '12'}`;
+            } else if (h.toLowerCase().includes('địa chỉ') || h.toLowerCase().includes('nơi ở')) {
+              rowObj[h] = sampleAddresses[(index + r) % sampleAddresses.length];
+            } else if (h.toLowerCase().includes('ghi chú') || h.toLowerCase().includes('đề xuất')) {
+              rowObj[h] = 'Đề xuất nhà trường xem xét phê duyệt';
+            } else {
+              rowObj[h] = `Dữ liệu ${hr.className} - Mục ${hIdx + 1}`;
+            }
+          });
+          rows.push(rowObj);
+        }
+        return {
+          id: tbl.id,
+          title: tbl.title,
+          headers: tbl.headers,
+          rows
+        };
+      });
+
+      if (targetPeriod.formTemplate.fields) {
+        customFields = targetPeriod.formTemplate.fields;
+        targetPeriod.formTemplate.fields.forEach(f => {
+          if (f.type === 'number') {
+            customFieldValues[f.id] = 10 + (index % 20);
+          } else {
+            customFieldValues[f.id] = `Nội dung lớp ${hr.className}`;
+          }
+        });
+      }
+
+      reportContent = `Kính gửi BGH,\nLớp ${hr.className} báo cáo số liệu theo biểu mẫu đợt: ${targetPeriod.title}.`;
+
+    } else {
+      // 5. MẪU BIÊN BẢN TẬP TRUNG HỌC SINH ĐẦU NĂM (MẶC ĐỊNH)
+      const absentCount = (index % 4 === 0) ? 0 : ((index % 3 === 0) ? 2 : 1);
+      const absentStudentsList: AbsentStudentItem[] = [];
+
+      for (let a = 0; a < absentCount; a++) {
+        const studentIdx = (index * 2 + a + 1);
+        const sName = `${studentFirstNames[(studentIdx) % studentFirstNames.length]} ${studentLastNames[(studentIdx * 3) % studentLastNames.length]}`;
+
+        absentStudentsList.push({
+          id: `absent-${hr.className}-${a + 1}`,
+          studentName: sName,
+          previousClass: `${hr.grade > 6 ? hr.grade - 1 : 5}${hr.className.replace(/[0-9]/g, '') || 'A1'}`,
+          currentAddress: sampleAddresses[(index + a) % sampleAddresses.length],
+          studentPhone: `09${Math.floor(10000000 + Math.random() * 89999999)}`,
+          parentPhone: `09${Math.floor(10000000 + Math.random() * 89999999)}`,
+          reason: 'Gia đình đi làm ăn xa chưa về kịp'
+        });
+      }
+
+      homeroomMinutes = {
+        academicYear: '2026 – 2027',
+        timeHour: '07',
+        timeMinute: '30',
+        meetingDate: '28',
+        meetingMonth: '8',
+        meetingYear: '2026',
+        roomNumber: `Phòng ${index + 1}`,
+        teacherName: hr.teacherName,
+        className: hr.className,
+        totalStudents,
+        maleStudents,
+        femaleStudents,
+        absentCount: absentStudentsList.length,
+        absentStudents: absentStudentsList,
+        talents: [],
+        cadres: [
+          {
+            id: `cadre-${hr.className}-1`,
+            role: 'Lớp trưởng',
+            studentName: `Nguyễn Lớp Trưởng ${hr.className}`,
+            academicPerf: 'Tốt',
+            conductPerf: 'Tốt',
+            phone: '0988776655'
+          }
+        ],
+        additionalNotes: 'Lớp ổn định nề nếp tốt, học sinh chấp hành nghiêm chỉnh nội quy.'
+      };
+
+      reportContent = `Biên bản tập trung học sinh lớp ${hr.className}. Tổng sĩ số: ${totalStudents}, hiện diện: ${totalStudents - absentCount}.`;
+    }
 
     submissions.push({
-      id: `sample-sub-53-${index + 1}`,
+      id: `sim-sub-53-${periodId}-${index + 1}`,
       periodId: periodId,
-      periodTitle: periodTitle,
+      periodTitle: targetPeriod?.title || periodTitle,
       authorId: user?.id || `staff-hr-${index + 1}`,
       authorName: hr.teacherName,
       authorEmail: user?.email || `gvcn.${hr.className.toLowerCase()}@docbinhkieu.edu.vn`,
@@ -494,10 +916,13 @@ export function generateSample53Submissions(
       homeroomClass: hr.className,
       homeroomStudentCount: totalStudents,
       homeroomCampus: hr.campus,
-      title: `Biên bản tập trung học sinh đầu năm học 2026-2027 - Lớp ${hr.className}`,
-      content: `Kính gửi Ban Giám Hiệu,\n\nLớp ${hr.className} đã tổ chức buổi tập trung đầu năm học 2026-2027 vào sáng ngày 28/08/2026.\nSĩ số: ${totalStudents} em (Nam: ${maleStudents}, Nữ: ${femaleStudents}).\nSố học sinh vắng: ${absentStudentsList.length} em.\n\nNhận xét chung:\n- Không khí buổi tập trung vui tươi, các em chấp hành tốt nội quy trường lớp.\n- Ban cán sự lớp đã được kiện toàn.\n- GVCN đã liên hệ gia đình các em chưa ra lớp để động viên các em đến trường đúng ngày khai giảng.\n\nÝ kiến đề xuất: ${meetingData.additionalNotes}`,
+      title: `${targetPeriod?.title || periodTitle} - Lớp ${hr.className} - ${hr.teacherName}`,
+      content: reportContent,
       structuredData: {
-        homeroomMinutes: meetingData
+        homeroomMinutes,
+        customTables: customTables.length > 0 ? customTables : undefined,
+        customFields: customFields.length > 0 ? customFields : undefined,
+        customFieldValues: Object.keys(customFieldValues).length > 0 ? customFieldValues : undefined
       },
       attachments: [],
       status: 'principal_approved',
@@ -513,66 +938,57 @@ export function generateSample53Submissions(
 }
 
 /**
- * Tạo báo cáo tóm tắt điều hành bằng AI / Engine tổng hợp
+ * Tạo báo cáo tóm tắt điều hành dành cho Ban Giám Hiệu
  */
 export function generateConsolidatedExecutiveSummary(data: PeriodConsolidationResult): string {
   const {
-    period,
+    periodTitle,
     totalHomeroomClasses,
     submittedCount,
     completionRate,
+    primaryTable,
+    dynamicTables,
+    fieldMatrix,
     totalEnrolledStudents,
     totalPresentStudents,
     totalAbsentStudents,
     overallAttendanceRate,
-    absentStudents,
-    talents,
-    classStats
+    absentStudents
   } = data;
 
-  // Nhóm lý do vắng
-  const reasonMap: Record<string, number> = {};
-  absentStudents.forEach(s => {
-    const r = s.reason || 'Khác';
-    reasonMap[r] = (reasonMap[r] || 0) + 1;
-  });
+  let tableSummaries = '';
+  if (dynamicTables.length > 0) {
+    tableSummaries = dynamicTables.map(t => {
+      return `  - ${t.title}: Tổng cộng ${t.totalRows} bản ghi được thu thập từ ${t.classesCount} lớp.`;
+    }).join('\n');
+  }
 
-  const topReasons = Object.entries(reasonMap)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 4);
-
-  // Lớp vắng nhiều nhất
-  const classesWithMostAbsents = [...classStats]
-    .filter(c => c.absentStudentsCount > 0)
-    .sort((a, b) => b.absentStudentsCount - a.absentStudentsCount)
-    .slice(0, 5);
+  let fieldSummaries = '';
+  if (fieldMatrix.columns.length > 0) {
+    fieldSummaries = fieldMatrix.columns.map(c => {
+      if (c.type === 'number' && fieldMatrix.numericTotals[c.id] !== undefined) {
+        return `  - ${c.label}: Tổng toàn trường = ${fieldMatrix.numericTotals[c.id].toLocaleString('vi-VN')}`;
+      }
+      return `  - ${c.label}: Đã ghi nhận đầy đủ phản hồi của các lớp.`;
+    }).join('\n');
+  }
 
   return `
-BÁO CÁO TỔNG HỢP VÀ ĐÁNH GIÁ ĐIỀU HÀNH DÀNH CHO BAN GIÁM HIỆU
-Đợt báo cáo: ${period?.title || 'Tập trung học sinh đầu năm học'}
+BÁO CÁO TỔNG HỢP VÀ ĐIỀU HÀNH DÀNH CHO BAN GIÁM HIỆU
+Nội dung đợt: ${periodTitle}
 Trường THCS & THPT Đốc Binh Kiều - Năm học 2026 - 2027
 --------------------------------------------------------------------------------
 
-1. TIẾN ĐỘ THỰC HIỆN VÀ TỔNG QUAN SĨ SỐ TOÀN TRƯỜNG:
-- Số lớp đã nộp báo cáo: ${submittedCount} / ${totalHomeroomClasses} lớp (Đạt tỷ lệ ${completionRate}%).
-- Tổng sĩ số học sinh ghi nhận: ${totalEnrolledStudents.toLocaleString('vi-VN')} học sinh.
-- Tổng số học sinh đã ra lớp hiện diện: ${totalPresentStudents.toLocaleString('vi-VN')} học sinh.
-- Tỷ lệ học sinh ra lớp toàn trường: ${overallAttendanceRate}% (Đạt chỉ tiêu kế hoạch đầu năm).
-- Tổng số học sinh chưa ra lớp cần theo dõi, vận động: ${totalAbsentStudents} học sinh.
+1. TIẾN ĐỘ THỰC HIỆN TOÀN TRƯỜNG:
+- Số lớp / giáo viên đã nộp báo cáo: ${submittedCount} / ${totalHomeroomClasses} lớp (Đạt tỷ lệ ${completionRate}%).
+- Tình trạng: ${completionRate === 100 ? 'Toàn bộ 53 lớp đã hoàn thành báo cáo đầy đủ, đúng tiến độ.' : `Còn ${totalHomeroomClasses - submittedCount} lớp đang trong quá trình tổng hợp.`}
 
-2. PHÂN TÍCH NGUYÊN NHÂN HỌC SINH CHƯA RA LỚP:
-Qua rà soát số liệu tổng hợp từ 53 lớp, các nguyên nhân chính gồm:
-${topReasons.map((r, i) => `  ${i + 1}. ${r[0]}: ${r[1]} học sinh`).join('\n')}
+2. TỔNG HỢP SỐ LIỆU TỪ CÁC BẢNG NỘI DUNG CHI TIẾT:
+${tableSummaries || '  - Không có bảng dữ liệu đặc biệt.'}
 
-3. CÁC LỚP CÓ SỐ LƯỢNG HỌC SINH CHƯA RA LỚP CẦN QUAN TÂM:
-${classesWithMostAbsents.length > 0 ? classesWithMostAbsents.map(c => `  - Lớp ${c.className} (GVCN: ${c.teacherName}): Vắng ${c.absentStudentsCount} học sinh`).join('\n') : '  - Toàn bộ các lớp đều đạt 100% sĩ số.'}
-
-4. NĂNG KHIẾU VÀ THÀNH TÍCH TIÊU BIỂU:
-Ghi nhận tổng cộng ${talents.length} học sinh có năng khiếu, giải thưởng trong các cuộc thi học sinh giỏi, Hội khỏe Phù Đổng và nghiên cứu sáng tạo. Đoàn trường và các tổ chuyên môn đã có danh sách để lập đội tuyển bồi dưỡng.
-
-5. TỔNG HỢP KIẾN NGHỊ VÀ ĐỀ XUẤT HÀNH ĐỘNG CỦA BGH:
-- Về công tác duy trì sĩ số: Chỉ đạo Đoàn Thanh niên, Đội TNTP và GVCN phối hợp chặt chẽ với Trưởng Ban nhân dân các ấp để đến tận nhà vận động các em có nguy cơ bỏ học.
-- Về cơ sở vật chất: Đề nghị Tổ Hành chính - Văn phòng kiểm tra, sửa chữa kịp thời quạt trần, đèn chiếu sáng và rèm che nắng tại các phòng học được GVCN phản ánh trước ngày khai giảng.
-- Về hỗ trợ học sinh: Trích quỹ khuyến học trường trao tặng tập vở và bảo hiểm cho các em học sinh có hoàn cảnh khó khăn đột xuất.
+${fieldSummaries ? `3. TỔNG HỢP CHỈ SỐ THEO BIỂU MẪU:\n${fieldSummaries}\n` : ''}
+4. NHẬN XÉT & ĐỀ XUẤT ĐIỀU HÀNH CỦA BAN GIÁM HIỆU:
+- Tiếp tục chỉ đạo các bộ phận chuyên môn khai thác số liệu chi tiết đã được tổng hợp để phục vụ công tác quản lý, phân loại học sinh và báo cáo Sở GD&ĐT.
+- Đối với các trường hợp cần hỗ trợ khẩn cấp (học sinh nghèo, học sinh có nguy cơ bỏ học), GVCN phối hợp chặt chẽ với Đoàn trường và Ban đại diện CMHS để xử lý dứt điểm.
 `.trim();
 }

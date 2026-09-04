@@ -52,17 +52,8 @@ const MainLayout: React.FC = () => {
   const isPwdDismissedLocally = currentUser ? Boolean(localStorage.getItem(`dbk_pwd_dismissed_${currentUser.id}`)) : false;
   const hasChangedPassword = Boolean(currentUser?.hasChangedPassword || userCred?.hasChangedPassword || isPwdChangedLocally);
 
-  // Modal is only forced if explicitly required by admin (mustChangePassword),
-  // not for Thay Tri (staff-2), and never if already changed or dismissed
-  const isFirstTimePasswordRequired = Boolean(
-    currentUser &&
-    currentUser.id !== 'staff-2' &&
-    currentUser.name !== 'Nguyễn Minh Trí' &&
-    !dismissedFirstTimeUserIds[currentUser.id] &&
-    !isPwdDismissedLocally &&
-    !hasChangedPassword &&
-    Boolean(currentUser.mustChangePassword || userCred?.mustChangePassword)
-  );
+  // Only show change password modal when user explicitly clicks "Đổi mật khẩu"
+  const isFirstTimePasswordRequired = false;
 
   const handleClosePasswordModal = () => {
     setIsChangePasswordOpen(false);

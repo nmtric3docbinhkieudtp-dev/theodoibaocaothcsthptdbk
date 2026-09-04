@@ -410,30 +410,92 @@ export const ExportService = {
     const wsSummary = XLSX.utils.json_to_sheet(summaryData);
     XLSX.utils.book_append_sheet(wb, wsSummary, 'Tổng Quan');
 
-    // 2. Sheet Danh Sách Học Sinh Chưa Ra Lớp Toàn Trường (QUAN TRỌNG NHẤT)
-    const absentRows = data.absentStudents.map((s, idx) => ({
-      'STT': idx + 1,
-      'Lớp': s.className,
-      'Khối': `Khối ${s.grade}`,
-      'Điểm Trường': s.campus === 'THPT' ? 'Điểm THPT' : (s.campus === 'TK' ? 'Điểm Tân Kiều' : 'Điểm Đốc Binh Kiều'),
-      'Giáo Viên Chủ Nhiệm': s.teacherName,
-      'Họ và Tên Học Sinh': s.studentName,
-      'Lớp Năm Trước': s.previousClass,
-      'Nơi Ở Hiện Nay': s.currentAddress,
-      'Số ĐT Học Sinh': s.studentPhone,
-      'Số ĐT Phụ Huynh': s.parentPhone,
-      'Lý Do Chưa Ra Lớp': s.reason
-    }));
+    // 2. Dynamic Tables Sheets (DANH SÁCH TỔNG HỢP NỘI DUNG TỪ 53 LỚP / TOÀN TRƯỜNG)
+    data.dynamicTables.forEach((tbl, tIdx) => {
+      const rows = tbl.rows.map((r, rIdx) => {
+        const rowData: Record<string, any> = {
+          'STT': rIdx + 1,
+          'Lớp': r.className,
+          'Điểm Trường': r.campus,
+          'Khối': r.grade ? `Khối ${r.grade}` : '',
+          'Người Nộp / GVCN': r.authorName,
+          'Thời Gian Nộp': r.submittedAt ? new Date(r.submittedAt).toLocaleString('vi-VN') : ''
+        };
+        tbl.headers.forEach(h => {
+          rowData[h] = r.data[h] || '';
+        });
+        return rowData;
+      });
 
-    if (absentRows.length > 0) {
+      if (rows.length > 0) {
+        const wsDyn = XLSX.utils.json_to_sheet(rows);
+        const cleanName = tbl.title.replace(/[\\/?*[\]:]/g, '').substring(0, 26);
+        const sheetTitle = `DS_${tIdx + 1}_${cleanName}`.substring(0, 31);
+        XLSX.utils.book_append_sheet(wb, wsDyn, sheetTitle);
+      }
+    });
+
+    // 3. Sheet Ma Trận Chỉ Số Biểu Mẫu 53 Lớp (nếu có các trường tùy biến)
+    if (data.fieldMatrix && data.fieldMatrix.columns.length > 0) {
+      const matrixRows = data.fieldMatrix.rows.map(r => {
+        const rowData: Record<string, any> = {
+          'STT': r.stt,
+          'Lớp': r.className,
+          'Cơ Sở': r.campus,
+          'Khối': `Khối ${r.grade}`,
+          'Người Báo Cáo': r.authorName,
+          'Trạng Thái': r.hasSubmitted ? 'Đã nộp' : 'Chưa nộp'
+        };
+        data.fieldMatrix.columns.forEach(col => {
+          rowData[col.label] = r.values[col.id] !== undefined ? r.values[col.id] : '';
+        });
+        return rowData;
+      });
+
+      // Thêm dòng Tổng cộng nếu có cột số
+      if (Object.keys(data.fieldMatrix.numericTotals).length > 0) {
+        const totalsRow: Record<string, any> = {
+          'STT': 0,
+          'Lớp': 'TỔNG CỘNG TOÀN TRƯỜNG',
+          'Cơ Sở': '-',
+          'Khối': '-',
+          'Người Báo Cáo': '-',
+          'Trạng Thái': `${data.submittedCount}/53 lớp`
+        };
+        data.fieldMatrix.columns.forEach(col => {
+          if (col.type === 'number') {
+            totalsRow[col.label] = data.fieldMatrix.numericTotals[col.id] || 0;
+          } else {
+            totalsRow[col.label] = '-';
+          }
+        });
+        matrixRows.push(totalsRow);
+      }
+
+      const wsMatrix = XLSX.utils.json_to_sheet(matrixRows);
+      XLSX.utils.book_append_sheet(wb, wsMatrix, 'Ma_Tran_Chi_So_53_Lop');
+    }
+
+    // 4. Sheet Danh Sách Học Sinh Vắng (nếu có)
+    if (data.absentStudents.length > 0) {
+      const absentRows = data.absentStudents.map((s, idx) => ({
+        'STT': idx + 1,
+        'Lớp': s.className,
+        'Khối': `Khối ${s.grade}`,
+        'Điểm Trường': s.campus === 'THPT' ? 'Điểm THPT' : (s.campus === 'TK' ? 'Điểm Tân Kiều' : 'Điểm Đốc Binh Kiều'),
+        'Giáo Viên Chủ Nhiệm': s.teacherName,
+        'Họ và Tên Học Sinh': s.studentName,
+        'Lớp Năm Trước': s.previousClass,
+        'Nơi Ở Hiện Nay': s.currentAddress,
+        'Số ĐT Học Sinh': s.studentPhone,
+        'Số ĐT Phụ Huynh': s.parentPhone,
+        'Lý Do Chưa Ra Lớp': s.reason
+      }));
       const wsAbsent = XLSX.utils.json_to_sheet(absentRows);
-      XLSX.utils.book_append_sheet(wb, wsAbsent, 'DS_HS_Chua_Ra_Lop_53_Lop');
-    } else {
-      const wsAbsent = XLSX.utils.json_to_sheet([{ 'Thông báo': '100% học sinh đã ra lớp đầy đủ, không có học sinh vắng.' }]);
       XLSX.utils.book_append_sheet(wb, wsAbsent, 'DS_HS_Chua_Ra_Lop_53_Lop');
     }
 
-    // 3. Sheet Bảng Tổng Hợp Sĩ Số & Tỷ Lệ Ra Lớp (53 Lớp)
+    // 5. Sheet Bảng Tổng Hợp Sĩ Số & Tỷ Lệ Ra Lớp (53 Lớp)
     const classRows = data.classStats.map((c) => ({
       'STT': c.stt,
       'Lớp': c.className,
@@ -470,7 +532,7 @@ export const ExportService = {
     const wsClasses = XLSX.utils.json_to_sheet(classRows);
     XLSX.utils.book_append_sheet(wb, wsClasses, 'Tong_Hop_Si_So_53_Lop');
 
-    // 4. Sheet Học Sinh Năng Khiếu Toàn Trường
+    // 6. Sheet Học Sinh Năng Khiếu Toàn Trường
     if (data.talents.length > 0) {
       const talentRows = data.talents.map((t, idx) => ({
         'STT': idx + 1,
@@ -485,7 +547,7 @@ export const ExportService = {
       XLSX.utils.book_append_sheet(wb, wsTalent, 'DS_Hoc_Sinh_Nang_Khieu');
     }
 
-    // 5. Sheet Ban Cán Sự 53 Lớp
+    // 7. Sheet Ban Cán Sự 53 Lớp
     if (data.cadres.length > 0) {
       const cadreRows = data.cadres.map((cd, idx) => ({
         'STT': idx + 1,
@@ -501,7 +563,7 @@ export const ExportService = {
       XLSX.utils.book_append_sheet(wb, wsCadre, 'Ban_Can_Su_53_Lop');
     }
 
-    // 6. Sheet Tổng Hợp Nội Dung Chi Tiết Của 53 Báo Cáo
+    // 8. Sheet Tổng Hợp Nội Dung Chi Tiết Của 53 Báo Cáo
     const feedbackRows = data.feedbacks.map((f, idx) => ({
       'STT': idx + 1,
       'Lớp / Đơn Vị': f.className,
@@ -516,25 +578,6 @@ export const ExportService = {
       const wsFeedbacks = XLSX.utils.json_to_sheet(feedbackRows);
       XLSX.utils.book_append_sheet(wb, wsFeedbacks, 'Tong_Hop_Noi_Dung_53_Nguoi');
     }
-
-    // 7. Dynamic tables nếu có
-    data.dynamicTables.forEach((tbl) => {
-      const rows = tbl.rows.map((r, rIdx) => {
-        const rowData: Record<string, any> = {
-          'STT': rIdx + 1,
-          'Người Nộp': r.authorName,
-          'Lớp': r.className,
-          'Tổ': r.departmentName
-        };
-        tbl.headers.forEach(h => {
-          rowData[h] = r.data[h] || '';
-        });
-        return rowData;
-      });
-      const wsDyn = XLSX.utils.json_to_sheet(rows);
-      const cleanName = tbl.title.replace(/[\\/?*[\]:]/g, '').substring(0, 30);
-      XLSX.utils.book_append_sheet(wb, wsDyn, cleanName);
-    });
 
     // Xuất file
     const dateStr = new Date().toISOString().split('T')[0];
@@ -666,27 +709,78 @@ export const ExportService = {
         <p>- Số học sinh hiện diện có mặt: <strong>${data.totalPresentStudents.toLocaleString('vi-VN')}</strong> học sinh. Tỷ lệ ra lớp: <strong>${data.overallAttendanceRate}%</strong>.</p>
         <p>- Tổng số học sinh chưa ra lớp cần tiếp tục vận động: <strong>${data.totalAbsentStudents}</strong> học sinh.</p>
 
-        <div class="section-title">II. DANH SÁCH TỔNG HỢP HỌC SINH CHƯA RA LỚP TOÀN TRƯỜNG (TỔNG HỢP TỪ 53 LỚP)</div>
-        <p><em>(Danh sách phục vụ công tác chỉ đạo Đoàn thanh niên, Đội TNTP và GVCN đi vận động học sinh đến trường)</em></p>
-        <table class="data-table">
-          <thead>
-            <tr>
-              <th style="width: 30px;">STT</th>
-              <th style="width: 55px;">Lớp</th>
-              <th style="width: 130px;">GVCN</th>
-              <th style="width: 140px;">Họ và tên học sinh</th>
-              <th>Nơi ở hiện nay</th>
-              <th style="width: 85px;">SĐT HS</th>
-              <th style="width: 85px;">SĐT Phụ huynh</th>
-              <th style="width: 150px;">Lý do chưa ra lớp</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${absentRowsHtml}
-          </tbody>
-        </table>
+        ${data.dynamicTables.length > 0 ? data.dynamicTables.map((tbl, tIdx) => `
+          <div class="section-title">II.${tIdx + 1}. DANH SÁCH TỔNG HỢP: ${tbl.title.toUpperCase()} (TỔNG HỢP 53 LỚP / TOÀN TRƯỜNG)</div>
+          <p><em>(Tổng cộng ${tbl.totalRows} bản ghi được tổng hợp từ các lớp đã nộp báo cáo)</em></p>
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th style="width: 35px;">STT</th>
+                <th style="width: 60px;">Lớp</th>
+                <th style="width: 140px;">GVCN / Người Báo Cáo</th>
+                ${tbl.headers.map(h => `<th>${h}</th>`).join('')}
+              </tr>
+            </thead>
+            <tbody>
+              ${tbl.rows.map(r => `
+                <tr>
+                  <td style="text-align: center; border: 1px solid #000; padding: 5px;">${r.stt}</td>
+                  <td style="text-align: center; border: 1px solid #000; padding: 5px; font-weight: bold;">${r.className}</td>
+                  <td style="border: 1px solid #000; padding: 5px;">${r.authorName}</td>
+                  ${tbl.headers.map(h => `<td style="border: 1px solid #000; padding: 5px;">${r.data[h] || '-'}</td>`).join('')}
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        `).join('') : ''}
 
-        <div class="section-title">III. BẢNG TỔNG HỢP SĨ SỐ VÀ TỶ LỆ RA LỚP 53 LỚP CHỦ NHIỆM</div>
+        ${data.fieldMatrix.columns.length > 0 ? `
+          <div class="section-title">III. BẢNG MA TRẬN CHỈ SỐ BIỂU MẪU CỦA 53 LỚP CHỦ NHIỆM</div>
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th style="width: 35px;">STT</th>
+                <th style="width: 60px;">Lớp</th>
+                <th style="width: 140px;">GVCN</th>
+                ${data.fieldMatrix.columns.map(c => `<th>${c.label}</th>`).join('')}
+              </tr>
+            </thead>
+            <tbody>
+              ${data.fieldMatrix.rows.map(r => `
+                <tr>
+                  <td style="text-align: center; border: 1px solid #000; padding: 5px;">${r.stt}</td>
+                  <td style="text-align: center; border: 1px solid #000; padding: 5px; font-weight: bold;">${r.className}</td>
+                  <td style="border: 1px solid #000; padding: 5px;">${r.authorName}</td>
+                  ${data.fieldMatrix.columns.map(c => `<td style="text-align: ${c.type === 'number' ? 'center' : 'left'}; border: 1px solid #000; padding: 5px;">${r.values[c.id] !== undefined && r.values[c.id] !== '' ? r.values[c.id] : '-'}</td>`).join('')}
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        ` : ''}
+
+        ${data.absentStudents.length > 0 ? `
+          <div class="section-title">IV. DANH SÁCH TỔNG HỢP HỌC SINH CHƯA RA LỚP TOÀN TRƯỜNG</div>
+          <p><em>(Danh sách phục vụ công tác chỉ đạo Đoàn thanh niên, Đội TNTP và GVCN đi vận động học sinh đến trường)</em></p>
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th style="width: 30px;">STT</th>
+                <th style="width: 55px;">Lớp</th>
+                <th style="width: 130px;">GVCN</th>
+                <th style="width: 140px;">Họ và tên học sinh</th>
+                <th>Nơi ở hiện nay</th>
+                <th style="width: 85px;">SĐT HS</th>
+                <th style="width: 85px;">SĐT Phụ huynh</th>
+                <th style="width: 150px;">Lý do chưa ra lớp</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${absentRowsHtml}
+            </tbody>
+          </table>
+        ` : ''}
+
+        <div class="section-title">V. BẢNG TỔNG HỢP SĨ SỐ VÀ TIẾN ĐỘ 53 LỚP CHỦ NHIỆM</div>
         <table class="data-table">
           <thead>
             <tr>

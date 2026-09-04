@@ -85,19 +85,19 @@ export const SubmitReportModal: React.FC<SubmitReportModalProps> = ({
     return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
   });
 
-  // Sync selected period
+  // Sync selected period whenever modal opens or defaultPeriodId changes
   useEffect(() => {
-    if (defaultPeriodId) {
-      setSelectedPeriodId(defaultPeriodId);
-    } else if (eligiblePeriods.length > 0) {
-      if (!selectedPeriodId || (!eligiblePeriods.some(p => p.id === selectedPeriodId) && selectedPeriodId !== 'adhoc')) {
+    if (isOpen) {
+      if (defaultPeriodId) {
+        setSelectedPeriodId(defaultPeriodId);
+      } else if (eligiblePeriods.length > 0) {
         const firstActive = eligiblePeriods.find(p => p.status === 'active') || eligiblePeriods[0];
         setSelectedPeriodId(firstActive.id);
+      } else {
+        setSelectedPeriodId('adhoc');
       }
-    } else {
-      setSelectedPeriodId('adhoc');
     }
-  }, [defaultPeriodId, eligiblePeriods]);
+  }, [isOpen, defaultPeriodId]);
 
   const currentPeriod = selectedPeriodId === 'adhoc' ? null : periods.find(p => p.id === selectedPeriodId);
 
@@ -116,32 +116,30 @@ export const SubmitReportModal: React.FC<SubmitReportModalProps> = ({
     customTables.length > 0
   );
 
-  // Load period form template if available
+  // Load period form template if available and reset stale inputs
   useEffect(() => {
+    if (!isOpen) return;
+
     if (currentPeriod) {
-      if (currentPeriod.defaultTemplateContent) {
-        setContent(currentPeriod.defaultTemplateContent);
-      } else {
-        setContent('');
-      }
-      if (currentPeriod.formTemplate?.fields) {
-        setCustomFields(currentPeriod.formTemplate.fields);
-      } else {
-        setCustomFields([]);
-      }
-      if (currentPeriod.formTemplate?.tables) {
-        setCustomTables(currentPeriod.formTemplate.tables);
-      } else {
-        setCustomTables([]);
-      }
+      setContent(currentPeriod.defaultTemplateContent || '');
+      setCustomFields(currentPeriod.formTemplate?.fields || []);
+      setCustomTables(currentPeriod.formTemplate?.tables || []);
       setCustomFieldValues({});
+      setCustomNotes('');
+      setLateExplanation('');
+      setHomeroomData(null);
+      setAttachments([]);
     } else {
       setCustomFields([]);
       setCustomTables([]);
       setCustomFieldValues({});
       setContent('');
+      setCustomNotes('');
+      setLateExplanation('');
+      setHomeroomData(null);
+      setAttachments([]);
     }
-  }, [selectedPeriodId]);
+  }, [isOpen, selectedPeriodId]);
 
   // Check if current submission is past deadline
   const isPastDeadline = currentPeriod 

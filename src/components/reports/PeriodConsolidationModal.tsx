@@ -60,10 +60,11 @@ export const PeriodConsolidationModal: React.FC<PeriodConsolidationModalProps> =
   });
 
   // Active tab state
-  const [activeTab, setActiveTab] = useState<'absent' | 'classes' | 'talents' | 'feedbacks' | 'dynamic' | 'ai'>('absent');
+  const [activeTab, setActiveTab] = useState<'dynamic' | 'matrix' | 'absent' | 'classes' | 'talents' | 'feedbacks' | 'ai'>('dynamic');
 
   // Filter states
   const [searchAbsent, setSearchAbsent] = useState('');
+  const [searchDynamic, setSearchDynamic] = useState('');
   const [gradeFilter, setGradeFilter] = useState<string>('all');
   const [campusFilter, setCampusFilter] = useState<string>('all');
   const [searchFeedback, setSearchFeedback] = useState('');
@@ -84,6 +85,54 @@ export const PeriodConsolidationModal: React.FC<PeriodConsolidationModalProps> =
   const consolidatedData: PeriodConsolidationResult = useMemo(() => {
     return aggregatePeriodReportData(activePeriod, submissions, allUsers);
   }, [activePeriod, submissions, allUsers]);
+
+  // Auto select best tab when period changes
+  React.useEffect(() => {
+    if (consolidatedData.dynamicTables.length > 0) {
+      setActiveTab('dynamic');
+    } else if (consolidatedData.fieldMatrix.columns.length > 0) {
+      setActiveTab('matrix');
+    } else if (consolidatedData.absentStudents.length > 0) {
+      setActiveTab('absent');
+    } else {
+      setActiveTab('classes');
+    }
+  }, [selectedPeriodId, consolidatedData.dynamicTables.length, consolidatedData.absentStudents.length, consolidatedData.fieldMatrix.columns.length]);
+
+  // Filter dynamic tables
+  const filteredDynamicTables = useMemo(() => {
+    return consolidatedData.dynamicTables.map(tbl => {
+      const rows = tbl.rows.filter(r => {
+        if (gradeFilter !== 'all' && String(r.grade) !== gradeFilter) return false;
+        if (campusFilter !== 'all' && r.campus !== campusFilter) return false;
+        if (searchDynamic.trim()) {
+          const q = searchDynamic.toLowerCase().trim();
+          const inClass = r.className.toLowerCase().includes(q);
+          const inAuthor = r.authorName.toLowerCase().includes(q);
+          const inData = Object.values(r.data).some(val => String(val).toLowerCase().includes(q));
+          if (!inClass && !inAuthor && !inData) return false;
+        }
+        return true;
+      });
+      return { ...tbl, filteredRows: rows };
+    });
+  }, [consolidatedData.dynamicTables, gradeFilter, campusFilter, searchDynamic]);
+
+  // Filter matrix rows
+  const filteredMatrixRows = useMemo(() => {
+    return consolidatedData.fieldMatrix.rows.filter(r => {
+      if (gradeFilter !== 'all' && String(r.grade) !== gradeFilter) return false;
+      if (campusFilter !== 'all' && r.campus !== campusFilter) return false;
+      if (searchDynamic.trim()) {
+        const q = searchDynamic.toLowerCase().trim();
+        const inClass = r.className.toLowerCase().includes(q);
+        const inAuthor = r.authorName.toLowerCase().includes(q);
+        const inValues = Object.values(r.values).some(val => String(val).toLowerCase().includes(q));
+        if (!inClass && !inAuthor && !inValues) return false;
+      }
+      return true;
+    });
+  }, [consolidatedData.fieldMatrix.rows, gradeFilter, campusFilter, searchDynamic]);
 
   // Filter absent students
   const filteredAbsentStudents = useMemo(() => {
@@ -340,20 +389,39 @@ export const PeriodConsolidationModal: React.FC<PeriodConsolidationModalProps> =
 
         {/* Navigation Tabs */}
         <div className="px-6 border-b border-slate-200 bg-white flex items-center gap-2 overflow-x-auto">
-          <button
-            onClick={() => setActiveTab('absent')}
-            className={`py-3 px-3 text-xs font-bold border-b-2 flex items-center gap-2 transition cursor-pointer whitespace-nowrap ${
-              activeTab === 'absent'
-                ? 'border-rose-600 text-rose-700 bg-rose-50/50'
-                : 'border-transparent text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            <AlertCircle className="w-4 h-4 text-rose-600" />
-            <span>1. Học Sinh Chưa Ra Lớp</span>
-            <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-700">
-              {consolidatedData.totalAbsentStudents}
-            </span>
-          </button>
+          {consolidatedData.dynamicTables.length > 0 && (
+            <button
+              onClick={() => setActiveTab('dynamic')}
+              className={`py-3 px-3.5 text-xs font-bold border-b-2 flex items-center gap-2 transition cursor-pointer whitespace-nowrap ${
+                activeTab === 'dynamic'
+                  ? 'border-indigo-600 text-indigo-700 bg-indigo-50/50'
+                  : 'border-transparent text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <Layers className="w-4 h-4 text-indigo-600" />
+              <span>1. Tổng Hợp Dữ Liệu 53 Lớp</span>
+              <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-indigo-100 text-indigo-800">
+                {consolidatedData.totalDynamicRows} bản ghi
+              </span>
+            </button>
+          )}
+
+          {consolidatedData.fieldMatrix.columns.length > 0 && (
+            <button
+              onClick={() => setActiveTab('matrix')}
+              className={`py-3 px-3.5 text-xs font-bold border-b-2 flex items-center gap-2 transition cursor-pointer whitespace-nowrap ${
+                activeTab === 'matrix'
+                  ? 'border-teal-600 text-teal-700 bg-teal-50/50'
+                  : 'border-transparent text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <FileSpreadsheet className="w-4 h-4 text-teal-600" />
+              <span>Ma Trận Chỉ Số</span>
+              <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-teal-100 text-teal-800">
+                {consolidatedData.fieldMatrix.columns.length} chỉ số
+              </span>
+            </button>
+          )}
 
           <button
             onClick={() => setActiveTab('classes')}
@@ -364,11 +432,28 @@ export const PeriodConsolidationModal: React.FC<PeriodConsolidationModalProps> =
             }`}
           >
             <School className="w-4 h-4 text-emerald-600" />
-            <span>2. Bảng Sĩ Số 53 Lớp</span>
+            <span>Tiến Độ & Sĩ Số 53 Lớp</span>
             <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700">
               53
             </span>
           </button>
+
+          {consolidatedData.totalAbsentStudents > 0 && (
+            <button
+              onClick={() => setActiveTab('absent')}
+              className={`py-3 px-3 text-xs font-bold border-b-2 flex items-center gap-2 transition cursor-pointer whitespace-nowrap ${
+                activeTab === 'absent'
+                  ? 'border-rose-600 text-rose-700 bg-rose-50/50'
+                  : 'border-transparent text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <AlertCircle className="w-4 h-4 text-rose-600" />
+              <span>Học Sinh Chưa Ra Lớp</span>
+              <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-700">
+                {consolidatedData.totalAbsentStudents}
+              </span>
+            </button>
+          )}
 
           <button
             onClick={() => setActiveTab('talents')}
@@ -379,7 +464,7 @@ export const PeriodConsolidationModal: React.FC<PeriodConsolidationModalProps> =
             }`}
           >
             <Award className="w-4 h-4 text-amber-600" />
-            <span>3. Năng Khiếu & Ban Cán Sự</span>
+            <span>Năng Khiếu & Ban Cán Sự</span>
             <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800">
               {consolidatedData.talents.length}
             </span>
@@ -394,22 +479,8 @@ export const PeriodConsolidationModal: React.FC<PeriodConsolidationModalProps> =
             }`}
           >
             <FileCheck className="w-4 h-4 text-blue-600" />
-            <span>4. Nội Dung Báo Cáo & Ý Kiến ({consolidatedData.feedbacks.length})</span>
+            <span>Nội Dung Báo Cáo ({consolidatedData.feedbacks.length})</span>
           </button>
-
-          {consolidatedData.dynamicTables.length > 0 && (
-            <button
-              onClick={() => setActiveTab('dynamic')}
-              className={`py-3 px-3 text-xs font-bold border-b-2 flex items-center gap-2 transition cursor-pointer whitespace-nowrap ${
-                activeTab === 'dynamic'
-                  ? 'border-indigo-600 text-indigo-700 bg-indigo-50/50'
-                  : 'border-transparent text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              <Layers className="w-4 h-4 text-indigo-600" />
-              <span>5. Bảng Biểu Mẫu Động ({consolidatedData.dynamicTables.length})</span>
-            </button>
-          )}
 
           <button
             onClick={() => setActiveTab('ai')}
@@ -420,7 +491,7 @@ export const PeriodConsolidationModal: React.FC<PeriodConsolidationModalProps> =
             }`}
           >
             <Sparkles className="w-4 h-4 text-purple-600" />
-            <span>6. AI Tóm Tắt & Chỉ Đạo BGH</span>
+            <span>AI Tóm Tắt & Chỉ Đạo BGH</span>
           </button>
         </div>
 
@@ -810,45 +881,223 @@ export const PeriodConsolidationModal: React.FC<PeriodConsolidationModalProps> =
             </div>
           )}
 
-          {/* TAB 5: DYNAMIC TABLES */}
+          {/* TAB: DYNAMIC TABLES (TỔNG HỢP DỮ LIỆU TỪ 53 LỚP / TOÀN TRƯỜNG) */}
           {activeTab === 'dynamic' && (
             <div className="space-y-6">
-              {consolidatedData.dynamicTables.map((tbl) => (
-                <div key={tbl.id} className="bg-white rounded-2xl border border-slate-200 shadow-2xs overflow-hidden">
-                  <div className="p-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
-                    <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
-                      {tbl.title} ({tbl.rows.length} dòng tổng hợp)
-                    </h3>
+              {/* Filter controls for dynamic table */}
+              <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs flex flex-wrap items-center justify-between gap-3">
+                <div className="flex flex-wrap items-center gap-3 flex-1 min-w-[280px]">
+                  <div className="relative flex-1 min-w-[200px]">
+                    <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="text"
+                      placeholder="Tìm kiếm trong bảng dữ liệu: tên học sinh, lớp, người nộp, ghi chú..."
+                      value={searchDynamic}
+                      onChange={(e) => setSearchDynamic(e.target.value)}
+                      className="w-full text-xs pl-9 pr-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
+                    />
                   </div>
 
-                  <div className="overflow-x-auto max-h-[50vh]">
-                    <table className="w-full text-left border-collapse text-xs">
-                      <thead className="sticky top-0 bg-slate-100 text-slate-700 font-bold border-b border-slate-200">
-                        <tr>
-                          <th className="p-2.5 w-10 text-center">STT</th>
-                          <th className="p-2.5 w-32">Người nộp</th>
-                          <th className="p-2.5 w-20 text-center">Lớp / Tổ</th>
-                          {tbl.headers.map((h, hIdx) => (
-                            <th key={hIdx} className="p-2.5">{h}</th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100">
-                        {tbl.rows.map((r, rIdx) => (
-                          <tr key={rIdx} className="hover:bg-slate-50">
-                            <td className="p-2.5 text-center text-slate-400">{rIdx + 1}</td>
-                            <td className="p-2.5 font-medium text-slate-800">{r.authorName}</td>
-                            <td className="p-2.5 text-center font-bold text-emerald-700">{r.className}</td>
+                  <select
+                    value={gradeFilter}
+                    onChange={(e) => setGradeFilter(e.target.value)}
+                    className="text-xs px-3 py-2 rounded-xl border border-slate-300 bg-white focus:outline-indigo-600"
+                  >
+                    <option value="all">Tất cả các khối</option>
+                    <option value="6">Khối 6</option>
+                    <option value="7">Khối 7</option>
+                    <option value="8">Khối 8</option>
+                    <option value="9">Khối 9</option>
+                    <option value="10">Khối 10</option>
+                    <option value="11">Khối 11</option>
+                    <option value="12">Khối 12</option>
+                  </select>
+
+                  <select
+                    value={campusFilter}
+                    onChange={(e) => setCampusFilter(e.target.value)}
+                    className="text-xs px-3 py-2 rounded-xl border border-slate-300 bg-white focus:outline-indigo-600"
+                  >
+                    <option value="all">Tất cả điểm trường</option>
+                    <option value="THPT">Điểm THPT</option>
+                    <option value="DBK">Điểm THCS Đốc Binh Kiều</option>
+                    <option value="TK">Điểm THCS Tân Kiều</option>
+                  </select>
+                </div>
+
+                <div className="text-xs text-slate-600 font-medium">
+                  Tổng hợp: <strong className="text-indigo-700">{consolidatedData.totalDynamicRows} bản ghi</strong> từ các lớp đã nộp
+                </div>
+              </div>
+
+              {filteredDynamicTables.map((tbl) => (
+                <div key={tbl.id} className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs overflow-hidden">
+                  <div className="p-4 bg-gradient-to-r from-indigo-50/80 to-slate-50 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-bold text-xs shadow-xs">
+                        <Layers className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wide">
+                          {tbl.title}
+                        </h3>
+                        <p className="text-[11px] text-slate-500">
+                          Bảng dữ liệu gom từ tất cả các lớp của đợt báo cáo
+                        </p>
+                      </div>
+                    </div>
+                    <span className="px-3 py-1 rounded-full text-xs font-bold bg-indigo-100 text-indigo-800 border border-indigo-200">
+                      {tbl.filteredRows.length} / {tbl.rows.length} dòng hiển thị
+                    </span>
+                  </div>
+
+                  {tbl.filteredRows.length === 0 ? (
+                    <div className="p-8 text-center text-slate-400 text-xs">
+                      Không tìm thấy bản ghi nào phù hợp với bộ lọc hiện tại.
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto max-h-[55vh]">
+                      <table className="w-full text-left border-collapse text-xs">
+                        <thead className="sticky top-0 bg-slate-100 text-slate-700 font-bold border-b border-slate-200 shadow-2xs">
+                          <tr>
+                            <th className="p-2.5 w-10 text-center">STT</th>
+                            <th className="p-2.5 w-20 text-center">Lớp</th>
+                            <th className="p-2.5 w-28 text-center">Cơ sở</th>
+                            <th className="p-2.5 w-36">Người nộp / GVCN</th>
                             {tbl.headers.map((h, hIdx) => (
-                              <td key={hIdx} className="p-2.5 text-slate-700">{r.data[h] || '-'}</td>
+                              <th key={hIdx} className="p-2.5 min-w-[120px]">{h}</th>
                             ))}
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                          {tbl.filteredRows.map((r, rIdx) => (
+                            <tr key={rIdx} className="hover:bg-indigo-50/40 transition">
+                              <td className="p-2.5 text-center text-slate-400 font-mono">{rIdx + 1}</td>
+                              <td className="p-2.5 text-center font-bold text-indigo-700">
+                                <span className="px-2 py-0.5 rounded-md bg-indigo-50 border border-indigo-100">
+                                  {r.className}
+                                </span>
+                              </td>
+                              <td className="p-2.5 text-center text-slate-600 text-[11px]">
+                                {r.campus === 'THPT' ? 'Điểm THPT' : (r.campus === 'TK' ? 'Tân Kiều' : 'Đốc Binh Kiều')}
+                              </td>
+                              <td className="p-2.5 font-medium text-slate-800">{r.authorName}</td>
+                              {tbl.headers.map((h, hIdx) => (
+                                <td key={hIdx} className="p-2.5 text-slate-700">
+                                  {r.data[h] !== undefined && r.data[h] !== '' ? String(r.data[h]) : '-'}
+                                </td>
+                              ))}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
                 </div>
               ))}
+            </div>
+          )}
+
+          {/* TAB: MATRIX (MA TRẬN CHỈ SỐ BIỂU MẪU) */}
+          {activeTab === 'matrix' && (
+            <div className="space-y-4">
+              <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs flex flex-wrap items-center justify-between gap-3">
+                <div className="flex flex-wrap items-center gap-3 flex-1 min-w-[280px]">
+                  <div className="relative flex-1 min-w-[200px]">
+                    <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="text"
+                      placeholder="Tìm kiếm theo lớp, người nộp hoặc giá trị..."
+                      value={searchDynamic}
+                      onChange={(e) => setSearchDynamic(e.target.value)}
+                      className="w-full text-xs pl-9 pr-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-teal-500 focus:outline-hidden"
+                    />
+                  </div>
+
+                  <select
+                    value={gradeFilter}
+                    onChange={(e) => setGradeFilter(e.target.value)}
+                    className="text-xs px-3 py-2 rounded-xl border border-slate-300 bg-white focus:outline-teal-600"
+                  >
+                    <option value="all">Tất cả các khối</option>
+                    <option value="6">Khối 6</option>
+                    <option value="7">Khối 7</option>
+                    <option value="8">Khối 8</option>
+                    <option value="9">Khối 9</option>
+                    <option value="10">Khối 10</option>
+                    <option value="11">Khối 11</option>
+                    <option value="12">Khối 12</option>
+                  </select>
+
+                  <select
+                    value={campusFilter}
+                    onChange={(e) => setCampusFilter(e.target.value)}
+                    className="text-xs px-3 py-2 rounded-xl border border-slate-300 bg-white focus:outline-teal-600"
+                  >
+                    <option value="all">Tất cả điểm trường</option>
+                    <option value="THPT">Điểm THPT</option>
+                    <option value="DBK">Điểm THCS Đốc Binh Kiều</option>
+                    <option value="TK">Điểm THCS Tân Kiều</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs overflow-hidden">
+                <div className="overflow-x-auto max-h-[60vh]">
+                  <table className="w-full text-left border-collapse text-xs">
+                    <thead className="sticky top-0 bg-slate-100 text-slate-700 font-bold border-b border-slate-200 shadow-2xs">
+                      <tr>
+                        <th className="p-2.5 w-10 text-center">STT</th>
+                        <th className="p-2.5 w-20 text-center">Lớp</th>
+                        <th className="p-2.5 w-24 text-center">Cơ sở</th>
+                        <th className="p-2.5 w-36">Người báo cáo</th>
+                        <th className="p-2.5 w-24 text-center">Trạng thái</th>
+                        {consolidatedData.fieldMatrix.columns.map((col) => (
+                          <th key={col.id} className="p-2.5 text-center min-w-[120px]">
+                            {col.label}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {filteredMatrixRows.map((r) => (
+                        <tr key={r.className} className={`hover:bg-teal-50/40 transition ${!r.hasSubmitted ? 'bg-slate-50/60 opacity-70' : ''}`}>
+                          <td className="p-2.5 text-center text-slate-400 font-mono">{r.stt}</td>
+                          <td className="p-2.5 text-center font-bold text-teal-700">{r.className}</td>
+                          <td className="p-2.5 text-center text-slate-500 text-[11px]">{r.campus}</td>
+                          <td className="p-2.5 text-slate-800 font-medium">{r.authorName}</td>
+                          <td className="p-2.5 text-center">
+                            {r.hasSubmitted ? (
+                              <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-100 text-emerald-800">Đã nộp</span>
+                            ) : (
+                              <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-200 text-slate-600">Chưa nộp</span>
+                            )}
+                          </td>
+                          {consolidatedData.fieldMatrix.columns.map((col) => (
+                            <td key={col.id} className={`p-2.5 ${col.type === 'number' ? 'text-center font-semibold text-slate-900' : 'text-slate-700'}`}>
+                              {r.values[col.id] !== undefined && r.values[col.id] !== '' ? String(r.values[col.id]) : '-'}
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                    {Object.keys(consolidatedData.fieldMatrix.numericTotals).length > 0 && (
+                      <tfoot className="bg-slate-100 font-bold border-t-2 border-slate-300">
+                        <tr>
+                          <td colSpan={5} className="p-2.5 text-center uppercase tracking-wider text-slate-800">
+                            TỔNG CỘNG TOÀN TRƯỜNG ({consolidatedData.submittedCount}/53 lớp)
+                          </td>
+                          {consolidatedData.fieldMatrix.columns.map((col) => (
+                            <td key={col.id} className="p-2.5 text-center text-teal-900 font-bold text-sm">
+                              {col.type === 'number' ? consolidatedData.fieldMatrix.numericTotals[col.id] || 0 : '-'}
+                            </td>
+                          ))}
+                        </tr>
+                      </tfoot>
+                    )}
+                  </table>
+                </div>
+              </div>
             </div>
           )}
 
