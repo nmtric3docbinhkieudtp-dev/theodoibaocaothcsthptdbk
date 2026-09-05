@@ -45,6 +45,23 @@ export const AdminReportsExport: React.FC<AdminReportsExportProps> = ({
   const [exporting, setExporting] = useState(false);
   const [exportingWord, setExportingWord] = useState(false);
 
+  if (!isAdmin && !isPrincipal) {
+    return (
+      <div className="bg-white rounded-3xl p-8 border border-slate-200 text-center space-y-4 shadow-xs max-w-lg mx-auto my-12">
+        <div className="w-14 h-14 rounded-2xl bg-amber-50 text-amber-600 mx-auto flex items-center justify-center">
+          <AlertCircle className="w-7 h-7" />
+        </div>
+        <div className="space-y-1">
+          <h2 className="text-base font-bold text-slate-900">Quyền Truy Cập Hạn Chế</h2>
+          <p className="text-xs text-slate-500 leading-relaxed">
+            Trung tâm xuất & tổng hợp dữ liệu báo cáo chỉ dành riêng cho Quản trị viên và Ban Giám hiệu nhà trường.
+            Tài khoản giáo viên và nhân viên chỉ có quyền điền và nộp báo cáo được phân công.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   const activePeriod = useMemo(() => {
     if (selectedPeriodId === 'all') return null;
     return periods.find((p: any) => p.id === selectedPeriodId) || null;

@@ -37,7 +37,7 @@ export const PeriodManagement: React.FC<PeriodManagementProps> = ({
   onOpenSubmit,
   onOpenConsolidation
 }) => {
-  const { isPrincipal, isAdmin, canManagePeriods, allUsers = [] } = useAuth();
+  const { isPrincipal, isAdmin, isDeptHead, canManagePeriods, allUsers = [] } = useAuth();
   const { 
     periods = [], 
     departments = [], 
@@ -356,7 +356,7 @@ export const PeriodManagement: React.FC<PeriodManagementProps> = ({
                       <span>Nộp báo cáo</span>
                     </button>
 
-                    {onOpenConsolidation && (
+                    {onOpenConsolidation && (isAdmin || isPrincipal) && (
                       <button
                         type="button"
                         onClick={() => onOpenConsolidation(period.id)}
@@ -370,14 +370,16 @@ export const PeriodManagement: React.FC<PeriodManagementProps> = ({
                   </div>
 
                   <div className="flex items-center gap-1.5">
-                    <button
-                      onClick={() => handleSendReminder(period)}
-                      title={isHomeroomPeriod ? "Gửi email nhắc hạn cho các GVCN chưa nộp" : "Gửi email nhắc hạn cho giáo viên"}
-                      className="p-1.5 rounded-lg text-slate-600 hover:text-emerald-700 hover:bg-emerald-50 text-xs font-semibold flex items-center gap-1 cursor-pointer"
-                    >
-                      <Mail className="w-4 h-4 text-emerald-600" />
-                      <span className="hidden sm:inline">Gửi Email nhắc</span>
-                    </button>
+                    {(isAdmin || isPrincipal || isDeptHead) && (
+                      <button
+                        onClick={() => handleSendReminder(period)}
+                        title={isHomeroomPeriod ? "Gửi email nhắc hạn cho các GVCN chưa nộp" : "Gửi email nhắc hạn cho giáo viên"}
+                        className="p-1.5 rounded-lg text-slate-600 hover:text-emerald-700 hover:bg-emerald-50 text-xs font-semibold flex items-center gap-1 cursor-pointer"
+                      >
+                        <Mail className="w-4 h-4 text-emerald-600" />
+                        <span className="hidden sm:inline">Gửi Email nhắc</span>
+                      </button>
+                    )}
 
                     {canManagePeriods && (
                       <>

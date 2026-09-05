@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ReportProvider } from './context/ReportContext';
 import { LoginPage } from './components/auth/LoginPage';
@@ -78,17 +78,32 @@ const MainLayout: React.FC = () => {
     setIsCreatePeriodModalOpen(true);
   };
 
+  // If user role does not have access to 'export', redirect to dashboard
+  useEffect(() => {
+    if (activeView === 'export' && !isAdmin && !isPrincipal) {
+      setActiveView('dashboard');
+    }
+  }, [activeView, isAdmin, isPrincipal]);
+
   const handleOpenReportDetail = (submission: ReportSubmission) => {
     setSelectedSubmission(submission);
     setIsDetailModalOpen(true);
   };
 
   const handleOpenConsolidation = (periodId?: string) => {
+    // Only administrators and principals are allowed to view or open consolidation
+    if (!isAdmin && !isPrincipal) {
+      return;
+    }
     setConsolidationPeriodId(periodId);
     setIsConsolidationModalOpen(true);
   };
 
   const handleNavigate = (tab: NavTab) => {
+    // Block unauthorized navigation to export tab
+    if (tab === 'export' && !isAdmin && !isPrincipal) {
+      return;
+    }
     if (tab === 'submit') {
       if (isAdmin || isPrincipal) {
         handleOpenCreatePeriod();
@@ -131,7 +146,7 @@ const MainLayout: React.FC = () => {
               onOpenSubmit={(periodId) => handleOpenSubmit(periodId)}
               onOpenCreatePeriod={handleOpenCreatePeriod}
               onOpenReportDetail={handleOpenReportDetail}
-              onOpenConsolidation={handleOpenConsolidation}
+              onOpenConsolidation={(isAdmin || isPrincipal) ? handleOpenConsolidation : undefined}
               onNavigate={handleNavigate}
             />
           )}
@@ -140,7 +155,7 @@ const MainLayout: React.FC = () => {
             <ReportList
               onOpenSubmit={() => handleOpenSubmit()}
               onOpenDetail={handleOpenReportDetail}
-              onOpenConsolidation={() => handleOpenConsolidation()}
+              onOpenConsolidation={(isAdmin || isPrincipal) ? () => handleOpenConsolidation() : undefined}
             />
           )}
 
@@ -153,7 +168,7 @@ const MainLayout: React.FC = () => {
           {activeView === 'periods' && (
             <PeriodManagement
               onOpenSubmit={(periodId) => handleOpenSubmit(periodId)}
-              onOpenConsolidation={handleOpenConsolidation}
+              onOpenConsolidation={(isAdmin || isPrincipal) ? handleOpenConsolidation : undefined}
             />
           )}
 
@@ -167,7 +182,7 @@ const MainLayout: React.FC = () => {
             <PersonnelRosterView />
           )}
 
-          {activeView === 'export' && (
+          {activeView === 'export' && (isAdmin || isPrincipal) && (
             <AdminReportsExport
               onOpenConsolidation={handleOpenConsolidation}
             />

@@ -104,6 +104,25 @@ export const Dashboard: React.FC<DashboardProps> = ({
     };
   };
 
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'draft':
+        return { label: 'Bản nháp', color: 'bg-slate-100 text-slate-700 border-slate-300' };
+      case 'submitted':
+        return { label: 'Chờ duyệt', color: 'bg-blue-50 text-blue-700 border-blue-300' };
+      case 'dept_approved':
+        return { label: 'Chờ BGH duyệt', color: 'bg-purple-50 text-purple-700 border-purple-300' };
+      case 'dept_rejected':
+        return { label: 'Yêu cầu sửa', color: 'bg-rose-50 text-rose-700 border-rose-300' };
+      case 'principal_approved':
+        return { label: 'Đã duyệt', color: 'bg-emerald-50 text-emerald-800 border-emerald-300 font-bold' };
+      case 'principal_rejected':
+        return { label: 'BGH yêu cầu sửa', color: 'bg-amber-50 text-amber-800 border-amber-300' };
+      default:
+        return { label: status, color: 'bg-slate-100 text-slate-700 border-slate-300' };
+    }
+  };
+
   return (
     <div className="space-y-6">
       
@@ -203,20 +222,30 @@ export const Dashboard: React.FC<DashboardProps> = ({
         <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs hover:shadow-xs transition">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-              Cần kiểm duyệt
+              {currentUser.role === 'teacher' ? 'Báo cáo chờ duyệt' : 'Cần kiểm duyệt'}
             </span>
-            <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${pendingApprovals.length > 0 ? 'bg-amber-50 text-amber-600' : 'bg-slate-50 text-slate-400'}`}>
+            <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${(currentUser.role === 'teacher' ? mySubmissions.filter(s => s.status === 'submitted' || s.status === 'dept_approved').length : pendingApprovals.length) > 0 ? 'bg-amber-50 text-amber-600' : 'bg-slate-50 text-slate-400'}`}>
               <FileCheck className="w-5 h-5" />
             </div>
           </div>
           <div className="mt-2 flex items-baseline gap-2">
             <span className="text-2xl font-black text-slate-900">
-              {pendingApprovals.length}
+              {currentUser.role === 'teacher' 
+                ? mySubmissions.filter(s => s.status === 'submitted' || s.status === 'dept_approved').length 
+                : pendingApprovals.length}
             </span>
             <span className="text-xs text-slate-500">hồ sơ</span>
           </div>
           <div className="mt-2 text-xs text-slate-500">
-            {pendingApprovals.length > 0 ? (
+            {currentUser.role === 'teacher' ? (
+              <button 
+                onClick={() => handleNav('reports')}
+                className="text-emerald-700 font-bold hover:underline inline-flex items-center gap-1 cursor-pointer"
+              >
+                <span>Xem danh sách của tôi</span>
+                <ArrowRight className="w-3 h-3" />
+              </button>
+            ) : pendingApprovals.length > 0 ? (
               <button 
                 onClick={() => handleNav('approvals')}
                 className="text-amber-600 font-bold hover:underline inline-flex items-center gap-1 cursor-pointer"
@@ -389,64 +418,137 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </div>
         </div>
 
-        {/* Pending Approvals Queue (1 Col) */}
+        {/* Pending Approvals Queue (for Admins/Reviewers) OR My Recent Reports (for Teachers) */}
         <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <FileCheck className="w-5 h-5 text-amber-600" />
-              <h2 className="text-base font-bold text-slate-900">
-                Hồ sơ chờ bạn duyệt ({pendingApprovals.length})
-              </h2>
-            </div>
-            <button
-              onClick={() => handleNav('approvals')}
-              className="text-xs text-amber-700 hover:text-amber-800 font-semibold flex items-center gap-1 cursor-pointer"
-            >
-              <span>Xem tất cả</span>
-              <ChevronRight className="w-3.5 h-3.5" />
-            </button>
-          </div>
-
-          <div className="bg-white rounded-2xl border border-slate-200/90 p-4 shadow-2xs space-y-3">
-            {pendingApprovals.length === 0 ? (
-              <div className="text-center py-8">
-                <CheckCircle className="w-10 h-10 text-emerald-400 mx-auto mb-2 opacity-80" />
-                <p className="text-xs font-semibold text-slate-700">
-                  Không có hồ sơ nào cần bạn phê duyệt
-                </p>
-                <p className="text-[11px] text-slate-400 mt-0.5">
-                  Tất cả báo cáo gửi tới tổ/trường đã được xử lý đầy đủ.
-                </p>
-              </div>
-            ) : (
-              pendingApprovals.slice(0, 4).map((sub: ReportSubmission) => (
-                <div
-                  key={sub.id}
-                  onClick={() => onOpenReportDetail(sub)}
-                  className="p-3 rounded-xl border border-slate-100 hover:border-amber-300 hover:bg-amber-50/30 transition cursor-pointer"
-                >
-                  <div className="flex items-center justify-between text-xs mb-1">
-                    <span className="font-bold text-slate-900 truncate">
-                      {sub.authorName}
-                    </span>
-                    <span className="text-[10px] text-slate-400">
-                      {sub.submittedAt ? new Date(sub.submittedAt).toLocaleDateString('vi-VN') : ''}
-                    </span>
-                  </div>
-                  <div className="text-xs font-medium text-slate-700 line-clamp-1">
-                    {sub.title}
-                  </div>
-                  <div className="mt-2 flex items-center justify-between text-[11px]">
-                    <span className="text-slate-500">{sub.departmentName}</span>
-                    <span className="text-amber-700 font-bold inline-flex items-center gap-1">
-                      <span>Kiểm duyệt</span>
-                      <ArrowRight className="w-3 h-3" />
-                    </span>
-                  </div>
+          {currentUser.role === 'teacher' ? (
+            <>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <FileText className="w-5 h-5 text-emerald-600" />
+                  <h2 className="text-base font-bold text-slate-900">
+                    Báo cáo gần đây của tôi ({mySubmissions.length})
+                  </h2>
                 </div>
-              ))
-            )}
-          </div>
+                <button
+                  onClick={() => handleNav('reports')}
+                  className="text-xs text-emerald-700 hover:text-emerald-800 font-semibold flex items-center gap-1 cursor-pointer"
+                >
+                  <span>Xem tất cả</span>
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+
+              <div className="bg-white rounded-2xl border border-slate-200/90 p-4 shadow-2xs space-y-3">
+                {mySubmissions.length === 0 ? (
+                  <div className="text-center py-8">
+                    <FileText className="w-10 h-10 text-slate-300 mx-auto mb-2 opacity-80" />
+                    <p className="text-xs font-semibold text-slate-700">
+                      Chưa nộp báo cáo nào
+                    </p>
+                    <p className="text-[11px] text-slate-400 mt-0.5 mb-3">
+                      Thầy/Cô hãy chọn đợt báo cáo để nộp cho tổ hoặc BGH.
+                    </p>
+                    <button
+                      onClick={() => onOpenSubmit()}
+                      className="px-3.5 py-1.5 rounded-xl bg-emerald-600 text-white font-bold text-xs inline-flex items-center gap-1 cursor-pointer"
+                    >
+                      <Send className="w-3 h-3" />
+                      <span>Nộp báo cáo ngay</span>
+                    </button>
+                  </div>
+                ) : (
+                  mySubmissions.slice(0, 4).map((sub: ReportSubmission) => {
+                    const badge = getStatusBadge(sub.status);
+                    return (
+                      <div
+                        key={sub.id}
+                        onClick={() => onOpenReportDetail(sub)}
+                        className="p-3 rounded-xl border border-slate-100 hover:border-emerald-300 hover:bg-emerald-50/20 transition cursor-pointer"
+                      >
+                        <div className="flex items-center justify-between text-xs mb-1">
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold border ${badge.color}`}>
+                            {badge.label}
+                          </span>
+                          <span className="text-[10px] text-slate-400">
+                            {sub.submittedAt ? new Date(sub.submittedAt).toLocaleDateString('vi-VN') : 'Bản nháp'}
+                          </span>
+                        </div>
+                        <div className="text-xs font-bold text-slate-900 line-clamp-1">
+                          {sub.title}
+                        </div>
+                        <div className="mt-1.5 flex items-center justify-between text-[11px]">
+                          <span className="text-slate-500 truncate max-w-[150px]">{sub.periodTitle}</span>
+                          <span className="text-emerald-700 font-bold inline-flex items-center gap-0.5">
+                            <span>Chi tiết</span>
+                            <ArrowRight className="w-3 h-3" />
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <FileCheck className="w-5 h-5 text-amber-600" />
+                  <h2 className="text-base font-bold text-slate-900">
+                    Hồ sơ chờ bạn duyệt ({pendingApprovals.length})
+                  </h2>
+                </div>
+                <button
+                  onClick={() => handleNav('approvals')}
+                  className="text-xs text-amber-700 hover:text-amber-800 font-semibold flex items-center gap-1 cursor-pointer"
+                >
+                  <span>Xem tất cả</span>
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+
+              <div className="bg-white rounded-2xl border border-slate-200/90 p-4 shadow-2xs space-y-3">
+                {pendingApprovals.length === 0 ? (
+                  <div className="text-center py-8">
+                    <CheckCircle className="w-10 h-10 text-emerald-400 mx-auto mb-2 opacity-80" />
+                    <p className="text-xs font-semibold text-slate-700">
+                      Không có hồ sơ nào cần bạn phê duyệt
+                    </p>
+                    <p className="text-[11px] text-slate-400 mt-0.5">
+                      Tất cả báo cáo gửi tới tổ/trường đã được xử lý đầy đủ.
+                    </p>
+                  </div>
+                ) : (
+                  pendingApprovals.slice(0, 4).map((sub: ReportSubmission) => (
+                    <div
+                      key={sub.id}
+                      onClick={() => onOpenReportDetail(sub)}
+                      className="p-3 rounded-xl border border-slate-100 hover:border-amber-300 hover:bg-amber-50/30 transition cursor-pointer"
+                    >
+                      <div className="flex items-center justify-between text-xs mb-1">
+                        <span className="font-bold text-slate-900 truncate">
+                          {sub.authorName}
+                        </span>
+                        <span className="text-[10px] text-slate-400">
+                          {sub.submittedAt ? new Date(sub.submittedAt).toLocaleDateString('vi-VN') : ''}
+                        </span>
+                      </div>
+                      <div className="text-xs font-medium text-slate-700 line-clamp-1">
+                        {sub.title}
+                      </div>
+                      <div className="mt-2 flex items-center justify-between text-[11px]">
+                        <span className="text-slate-500">{sub.departmentName}</span>
+                        <span className="text-amber-700 font-bold inline-flex items-center gap-1">
+                          <span>Kiểm duyệt</span>
+                          <ArrowRight className="w-3 h-3" />
+                        </span>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </>
+          )}
 
           {/* Department Progress Summary Widget */}
           <div className="bg-white rounded-2xl border border-slate-200/90 p-4 shadow-2xs">

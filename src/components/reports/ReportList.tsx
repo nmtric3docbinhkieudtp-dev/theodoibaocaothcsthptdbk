@@ -250,7 +250,7 @@ export const ReportList: React.FC<ReportListProps> = ({
             </button>
           </div>
 
-          {onOpenConsolidation && (
+          {onOpenConsolidation && (isAdmin || isPrincipal) && (
             <button
               type="button"
               onClick={onOpenConsolidation}
@@ -272,8 +272,8 @@ export const ReportList: React.FC<ReportListProps> = ({
         </div>
       </div>
 
-      {/* Bulk Action Bar if items selected */}
-      {selectedReportIds.length > 0 && (
+      {/* Bulk Action Bar if items selected (Admin / BGH only) */}
+      {selectedReportIds.length > 0 && (isAdmin || isPrincipal) && (
         <div className="bg-slate-900 text-white p-3 rounded-2xl flex flex-wrap items-center justify-between gap-3 shadow-md animate-in slide-in-from-top-2">
           <div className="flex items-center gap-2 text-xs font-bold">
             <CheckSquare className="w-4 h-4 text-emerald-400" />
@@ -410,15 +410,17 @@ export const ReportList: React.FC<ReportListProps> = ({
             <table className="w-full text-left border-collapse text-xs">
               <thead>
                 <tr className="bg-slate-50/80 border-b border-slate-200/80 text-slate-500 font-bold uppercase tracking-wider text-[11px]">
-                  <th className="py-3.5 px-3 w-8 text-center">
-                    <input
-                      type="checkbox"
-                      checked={filteredSubmissions.length > 0 && selectedReportIds.length === filteredSubmissions.length}
-                      onChange={toggleSelectAll}
-                      className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 cursor-pointer"
-                      title="Chọn tất cả"
-                    />
-                  </th>
+                  {(isAdmin || isPrincipal) && (
+                    <th className="py-3.5 px-3 w-8 text-center">
+                      <input
+                        type="checkbox"
+                        checked={filteredSubmissions.length > 0 && selectedReportIds.length === filteredSubmissions.length}
+                        onChange={toggleSelectAll}
+                        className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 cursor-pointer"
+                        title="Chọn tất cả"
+                      />
+                    </th>
+                  )}
                   <th className="py-3.5 px-4">Tên Báo Cáo & Đợt</th>
                   <th className="py-3.5 px-4">Người Nộp & Tổ</th>
                   <th className="py-3.5 px-4">Thời Gian Nộp</th>
@@ -443,14 +445,16 @@ export const ReportList: React.FC<ReportListProps> = ({
                       }`}
                     >
                       {/* Checkbox */}
-                      <td className="py-3 px-3 text-center" onClick={(e) => e.stopPropagation()}>
-                        <input
-                          type="checkbox"
-                          checked={isSelected}
-                          onChange={(e) => toggleSelectReport(sub.id, e as any)}
-                          className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 cursor-pointer"
-                        />
-                      </td>
+                      {(isAdmin || isPrincipal) && (
+                        <td className="py-3 px-3 text-center" onClick={(e) => e.stopPropagation()}>
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={(e) => toggleSelectReport(sub.id, e as any)}
+                            className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 cursor-pointer"
+                          />
+                        </td>
+                      )}
 
                       {/* Title & Period */}
                       <td className="py-3.5 px-4 min-w-[280px]">
@@ -594,12 +598,14 @@ export const ReportList: React.FC<ReportListProps> = ({
                 <div>
                   <div className="flex items-center justify-between gap-2 mb-2">
                     <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-                      <input
-                        type="checkbox"
-                        checked={isSelected}
-                        onChange={(e) => toggleSelectReport(sub.id, e as any)}
-                        className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 cursor-pointer"
-                      />
+                      {(isAdmin || isPrincipal) && (
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={(e) => toggleSelectReport(sub.id, e as any)}
+                          className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 cursor-pointer"
+                        />
+                      )}
                       <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${badge.color}`}>
                         {badge.label}
                       </span>

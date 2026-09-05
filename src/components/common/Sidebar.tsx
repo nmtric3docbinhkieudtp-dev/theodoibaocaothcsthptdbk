@@ -53,6 +53,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const { currentUser, isPrincipal, isDeptHead, isAdmin } = useAuth();
 
   const handleSelect = (tab: NavTab) => {
+    if (tab === 'export' && !isAdmin && !isPrincipal) {
+      return;
+    }
     if (tab === 'submit') {
       if (isAdmin || isPrincipal) {
         if (onOpenCreatePeriod) {
@@ -117,13 +120,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
       badge: submissions.length,
       badgeColor: 'bg-slate-800 text-slate-300'
     },
-    {
-      id: 'approvals',
+    ...((isAdmin || isPrincipal || isDeptHead) ? [{
+      id: 'approvals' as NavTab,
       label: 'Kiểm duyệt báo cáo',
       icon: CheckSquare,
       badge: pendingReviewsCount > 0 ? pendingReviewsCount : undefined,
       badgeColor: 'bg-amber-500 text-slate-950 font-bold animate-pulse'
-    },
+    }] : []),
     {
       id: 'periods',
       label: (isAdmin || isPrincipal) ? 'Quản lý đợt & Hạn chót' : 'Đợt nộp & Hạn chót',
@@ -145,13 +148,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
       badge: '120 CB-GV',
       badgeColor: 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
     },
-    {
-      id: 'export',
+    ...((isAdmin || isPrincipal) ? [{
+      id: 'export' as NavTab,
       label: 'Tổng Hợp & Xuất 53 Lớp',
       icon: FileSpreadsheet,
       badge: '53 Lớp',
       badgeColor: 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
-    }
+    }] : [])
   ];
 
   return (
