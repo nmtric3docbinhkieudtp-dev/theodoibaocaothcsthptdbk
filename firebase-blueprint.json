@@ -61,6 +61,19 @@
         "role": { "type": "string" }
       },
       "required": ["id", "name", "email", "role"]
+    },
+    "UserCredential": {
+      "title": "UserCredential",
+      "description": "Thông tin xác thực mật khẩu người dùng và cờ trạng thái đổi mật khẩu",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "password": { "type": "string" },
+        "hasChangedPassword": { "type": "boolean" },
+        "mustChangePassword": { "type": "boolean" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["userId"]
     }
   },
   "firestore": {
@@ -79,6 +92,10 @@
     "/users/{userId}": {
       "schema": { "$ref": "#/entities/User" },
       "description": "Danh sách 120 cán bộ giáo viên nhân viên"
+    },
+    "/user_credentials/{userId}": {
+      "schema": { "$ref": "#/entities/UserCredential" },
+      "description": "Mật khẩu và trạng thái xác thực người dùng"
     }
   }
 }

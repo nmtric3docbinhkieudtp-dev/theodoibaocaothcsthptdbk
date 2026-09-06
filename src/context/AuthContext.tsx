@@ -9,6 +9,7 @@ interface AuthContextType {
   login: (identifier: string, password?: string) => Promise<{ success: boolean; message: string }>;
   logout: () => void;
   changePassword: (newPassword: string) => boolean;
+  resetUserPassword: (targetUserId: string) => { success: boolean; message: string };
   setCurrentUser: (user: User) => void;
   switchUser: (userId: string) => void;
   switchRoleQuick: (role: UserRole) => void;
@@ -121,6 +122,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return true;
   };
 
+  const resetUserPassword = (targetUserId: string): { success: boolean; message: string } => {
+    if (currentUser.role !== 'admin') {
+      return {
+        success: false,
+        message: 'Từ chối quyền hạn: Chỉ tài khoản Quản trị viên hệ thống (Admin) mới có quyền đặt lại mật khẩu cho cán bộ, giáo viên!'
+      };
+    }
+
+    const res = StorageService.resetUserPasswordToDefault(targetUserId);
+    if (res.success) {
+      const updatedUsers = StorageService.getUsers();
+      setUsers(updatedUsers);
+    }
+    return res;
+  };
+
   const switchUser = (userId: string) => {
     const target = users.find(u => u.id === userId);
     if (target) {
@@ -170,6 +187,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         login,
         logout,
         changePassword,
+        resetUserPassword,
         setCurrentUser: (u) => {
           setCurrentUserId(u.id);
           setIsAuthenticated(true);

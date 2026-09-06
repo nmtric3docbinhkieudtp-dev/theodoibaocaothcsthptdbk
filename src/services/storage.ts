@@ -132,6 +132,64 @@ export function saveUserCredential(userId: string, data: Partial<UserCredentialD
   }
 }
 
+export function resetUserPasswordToDefault(userId: string): { success: boolean; message: string } {
+  const defaultPass = '123456';
+  
+  // 1. Update user credential
+  const creds = getUserCredentials();
+  creds[userId] = {
+    userId,
+    password: defaultPass,
+    hasChangedPassword: false,
+    mustChangePassword: true,
+    updatedAt: new Date().toISOString()
+  };
+  setLocal(STORAGE_KEYS.USER_CREDENTIALS, creds);
+
+  // 2. Clear changed flags from localStorage and set default password
+  try {
+    localStorage.removeItem(`dbk_pwd_changed_${userId}`);
+    localStorage.removeItem(`dbk_pwd_dismissed_${userId}`);
+    localStorage.setItem(`dbk_user_pass_${userId}`, defaultPass);
+  } catch (e) {
+    console.error('Error updating local storage flags for reset:', e);
+  }
+
+  // 3. Update in USERS storage
+  const allUsers = getLocal<User[]>(STORAGE_KEYS.USERS, []);
+  const userIdx = allUsers.findIndex(u => u.id === userId);
+  let userName = '';
+  if (userIdx >= 0) {
+    userName = allUsers[userIdx].name;
+    allUsers[userIdx] = {
+      ...allUsers[userIdx],
+      password: defaultPass,
+      hasChangedPassword: false,
+      mustChangePassword: true
+    };
+    setLocal(STORAGE_KEYS.USERS, allUsers);
+  }
+
+  // 4. Background sync to Firestore if enabled
+  const { db, isReady } = getFirebaseInstance();
+  if (isReady && db) {
+    try {
+      const payload = cleanFirestorePayload(creds[userId]);
+      setDoc(doc(db, 'user_credentials', userId), payload).catch(err => console.warn('Firestore credential reset err:', err));
+      if (userIdx >= 0) {
+        setDoc(doc(db, 'users', userId), cleanFirestorePayload(allUsers[userIdx])).catch(err => console.warn('Firestore user reset err:', err));
+      }
+    } catch (e) {
+      console.warn('Sync reset credential error:', e);
+    }
+  }
+
+  return {
+    success: true,
+    message: `Đã đặt lại mật khẩu cho Thầy/Cô ${userName || userId} về mặc định (123456) thành công!`
+  };
+}
+
 export const VALID_DEPT_IDS = ['van_phong', 'toan', 'ngu_van_tv_tb', 'su_dia_gdcd', 'khtn_cn', 'nn_tin', 'gdtc_qp_nt'];
 
 export function initializeDatabaseIfNeeded(forceReset = false) {
@@ -641,6 +699,11 @@ export const StorageService = {
     } catch (e: any) {
       return { success: false, count: 0, message: `Lỗi tải dữ liệu từ Firebase: ${e.message || e}` };
     }
+  },
+
+  // Reset user password back to default '123456'
+  resetUserPasswordToDefault(userId: string): { success: boolean; message: string } {
+    return resetUserPasswordToDefault(userId);
   },
 
   // Reset demo data to pristine state

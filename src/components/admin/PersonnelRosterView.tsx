@@ -21,11 +21,18 @@ import {
   FileSpreadsheet,
   CheckCircle2,
   Sparkles,
-  Layers
+  Layers,
+  KeyRound,
+  RotateCcw,
+  Lock,
+  ShieldCheck,
+  AlertCircle,
+  Copy,
+  Check
 } from 'lucide-react';
 
 export const PersonnelRosterView: React.FC = () => {
-  const { allUsers = [], currentUser, switchUser, isAdmin, isPrincipal } = useAuth();
+  const { allUsers = [], currentUser, switchUser, isAdmin, isPrincipal, resetUserPassword } = useAuth();
   const { departments = [], syncToFirebase } = useReports();
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -35,7 +42,14 @@ export const PersonnelRosterView: React.FC = () => {
   const [filterParty, setFilterParty] = useState<string>('all');
   const [filterDegree, setFilterDegree] = useState<string>('all');
   const [filterHomeroom, setFilterHomeroom] = useState<string>('all'); // 'all' | 'gvcn_only' | 'non_gvcn'
+  const [filterPasswordStatus, setFilterPasswordStatus] = useState<string>('all'); // 'all' | 'changed' | 'default'
   const [selectedUserDetail, setSelectedUserDetail] = useState<User | null>(null);
+  
+  // Reset Password State (Admin only)
+  const [userToReset, setUserToReset] = useState<User | null>(null);
+  const [isResetting, setIsResetting] = useState(false);
+  const [resetFeedback, setResetFeedback] = useState<{ success: boolean; message: string; copied?: boolean } | null>(null);
+
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncStatus, setSyncStatus] = useState<string | null>(null);
 
@@ -90,9 +104,12 @@ export const PersonnelRosterView: React.FC = () => {
         if (filterDegree === 'intermediate' && !u.qualification?.includes('Trung cấp')) return false;
       }
 
+      if (filterPasswordStatus === 'changed' && !u.hasChangedPassword) return false;
+      if (filterPasswordStatus === 'default' && u.hasChangedPassword) return false;
+
       return true;
     });
-  }, [allUsers, searchQuery, selectedDept, selectedSchool, selectedRole, filterParty, filterDegree, filterHomeroom]);
+  }, [allUsers, searchQuery, selectedDept, selectedSchool, selectedRole, filterParty, filterDegree, filterHomeroom, filterPasswordStatus]);
 
   // Statistics
   const stats = useMemo(() => {
@@ -104,6 +121,8 @@ export const PersonnelRosterView: React.FC = () => {
     const thptCount = allUsers.filter(u => u.originalSchool === 'THPTĐBK').length;
     const thcsDbkCount = allUsers.filter(u => u.originalSchool === 'THCSĐBK').length;
     const thcsTkCount = allUsers.filter(u => u.originalSchool === 'THCSTK').length;
+    const changedPasswordCount = allUsers.filter(u => u.hasChangedPassword).length;
+    const defaultPasswordCount = allUsers.filter(u => !u.hasChangedPassword && u.id !== 'user-admin').length;
 
     return {
       totalStaff,
@@ -114,9 +133,44 @@ export const PersonnelRosterView: React.FC = () => {
       deptHeadCmCount,
       thptCount,
       thcsDbkCount,
-      thcsTkCount
+      thcsTkCount,
+      changedPasswordCount,
+      defaultPasswordCount
     };
   }, [allUsers]);
+
+  const handleConfirmResetPassword = () => {
+    if (!userToReset) return;
+    if (!isAdmin) {
+      setResetFeedback({
+        success: false,
+        message: 'Chỉ tài khoản Quản trị viên (Admin) mới có quyền reset mật khẩu!'
+      });
+      return;
+    }
+
+    setIsResetting(true);
+    try {
+      const res = resetUserPassword(userToReset.id);
+      setResetFeedback({
+        success: res.success,
+        message: res.message
+      });
+    } catch (err: any) {
+      setResetFeedback({
+        success: false,
+        message: err.message || 'Lỗi khi đặt lại mật khẩu'
+      });
+    } finally {
+      setIsResetting(false);
+    }
+  };
+
+  const copyResetNotification = (target: User) => {
+    const text = `Kính gửi Thầy/Cô ${target.name},\nQuản trị viên hệ thống trường THCS & THPT Đốc Binh Kiều đã đặt lại mật khẩu tài khoản đăng nhập của Thầy/Cô về mặc định là: 123456.\nThầy/Cô vui lòng đăng nhập vào hệ thống bằng mật khẩu 123456 và đổi lại mật khẩu cá nhân mới khi cần thiết.\nTrân trọng!`;
+    navigator.clipboard.writeText(text);
+    setResetFeedback(prev => prev ? { ...prev, copied: true } : null);
+  };
 
   const handleSyncToFirebase = async () => {
     setIsSyncing(true);
@@ -310,18 +364,37 @@ export const PersonnelRosterView: React.FC = () => {
             <div className="text-lg font-black text-teal-900 mt-0.5">{stats.thcsTkCount}</div>
             <div className="text-[10px] text-teal-600">15 lớp Tân Kiều</div>
           </div>
+
+          <div 
+            onClick={() => {
+              setFilterPasswordStatus(filterPasswordStatus === 'default' ? 'all' : 'default');
+            }}
+            className={`rounded-xl p-2 border cursor-pointer transition ${
+              filterPasswordStatus === 'default'
+                ? 'bg-amber-100 border-amber-400 ring-2 ring-amber-400'
+                : 'bg-slate-50/70 border-slate-200/80 hover:bg-slate-100'
+            }`}
+            title="Nhấp để lọc danh sách cán bộ đang dùng mật khẩu mặc định 123456"
+          >
+            <div className="text-[11px] font-semibold text-slate-600 flex items-center gap-1">
+              <KeyRound className="w-3.5 h-3.5 text-amber-600" />
+              <span>MK: 123456</span>
+            </div>
+            <div className="text-lg font-black text-amber-900 mt-0.5">{stats.defaultPasswordCount}</div>
+            <div className="text-[10px] text-slate-500 font-medium">Cần hỗ trợ reset</div>
+          </div>
         </div>
       </div>
 
       {/* Filter and Search Bar */}
       <div className="bg-white rounded-2xl p-3.5 sm:p-4 border border-slate-200/80 shadow-2xs space-y-3">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-2.5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-7 gap-2.5">
           {/* Search Box */}
           <div className="lg:col-span-2 relative">
             <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
               type="text"
-              placeholder="Tìm theo họ tên, lớp chủ nhiệm (12CB1, 6A1...), môn dạy..."
+              placeholder="Tìm theo họ tên, lớp chủ nhiệm, email..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-9 pr-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-emerald-600 transition"
@@ -340,8 +413,8 @@ export const PersonnelRosterView: React.FC = () => {
               }`}
             >
               <option value="all">Tất cả nhiệm vụ</option>
-              <option value="gvcn_only">⭐ Chỉ 53 Giáo viên chủ nhiệm (GVCN)</option>
-              <option value="non_gvcn">Không làm chủ nhiệm</option>
+              <option value="gvcn_only">⭐ 53 GVCN</option>
+              <option value="non_gvcn">Không chủ nhiệm</option>
             </select>
           </div>
 
@@ -352,7 +425,7 @@ export const PersonnelRosterView: React.FC = () => {
               onChange={(e) => setSelectedDept(e.target.value)}
               className="w-full py-2 px-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-emerald-600 transition"
             >
-              <option value="all">Tất cả 7 Tổ (6 CM + 1 VP)</option>
+              <option value="all">Tất cả 7 Tổ</option>
               {departments.map((d) => (
                 <option key={d.id} value={d.id}>
                   {d.name} ({d.memberCount || 0})
@@ -368,7 +441,7 @@ export const PersonnelRosterView: React.FC = () => {
               onChange={(e) => setSelectedSchool(e.target.value)}
               className="w-full py-2 px-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-emerald-600 transition"
             >
-              <option value="all">Tất cả Trường/Cơ sở</option>
+              <option value="all">Tất cả Cơ sở</option>
               <option value="THPTĐBK">THPT Đốc Binh Kiều</option>
               <option value="THCSĐBK">THCS Đốc Binh Kiều</option>
               <option value="THCSTK">THCS Tân Kiều</option>
@@ -384,16 +457,33 @@ export const PersonnelRosterView: React.FC = () => {
             >
               <option value="all">Tất cả Chức vụ</option>
               <option value="principal">Ban Giám Hiệu (4)</option>
-              <option value="dept_head_cm">⭐ 19 Tổ trưởng & Tổ phó Chuyên môn</option>
-              <option value="dept_head">Tất cả 22 Tổ trưởng & Tổ phó (gồm VP)</option>
+              <option value="dept_head_cm">⭐ 19 Tổ trưởng & Phó CM</option>
+              <option value="dept_head">Tất cả Tổ trưởng & Phó (22)</option>
               <option value="teacher">Giáo viên / Nhân viên</option>
+            </select>
+          </div>
+
+          {/* Password Status Filter */}
+          <div>
+            <select
+              value={filterPasswordStatus}
+              onChange={(e) => setFilterPasswordStatus(e.target.value)}
+              className={`w-full py-2 px-2.5 text-xs rounded-xl border focus:outline-emerald-600 transition font-medium ${
+                filterPasswordStatus !== 'all'
+                  ? 'bg-amber-50 border-amber-300 text-amber-900 font-bold'
+                  : 'bg-slate-50 border-slate-200 text-slate-700'
+              }`}
+            >
+              <option value="all">Mật khẩu: Tất cả</option>
+              <option value="changed">🔒 Đã đổi MK ({stats.changedPasswordCount})</option>
+              <option value="default">🔑 Mặc định 123456 ({stats.defaultPasswordCount})</option>
             </select>
           </div>
         </div>
 
         {/* Active Filter Badges */}
         <div className="flex items-center justify-between text-xs text-slate-500 pt-1">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <span>Hiển thị <strong className="text-slate-900">{filteredUsers.length}</strong> / {allUsers.length} nhân sự</span>
             {filterHomeroom === 'gvcn_only' && (
               <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 text-[10px] font-bold">
@@ -405,8 +495,20 @@ export const PersonnelRosterView: React.FC = () => {
                 ⭐ Đang lọc 19 Tổ trưởng & Tổ phó Chuyên môn
               </span>
             )}
+            {filterPasswordStatus === 'default' && (
+              <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 text-[10px] font-bold flex items-center gap-1">
+                <KeyRound className="w-3 h-3 text-amber-700" />
+                Đang lọc cán bộ dùng MK mặc định 123456 ({stats.defaultPasswordCount})
+              </span>
+            )}
+            {filterPasswordStatus === 'changed' && (
+              <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-900 text-[10px] font-bold flex items-center gap-1">
+                <ShieldCheck className="w-3 h-3 text-emerald-700" />
+                Đang lọc cán bộ đã đổi MK cá nhân ({stats.changedPasswordCount})
+              </span>
+            )}
           </div>
-          {(searchQuery || selectedDept !== 'all' || selectedSchool !== 'all' || selectedRole !== 'all' || filterParty !== 'all' || filterHomeroom !== 'all') && (
+          {(searchQuery || selectedDept !== 'all' || selectedSchool !== 'all' || selectedRole !== 'all' || filterParty !== 'all' || filterHomeroom !== 'all' || filterPasswordStatus !== 'all') && (
             <button
               onClick={() => {
                 setSearchQuery('');
@@ -416,6 +518,7 @@ export const PersonnelRosterView: React.FC = () => {
                 setFilterParty('all');
                 setFilterDegree('all');
                 setFilterHomeroom('all');
+                setFilterPasswordStatus('all');
               }}
               className="text-emerald-700 hover:text-emerald-900 font-semibold cursor-pointer underline text-[11px]"
             >
@@ -468,13 +571,24 @@ export const PersonnelRosterView: React.FC = () => {
                           {user.name.slice(0, 2).toUpperCase()}
                         </div>
                         <div className="min-w-0">
-                          <div className="flex items-center gap-1.5">
+                          <div className="flex items-center gap-1.5 flex-wrap">
                             <span className="font-bold text-slate-900 truncate">
                               {user.name}
                             </span>
                             {user.partyMember && (
                               <span className="px-1.5 py-0.2 rounded text-[9px] font-black bg-red-100 text-red-700 border border-red-200">
                                 ĐV
+                              </span>
+                            )}
+                            {user.hasChangedPassword ? (
+                              <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded text-[9px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200" title="Đã đổi mật khẩu cá nhân">
+                                <ShieldCheck className="w-2.5 h-2.5 text-emerald-600" />
+                                Đã đổi MK
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded text-[9px] font-medium bg-slate-100 text-slate-600 border border-slate-200" title="Đang dùng mật khẩu mặc định 123456">
+                                <Lock className="w-2.5 h-2.5 text-slate-400" />
+                                123456
                               </span>
                             )}
                             {isCurrent && (
@@ -588,6 +702,21 @@ export const PersonnelRosterView: React.FC = () => {
                         >
                           <Eye className="w-3.5 h-3.5" />
                         </button>
+
+                        {isAdmin && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setUserToReset(user);
+                              setResetFeedback(null);
+                            }}
+                            title={`Đặt lại mật khẩu về mặc định 123456 cho ${user.name} (Chỉ Quản trị viên)`}
+                            className="p-1 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-700 hover:text-amber-900 border border-amber-200 transition cursor-pointer"
+                          >
+                            <KeyRound className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+
                         <button
                           onClick={() => switchUser(user.id)}
                           title={`Chuyển quyền sang ${user.name}`}
@@ -704,18 +833,189 @@ export const PersonnelRosterView: React.FC = () => {
                   Sao chép
                 </button>
               </div>
+
+              {/* Mật khẩu & Bảo mật */}
+              <div className="col-span-2 bg-amber-50/60 border border-amber-200/80 p-3 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                <div className="space-y-0.5">
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-amber-900 flex items-center gap-1.5">
+                    <KeyRound className="w-3.5 h-3.5 text-amber-700" />
+                    <span>Mật khẩu & Tài khoản đăng nhập</span>
+                  </div>
+                  <div className="text-xs text-slate-700 flex items-center gap-1.5">
+                    <span>Trạng thái:</span>
+                    {selectedUserDetail.hasChangedPassword ? (
+                      <span className="inline-flex items-center gap-1 font-bold text-emerald-700 bg-emerald-100/80 px-2 py-0.5 rounded text-[11px]">
+                        <ShieldCheck className="w-3 h-3 text-emerald-600" />
+                        Đã đổi mật khẩu cá nhân
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 font-semibold text-amber-900 bg-amber-100/80 px-2 py-0.5 rounded text-[11px]">
+                        <Lock className="w-3 h-3 text-amber-700" />
+                        Mặc định: 123456
+                      </span>
+                    )}
+                  </div>
+                  {!isAdmin && (
+                    <div className="text-[10px] text-slate-500 italic">
+                      * Chỉ tài khoản Quản trị viên (Admin) mới có quyền đặt lại mật khẩu.
+                    </div>
+                  )}
+                </div>
+
+                {isAdmin && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setUserToReset(selectedUserDetail);
+                      setResetFeedback(null);
+                    }}
+                    className="self-start sm:self-center px-3 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-2xs transition cursor-pointer active:scale-98"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5" />
+                    <span>Đặt lại mật khẩu (123456)</span>
+                  </button>
+                )}
+              </div>
             </div>
 
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+            <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setSelectedUserDetail(null)}
+                className="px-3.5 py-1.5 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-semibold cursor-pointer transition"
+              >
+                Đóng
+              </button>
+
               <button
                 onClick={() => {
                   switchUser(selectedUserDetail.id);
                   setSelectedUserDetail(null);
                 }}
-                className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition cursor-pointer"
+                className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition cursor-pointer shadow-2xs"
               >
                 Đăng nhập thử vai trò cán bộ này
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Reset Password Modal (Admin Exclusive) */}
+      {userToReset && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in">
+          <div className="bg-white rounded-2xl max-w-md w-full p-5 sm:p-6 shadow-2xl border border-slate-200 space-y-4">
+            <div className="flex items-start justify-between gap-3 border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center font-bold">
+                  <KeyRound className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-extrabold text-slate-900">
+                    Đặt Lại Mật Khẩu Về 123456
+                  </h3>
+                  <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-800 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
+                    <ShieldCheck className="w-3 h-3 text-amber-600" />
+                    Đặc quyền Quản trị viên (Admin)
+                  </span>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setUserToReset(null);
+                  setResetFeedback(null);
+                }}
+                className="text-slate-400 hover:text-slate-600 text-lg font-bold p-1 leading-none"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Target User Info */}
+            <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-1.5">
+              <div className="text-[11px] text-slate-500 font-medium">Cán bộ / Giáo viên được đặt lại:</div>
+              <div className="font-extrabold text-slate-900 text-sm">{userToReset.name}</div>
+              <div className="text-xs text-slate-600">
+                {userToReset.roleTitle} • {userToReset.departmentName}
+              </div>
+              <div className="text-xs text-slate-500 font-mono">
+                Email: {userToReset.email}
+              </div>
+              <div className="text-xs pt-1 flex items-center gap-2">
+                <span className="text-slate-500">Mật khẩu hiện tại:</span>
+                {userToReset.hasChangedPassword ? (
+                  <span className="text-emerald-700 font-bold">Đã đổi mật khẩu cá nhân</span>
+                ) : (
+                  <span className="text-slate-600 font-medium">Đang dùng mật khẩu mặc định (123456)</span>
+                )}
+              </div>
+            </div>
+
+            {/* Instruction Note */}
+            <div className="p-3 rounded-xl bg-amber-50/80 border border-amber-200/90 text-xs text-amber-900 space-y-1">
+              <div className="font-bold flex items-center gap-1.5">
+                <AlertCircle className="w-4 h-4 text-amber-700 shrink-0" />
+                <span>Quy tắc đặt lại mật khẩu:</span>
+              </div>
+              <ul className="list-disc list-inside space-y-0.5 text-[11px] text-amber-800 pl-1">
+                <li>Mật khẩu tài khoản sẽ được đưa về giá trị mặc định: <strong className="font-mono text-xs bg-amber-100 px-1 rounded">123456</strong></li>
+                <li>Thầy/Cô có thể đăng nhập ngay với mật khẩu 123456 và tự đổi mật khẩu mới trong menu tài khoản.</li>
+                <li>Hệ thống lưu lại trên trình duyệt và tự động đồng bộ lên Firebase.</li>
+              </ul>
+            </div>
+
+            {/* Feedback message if any */}
+            {resetFeedback && (
+              <div className={`p-3 rounded-xl border text-xs space-y-2 ${
+                resetFeedback.success 
+                  ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+                  : 'bg-rose-50 border-rose-200 text-rose-800'
+              }`}>
+                <div className="flex items-center gap-2 font-bold">
+                  {resetFeedback.success ? <CheckCircle2 className="w-4 h-4 text-emerald-600" /> : <AlertCircle className="w-4 h-4 text-rose-600" />}
+                  <span>{resetFeedback.message}</span>
+                </div>
+
+                {resetFeedback.success && (
+                  <div className="pt-1 flex items-center justify-between gap-2 border-t border-emerald-200/60">
+                    <span className="text-[11px] text-emerald-700">Mật khẩu mới: <strong className="font-mono">123456</strong></span>
+                    <button
+                      type="button"
+                      onClick={() => copyResetNotification(userToReset)}
+                      className="px-2.5 py-1 rounded bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] flex items-center gap-1 cursor-pointer transition shadow-2xs"
+                    >
+                      {resetFeedback.copied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                      <span>{resetFeedback.copied ? 'Đã sao chép!' : 'Sao chép tin gửi Thầy/Cô'}</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Action Buttons */}
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => {
+                  setUserToReset(null);
+                  setResetFeedback(null);
+                }}
+                className="px-4 py-2 rounded-xl border border-slate-300 text-slate-700 font-bold text-xs hover:bg-slate-100 transition cursor-pointer"
+              >
+                {resetFeedback?.success ? 'Đóng' : 'Hủy bỏ'}
+              </button>
+
+              {!resetFeedback?.success && (
+                <button
+                  type="button"
+                  onClick={handleConfirmResetPassword}
+                  disabled={isResetting}
+                  className="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 disabled:bg-slate-300 text-white font-bold text-xs flex items-center gap-1.5 transition cursor-pointer shadow-sm active:scale-98"
+                >
+                  <RotateCcw className={`w-3.5 h-3.5 ${isResetting ? 'animate-spin' : ''}`} />
+                  <span>{isResetting ? 'Đang đặt lại...' : 'Xác nhận đặt lại về 123456'}</span>
+                </button>
+              )}
             </div>
           </div>
         </div>

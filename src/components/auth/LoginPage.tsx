@@ -470,6 +470,10 @@ export const LoginPage: React.FC = () => {
                       {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
                   </div>
+                  <div className="flex items-center justify-between text-[11px] text-slate-500 mt-1.5 px-0.5">
+                    <span>Mật khẩu mặc định: <strong className="font-mono text-slate-800 font-bold bg-slate-100 px-1 py-0.5 rounded">123456</strong></span>
+                    <span className="text-amber-800 font-medium">Quên mật khẩu? Nhờ Admin reset</span>
+                  </div>
                 </div>
 
                 <div className="flex items-center gap-2 pt-2">
