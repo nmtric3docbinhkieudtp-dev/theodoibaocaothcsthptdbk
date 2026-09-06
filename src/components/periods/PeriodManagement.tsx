@@ -22,7 +22,8 @@ import {
   RefreshCw,
   FolderX,
   UploadCloud,
-  FileSpreadsheet
+  FileSpreadsheet,
+  UserCheck
 } from 'lucide-react';
 import { ReportPeriod, ReportType, UserRole, TargetAudienceType, PeriodFormTemplate } from '../../types';
 import { getAudienceLabel, getRequiredUsersForPeriod } from '../../utils/reportFilters';
@@ -293,9 +294,19 @@ export const PeriodManagement: React.FC<PeriodManagementProps> = ({
                           <GraduationCap className="w-3 h-3 text-amber-600" />
                           Chỉ 53 GVCN
                         </span>
+                      ) : period.targetAudience === 'specific_users' ? (
+                        <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-indigo-50 text-indigo-900 border border-indigo-300 flex items-center gap-1">
+                          <UserCheck className="w-3 h-3 text-indigo-600" />
+                          Chỉ định đích danh ({period.targetUserIds?.length || requiredUsers.length} Thầy/Cô)
+                        </span>
+                      ) : period.targetAudience === 'dept_heads_only' ? (
+                        <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-blue-50 text-blue-900 border border-blue-300 flex items-center gap-1">
+                          <Users className="w-3 h-3 text-blue-600" />
+                          19 Tổ trưởng & Tổ phó CM
+                        </span>
                       ) : (
                         <span className="px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-slate-100 text-slate-700 border border-slate-200">
-                          {getAudienceLabel(period.targetAudience, period.targetDepartmentIds)}
+                          {getAudienceLabel(period.targetAudience, period.targetDepartmentIds, period.targetUserIds)}
                         </span>
                       )}
                     </div>
@@ -325,7 +336,13 @@ export const PeriodManagement: React.FC<PeriodManagementProps> = ({
                     <div className="flex items-center justify-between">
                       <span className="font-semibold text-slate-700">Đối tượng báo cáo:</span>
                       <span className="font-bold text-amber-700">
-                        {isHomeroomPeriod ? '53 Thầy/Cô Giáo viên chủ nhiệm' : `${requiredUsers.length} cán bộ/giáo viên`}
+                        {isHomeroomPeriod 
+                          ? '53 Thầy/Cô Giáo viên chủ nhiệm' 
+                          : period.targetAudience === 'specific_users'
+                          ? `Chỉ định đích danh ${period.targetUserIds?.length || requiredUsers.length} Thầy/Cô`
+                          : period.targetAudience === 'dept_heads_only'
+                          ? '19 Tổ trưởng & Tổ phó chuyên môn'
+                          : `${requiredUsers.length} cán bộ/giáo viên`}
                       </span>
                     </div>
 

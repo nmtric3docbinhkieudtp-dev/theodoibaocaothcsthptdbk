@@ -33,7 +33,8 @@ import {
   Calendar,
   Phone,
   MapPin,
-  FileCheck
+  FileCheck,
+  UserCheck
 } from 'lucide-react';
 import { ReportPeriod } from '../../types';
 
@@ -315,31 +316,61 @@ export const PeriodConsolidationModal: React.FC<PeriodConsolidationModalProps> =
           {/* Quick Metrics Bar */}
           <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs">
             <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-slate-200 shadow-2xs font-semibold text-slate-700">
-              <Users className="w-4 h-4 text-emerald-600" />
+              {consolidatedData.isSpecificUsersAudience ? (
+                <UserCheck className="w-4 h-4 text-indigo-600" />
+              ) : (
+                <Users className="w-4 h-4 text-emerald-600" />
+              )}
               <span>Tiến độ nộp:</span>
-              <span className="font-bold text-emerald-700">{consolidatedData.submittedCount} / 53 lớp ({consolidatedData.completionRate}%)</span>
+              <span className="font-bold text-emerald-700">
+                {consolidatedData.submittedCount} / {
+                  consolidatedData.isSpecificUsersAudience 
+                    ? `${consolidatedData.totalSpecificUsers} người` 
+                    : consolidatedData.isDeptHeadAudience 
+                    ? '19 người' 
+                    : '53 lớp'
+                } ({consolidatedData.completionRate}%)
+              </span>
             </div>
 
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-slate-200 shadow-2xs font-semibold text-slate-700">
-              <School className="w-4 h-4 text-blue-600" />
-              <span>Sĩ số toàn trường:</span>
-              <span className="font-bold text-slate-900">{consolidatedData.totalEnrolledStudents.toLocaleString('vi-VN')}</span>
-            </div>
+            {consolidatedData.isSpecificUsersAudience ? (
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-50 border border-indigo-200 shadow-2xs font-semibold text-indigo-800">
+                <UserCheck className="w-4 h-4 text-indigo-600" />
+                <span>Chỉ định đích danh:</span>
+                <span className="font-bold text-indigo-950">{consolidatedData.totalSpecificUsers} Thầy/Cô</span>
+              </div>
+            ) : consolidatedData.isDeptHeadAudience ? (
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-50 border border-blue-200 shadow-2xs font-semibold text-blue-800">
+                <Users className="w-4 h-4 text-blue-600" />
+                <span>Đối tượng:</span>
+                <span className="font-bold text-blue-950">19 Tổ trưởng & Tổ phó CM</span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-slate-200 shadow-2xs font-semibold text-slate-700">
+                <School className="w-4 h-4 text-blue-600" />
+                <span>Sĩ số toàn trường:</span>
+                <span className="font-bold text-slate-900">{consolidatedData.totalEnrolledStudents.toLocaleString('vi-VN')}</span>
+              </div>
+            )}
 
-            <div 
-              onClick={() => setActiveTab('absent')}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-50 border border-rose-200 shadow-2xs font-semibold text-rose-700 cursor-pointer hover:bg-rose-100 transition"
-              title="Nhấp để xem danh sách chi tiết"
-            >
-              <AlertCircle className="w-4 h-4 text-rose-600 animate-pulse" />
-              <span>Chưa ra lớp:</span>
-              <span className="font-bold text-rose-700 bg-rose-200/70 px-1.5 py-0.5 rounded-md">{consolidatedData.totalAbsentStudents} học sinh</span>
-            </div>
+            {consolidatedData.totalAbsentStudents > 0 && (
+              <div 
+                onClick={() => setActiveTab('absent')}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-50 border border-rose-200 shadow-2xs font-semibold text-rose-700 cursor-pointer hover:bg-rose-100 transition"
+                title="Nhấp để xem danh sách chi tiết"
+              >
+                <AlertCircle className="w-4 h-4 text-rose-600 animate-pulse" />
+                <span>Chưa ra lớp:</span>
+                <span className="font-bold text-rose-700 bg-rose-200/70 px-1.5 py-0.5 rounded-md">{consolidatedData.totalAbsentStudents} học sinh</span>
+              </div>
+            )}
 
             <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-slate-200 shadow-2xs font-semibold text-slate-700">
               <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-              <span>Tỷ lệ ra lớp:</span>
-              <span className="font-bold text-emerald-700">{consolidatedData.overallAttendanceRate}%</span>
+              <span>Chưa nộp:</span>
+              <span className={`font-bold ${consolidatedData.pendingCount > 0 ? 'text-amber-700' : 'text-emerald-700'}`}>
+                {consolidatedData.pendingCount} {consolidatedData.isSpecificUsersAudience || consolidatedData.isDeptHeadAudience ? 'người' : 'lớp'}
+              </span>
             </div>
           </div>
 
@@ -433,11 +464,31 @@ export const PeriodConsolidationModal: React.FC<PeriodConsolidationModalProps> =
                 : 'border-transparent text-slate-600 hover:text-slate-900'
             }`}
           >
-            <School className="w-4 h-4 text-emerald-600" />
-            <span>Tiến Độ & Sĩ Số 53 Lớp</span>
-            <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700">
-              53
-            </span>
+            {consolidatedData.isSpecificUsersAudience ? (
+              <>
+                <UserCheck className="w-4 h-4 text-indigo-600" />
+                <span>Tiến Độ Người Báo Cáo Được Chỉ Định</span>
+                <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-indigo-100 text-indigo-800">
+                  {consolidatedData.submittedCount}/{consolidatedData.totalSpecificUsers}
+                </span>
+              </>
+            ) : consolidatedData.isDeptHeadAudience ? (
+              <>
+                <Users className="w-4 h-4 text-blue-600" />
+                <span>Tiến Độ 19 Tổ Trưởng & Tổ Phó</span>
+                <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-800">
+                  {consolidatedData.submittedCount}/19
+                </span>
+              </>
+            ) : (
+              <>
+                <School className="w-4 h-4 text-emerald-600" />
+                <span>Tiến Độ & Sĩ Số 53 Lớp</span>
+                <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700">
+                  53
+                </span>
+              </>
+            )}
           </button>
 
           {consolidatedData.totalAbsentStudents > 0 && (
@@ -630,101 +681,231 @@ export const PeriodConsolidationModal: React.FC<PeriodConsolidationModalProps> =
             </div>
           )}
 
-          {/* TAB 2: BẢNG SĨ SỐ 53 LỚP */}
+          {/* TAB 2: BẢNG SĨ SỐ 53 LỚP / TIẾN ĐỘ NGƯỜI BÁO CÁO */}
           {activeTab === 'classes' && (
             <div className="space-y-4">
-              <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs overflow-hidden">
-                <div className="p-4 border-b border-slate-200/80 bg-slate-50 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <School className="w-4 h-4 text-emerald-600" />
-                    <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
-                      Bảng Thống Kê Sĩ Số & Tỷ Lệ Ra Lớp 53 Lớp Chủ Nhiệm (Năm Học 2026 - 2027)
-                    </h3>
+              {consolidatedData.isSpecificUsersAudience ? (
+                <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs overflow-hidden">
+                  <div className="p-4 border-b border-slate-200/80 bg-slate-50 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <UserCheck className="w-4 h-4 text-indigo-600" />
+                      <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
+                        Bảng Theo Dõi Tiến Độ Báo Cáo - {consolidatedData.totalSpecificUsers} Cán Bộ / Giáo Viên Được Chỉ Định Đích Danh
+                      </h3>
+                    </div>
+                    <span className="text-xs font-bold text-indigo-700 bg-indigo-100 px-2.5 py-1 rounded-lg">
+                      Đã nộp: {consolidatedData.submittedCount} / {consolidatedData.totalSpecificUsers} người ({consolidatedData.completionRate}%)
+                    </span>
                   </div>
-                  <span className="text-xs font-bold text-emerald-700 bg-emerald-100 px-2.5 py-1 rounded-lg">
-                    Tổng cộng: {consolidatedData.totalEnrolledStudents} học sinh
-                  </span>
-                </div>
 
-                <div className="overflow-x-auto max-h-[64vh]">
-                  <table className="w-full text-left border-collapse text-xs">
-                    <thead className="sticky top-0 bg-slate-100/95 backdrop-blur-xs text-slate-700 font-bold border-b border-slate-200 z-10">
-                      <tr>
-                        <th className="p-3 w-12 text-center">STT</th>
-                        <th className="p-3 w-20 text-center">Lớp</th>
-                        <th className="p-3 w-28">Điểm trường</th>
-                        <th className="p-3 w-40">GVCN</th>
-                        <th className="p-3 w-20 text-center">Sĩ số</th>
-                        <th className="p-3 w-16 text-center">Nam</th>
-                        <th className="p-3 w-16 text-center">Nữ</th>
-                        <th className="p-3 w-20 text-center">Hiện diện</th>
-                        <th className="p-3 w-20 text-center">Vắng</th>
-                        <th className="p-3 w-24 text-center">Tỷ lệ (%)</th>
-                        <th className="p-3 w-28 text-center">Trạng thái</th>
-                        <th className="p-3 min-w-[200px]">Phản ánh / Ghi chú của GVCN</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100">
-                      {consolidatedData.classStats.map((c) => (
-                        <tr key={c.className} className={`hover:bg-slate-50 transition ${!c.hasSubmitted ? 'bg-amber-50/30' : ''}`}>
-                          <td className="p-3 text-center text-slate-500 font-medium">{c.stt}</td>
-                          <td className="p-3 text-center font-bold text-slate-900 bg-slate-50/60">{c.className}</td>
-                          <td className="p-3 text-slate-600">
-                            {c.campus === 'THPT' ? 'Điểm THPT' : (c.campus === 'TK' ? 'Tân Kiều' : 'Đốc Binh Kiều')}
-                          </td>
-                          <td className="p-3 text-slate-800 font-medium">{c.teacherName}</td>
-                          <td className="p-3 text-center font-bold text-slate-900">{c.totalStudents}</td>
-                          <td className="p-3 text-center text-slate-600">{c.maleStudents}</td>
-                          <td className="p-3 text-center text-slate-600">{c.femaleStudents}</td>
-                          <td className="p-3 text-center font-bold text-emerald-700">{c.presentStudents}</td>
-                          <td className={`p-3 text-center font-bold ${c.absentStudentsCount > 0 ? 'text-rose-600 bg-rose-50/50' : 'text-slate-400'}`}>
-                            {c.absentStudentsCount}
-                          </td>
-                          <td className="p-3 text-center font-bold">
-                            {c.hasSubmitted ? (
-                              <span className={`px-2 py-0.5 rounded-md ${c.attendanceRate >= 95 ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}`}>
-                                {c.attendanceRate}%
-                              </span>
-                            ) : (
-                              <span className="text-slate-400">-</span>
-                            )}
-                          </td>
-                          <td className="p-3 text-center">
-                            {c.hasSubmitted ? (
-                              <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-                                <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-                                <span>Đã nộp</span>
-                              </span>
-                            ) : (
-                              <span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
-                                <span>Chờ nộp</span>
-                              </span>
-                            )}
-                          </td>
-                          <td className="p-3 text-slate-600 text-[11px] italic truncate max-w-xs" title={c.notes}>
-                            {c.notes || '-'}
-                          </td>
+                  <div className="overflow-x-auto max-h-[64vh]">
+                    <table className="w-full text-left border-collapse text-xs">
+                      <thead className="sticky top-0 bg-slate-100/95 backdrop-blur-xs text-slate-700 font-bold border-b border-slate-200 z-10">
+                        <tr>
+                          <th className="p-3 w-12 text-center">STT</th>
+                          <th className="p-3 w-48">Họ và Tên Thầy/Cô</th>
+                          <th className="p-3 w-40">Chức Vụ</th>
+                          <th className="p-3 w-40">Tổ / Bộ Phận</th>
+                          <th className="p-3 w-32">Môn / Nhiệm vụ</th>
+                          <th className="p-3 w-32">Cơ sở / Đơn vị</th>
+                          <th className="p-3 w-32 text-center">Trạng thái nộp</th>
+                          <th className="p-3 w-36 text-center">Thời gian nộp</th>
+                          <th className="p-3 min-w-[220px]">Tiêu đề báo cáo / Trích yếu</th>
                         </tr>
-                      ))}
-
-                      {/* Dòng Tổng cộng toàn trường */}
-                      <tr className="bg-slate-900 text-white font-bold sticky bottom-0 z-10 shadow-lg">
-                        <td colSpan={4} className="p-3 text-center uppercase tracking-wider text-emerald-300">
-                          TỔNG CỘNG TOÀN TRƯỜNG (53 LỚP)
-                        </td>
-                        <td className="p-3 text-center text-white">{consolidatedData.totalEnrolledStudents}</td>
-                        <td className="p-3 text-center text-slate-300">{consolidatedData.totalMaleStudents}</td>
-                        <td className="p-3 text-center text-slate-300">{consolidatedData.totalFemaleStudents}</td>
-                        <td className="p-3 text-center text-emerald-400">{consolidatedData.totalPresentStudents}</td>
-                        <td className="p-3 text-center text-rose-400">{consolidatedData.totalAbsentStudents}</td>
-                        <td className="p-3 text-center text-emerald-300">{consolidatedData.overallAttendanceRate}%</td>
-                        <td className="p-3 text-center text-slate-300">{consolidatedData.submittedCount}/53 lớp</td>
-                        <td className="p-3 text-slate-400 font-normal text-[11px]">-</td>
-                      </tr>
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {consolidatedData.specificUserStats.map((u) => (
+                          <tr key={u.userId} className={`hover:bg-slate-50 transition ${!u.hasSubmitted ? 'bg-amber-50/30' : ''}`}>
+                            <td className="p-3 text-center text-slate-500 font-medium">{u.stt}</td>
+                            <td className="p-3 font-bold text-slate-900">{u.teacherName}</td>
+                            <td className="p-3 text-slate-700 font-medium">{u.roleTitle}</td>
+                            <td className="p-3 text-slate-600">{u.departmentName || '-'}</td>
+                            <td className="p-3 text-slate-600">{u.subject || '-'}</td>
+                            <td className="p-3 text-slate-600">{u.originalSchool || '-'}</td>
+                            <td className="p-3 text-center">
+                              {u.hasSubmitted ? (
+                                <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                                  <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                                  <span>Đã nộp</span>
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
+                                  <span>Chờ nộp</span>
+                                </span>
+                              )}
+                            </td>
+                            <td className="p-3 text-center text-slate-600">
+                              {u.submittedAt ? new Date(u.submittedAt).toLocaleString('vi-VN') : '-'}
+                            </td>
+                            <td className="p-3 text-slate-700">
+                              {u.reportTitle && <p className="font-semibold text-slate-900">{u.reportTitle}</p>}
+                              {u.summaryNote && <p className="text-[11px] text-slate-500 italic mt-0.5">{u.summaryNote}</p>}
+                              {!u.reportTitle && !u.summaryNote && <span className="text-slate-400 italic">Chưa có nội dung</span>}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
-              </div>
+              ) : consolidatedData.isDeptHeadAudience ? (
+                <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs overflow-hidden">
+                  <div className="p-4 border-b border-slate-200/80 bg-slate-50 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Users className="w-4 h-4 text-blue-600" />
+                      <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
+                        Bảng Theo Dõi Tiến Độ Báo Cáo 19 Tổ Trưởng & Tổ Phó Chuyên Môn
+                      </h3>
+                    </div>
+                    <span className="text-xs font-bold text-blue-700 bg-blue-100 px-2.5 py-1 rounded-lg">
+                      Đã nộp: {consolidatedData.submittedCount} / 19 người ({consolidatedData.completionRate}%)
+                    </span>
+                  </div>
+
+                  <div className="overflow-x-auto max-h-[64vh]">
+                    <table className="w-full text-left border-collapse text-xs">
+                      <thead className="sticky top-0 bg-slate-100/95 backdrop-blur-xs text-slate-700 font-bold border-b border-slate-200 z-10">
+                        <tr>
+                          <th className="p-3 w-12 text-center">STT</th>
+                          <th className="p-3 w-48">Họ và Tên Thầy/Cô</th>
+                          <th className="p-3 w-40">Chức Vụ</th>
+                          <th className="p-3 w-40">Tổ Chuyên Môn</th>
+                          <th className="p-3 w-32">Môn Giảng Dạy</th>
+                          <th className="p-3 w-32">Đơn Vị Cũ</th>
+                          <th className="p-3 w-32 text-center">Trạng thái nộp</th>
+                          <th className="p-3 w-36 text-center">Thời gian nộp</th>
+                          <th className="p-3 min-w-[220px]">Tiêu đề báo cáo / Trích yếu</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {consolidatedData.deptHeadStats.map((dh) => (
+                          <tr key={dh.userId} className={`hover:bg-slate-50 transition ${!dh.hasSubmitted ? 'bg-amber-50/30' : ''}`}>
+                            <td className="p-3 text-center text-slate-500 font-medium">{dh.stt}</td>
+                            <td className="p-3 font-bold text-slate-900">{dh.teacherName}</td>
+                            <td className="p-3 text-slate-700 font-medium">{dh.roleTitle}</td>
+                            <td className="p-3 text-slate-600">{dh.departmentName}</td>
+                            <td className="p-3 text-slate-600">{dh.subject || '-'}</td>
+                            <td className="p-3 text-slate-600">{dh.originalSchool || '-'}</td>
+                            <td className="p-3 text-center">
+                              {dh.hasSubmitted ? (
+                                <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                                  <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                                  <span>Đã nộp</span>
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
+                                  <span>Chờ nộp</span>
+                                </span>
+                              )}
+                            </td>
+                            <td className="p-3 text-center text-slate-600">
+                              {dh.submittedAt ? new Date(dh.submittedAt).toLocaleString('vi-VN') : '-'}
+                            </td>
+                            <td className="p-3 text-slate-700">
+                              {dh.reportTitle && <p className="font-semibold text-slate-900">{dh.reportTitle}</p>}
+                              {dh.summaryNote && <p className="text-[11px] text-slate-500 italic mt-0.5">{dh.summaryNote}</p>}
+                              {!dh.reportTitle && !dh.summaryNote && <span className="text-slate-400 italic">Chưa có nội dung</span>}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              ) : (
+                <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs overflow-hidden">
+                  <div className="p-4 border-b border-slate-200/80 bg-slate-50 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <School className="w-4 h-4 text-emerald-600" />
+                      <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
+                        Bảng Thống Kê Sĩ Số & Tỷ Lệ Ra Lớp 53 Lớp Chủ Nhiệm (Năm Học 2026 - 2027)
+                      </h3>
+                    </div>
+                    <span className="text-xs font-bold text-emerald-700 bg-emerald-100 px-2.5 py-1 rounded-lg">
+                      Tổng cộng: {consolidatedData.totalEnrolledStudents} học sinh
+                    </span>
+                  </div>
+
+                  <div className="overflow-x-auto max-h-[64vh]">
+                    <table className="w-full text-left border-collapse text-xs">
+                      <thead className="sticky top-0 bg-slate-100/95 backdrop-blur-xs text-slate-700 font-bold border-b border-slate-200 z-10">
+                        <tr>
+                          <th className="p-3 w-12 text-center">STT</th>
+                          <th className="p-3 w-20 text-center">Lớp</th>
+                          <th className="p-3 w-28">Điểm trường</th>
+                          <th className="p-3 w-40">GVCN</th>
+                          <th className="p-3 w-20 text-center">Sĩ số</th>
+                          <th className="p-3 w-16 text-center">Nam</th>
+                          <th className="p-3 w-16 text-center">Nữ</th>
+                          <th className="p-3 w-20 text-center">Hiện diện</th>
+                          <th className="p-3 w-20 text-center">Vắng</th>
+                          <th className="p-3 w-24 text-center">Tỷ lệ (%)</th>
+                          <th className="p-3 w-28 text-center">Trạng thái</th>
+                          <th className="p-3 min-w-[200px]">Phản ánh / Ghi chú của GVCN</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {consolidatedData.classStats.map((c) => (
+                          <tr key={c.className} className={`hover:bg-slate-50 transition ${!c.hasSubmitted ? 'bg-amber-50/30' : ''}`}>
+                            <td className="p-3 text-center text-slate-500 font-medium">{c.stt}</td>
+                            <td className="p-3 text-center font-bold text-slate-900 bg-slate-50/60">{c.className}</td>
+                            <td className="p-3 text-slate-600">
+                              {c.campus === 'THPT' ? 'Điểm THPT' : (c.campus === 'TK' ? 'Tân Kiều' : 'Đốc Binh Kiều')}
+                            </td>
+                            <td className="p-3 text-slate-800 font-medium">{c.teacherName}</td>
+                            <td className="p-3 text-center font-bold text-slate-900">{c.totalStudents}</td>
+                            <td className="p-3 text-center text-slate-600">{c.maleStudents}</td>
+                            <td className="p-3 text-center text-slate-600">{c.femaleStudents}</td>
+                            <td className="p-3 text-center font-bold text-emerald-700">{c.presentStudents}</td>
+                            <td className={`p-3 text-center font-bold ${c.absentStudentsCount > 0 ? 'text-rose-600 bg-rose-50/50' : 'text-slate-400'}`}>
+                              {c.absentStudentsCount}
+                            </td>
+                            <td className="p-3 text-center font-bold">
+                              {c.hasSubmitted ? (
+                                <span className={`px-2 py-0.5 rounded-md ${c.attendanceRate >= 95 ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}`}>
+                                  {c.attendanceRate}%
+                                </span>
+                              ) : (
+                                <span className="text-slate-400">-</span>
+                              )}
+                            </td>
+                            <td className="p-3 text-center">
+                              {c.hasSubmitted ? (
+                                <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                                  <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                                  <span>Đã nộp</span>
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
+                                  <span>Chờ nộp</span>
+                                </span>
+                              )}
+                            </td>
+                            <td className="p-3 text-slate-600 text-[11px] italic truncate max-w-xs" title={c.notes}>
+                              {c.notes || '-'}
+                            </td>
+                          </tr>
+                        ))}
+
+                        {/* Dòng Tổng cộng toàn trường */}
+                        <tr className="bg-slate-900 text-white font-bold sticky bottom-0 z-10 shadow-lg">
+                          <td colSpan={4} className="p-3 text-center uppercase tracking-wider text-emerald-300">
+                            TỔNG CỘNG TOÀN TRƯỜNG (53 LỚP)
+                          </td>
+                          <td className="p-3 text-center text-white">{consolidatedData.totalEnrolledStudents}</td>
+                          <td className="p-3 text-center text-slate-300">{consolidatedData.totalMaleStudents}</td>
+                          <td className="p-3 text-center text-slate-300">{consolidatedData.totalFemaleStudents}</td>
+                          <td className="p-3 text-center text-emerald-400">{consolidatedData.totalPresentStudents}</td>
+                          <td className="p-3 text-center text-rose-400">{consolidatedData.totalAbsentStudents}</td>
+                          <td className="p-3 text-center text-emerald-300">{consolidatedData.overallAttendanceRate}%</td>
+                          <td className="p-3 text-center text-slate-300">{consolidatedData.submittedCount}/53 lớp</td>
+                          <td className="p-3 text-slate-400 font-normal text-[11px]">-</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 

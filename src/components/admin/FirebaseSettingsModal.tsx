@@ -13,11 +13,16 @@ import {
   Save, 
   ExternalLink,
   ShieldCheck,
-  Server
+  Server,
+  Image as ImageIcon
 } from 'lucide-react';
 import { FirebaseConfig, SchoolInfo } from '../../types';
 
-export const FirebaseSettingsModal: React.FC = () => {
+interface FirebaseSettingsModalProps {
+  onOpenLogoModal?: () => void;
+}
+
+export const FirebaseSettingsModal: React.FC<FirebaseSettingsModalProps> = ({ onOpenLogoModal }) => {
   const { 
     firebaseConfig, 
     updateFirebaseConfig, 
@@ -290,14 +295,35 @@ export const FirebaseSettingsModal: React.FC = () => {
 
       </div>
 
-      {/* School Information Editor */}
+      {/* School Information Editor & Logo */}
       <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-2xs space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 text-sm font-bold text-slate-900">
-            <School className="w-4 h-4 text-emerald-600" />
-            <span>Thông tin Nhà trường (Trường THCS & THPT Đốc Binh Kiều)</span>
+        <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-100">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-xl bg-slate-50 border border-slate-200 p-1 flex items-center justify-center shrink-0 shadow-2xs overflow-hidden">
+              {schoolInfo.logoUrl ? (
+                <img src={schoolInfo.logoUrl} alt="Logo" className="w-full h-full object-contain" />
+              ) : (
+                <School className="w-6 h-6 text-emerald-600" />
+              )}
+            </div>
+            <div>
+              <div className="flex items-center gap-2 text-sm font-bold text-slate-900">
+                <span>Biểu trưng & Thông tin Nhà trường</span>
+              </div>
+              <p className="text-xs text-slate-500">Logo và thông tin chính thức của trường</p>
+            </div>
           </div>
-          <span className="text-xs text-slate-400">Tự động điền vào các mẫu biểu báo cáo</span>
+
+          {onOpenLogoModal && (
+            <button
+              type="button"
+              onClick={onOpenLogoModal}
+              className="px-4 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 font-bold text-xs flex items-center gap-2 transition cursor-pointer shadow-2xs"
+            >
+              <ImageIcon className="w-4 h-4 text-emerald-700" />
+              <span>Thay Đổi / Cập Nhật Logo</span>
+            </button>
+          )}
         </div>
 
         <form onSubmit={handleSaveSchoolInfo} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-xs">

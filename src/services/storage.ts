@@ -16,7 +16,7 @@ import {
   INITIAL_NOTIFICATIONS 
 } from '../data/initialData';
 import { getFirebaseInstance } from './firebase';
-import { collection, doc, getDocs, setDoc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc } from 'firebase/firestore';
 
 const STORAGE_KEYS = {
   USERS: 'dbk_users_data',
@@ -27,6 +27,7 @@ const STORAGE_KEYS = {
   NOTIFICATIONS: 'dbk_notifications_data',
   EMAIL_LOGS: 'dbk_email_logs_data',
   SCHOOL_INFO: 'dbk_school_info_data',
+  SCHOOL_LOGO: 'dbk_school_custom_logo',
   SEEDED: 'dbk_seeded_v18_persistent_password_fix'
 };
 
@@ -163,7 +164,13 @@ export function initializeDatabaseIfNeeded(forceReset = false) {
   const hasOldUserIds = currentUsers.some(u => u.id.startsWith('user-toan') || u.id === 'user-bgh-1' || u.id === 'user-admin');
 
   if (forceReset || !isSeeded || currentUsers.length < 100 || currentDepts.length !== 7 || hasOutdatedDepts || hasOldUserIds) {
-    setLocal(STORAGE_KEYS.SCHOOL_INFO, INITIAL_SCHOOL_INFO);
+    const existingSchoolInfo = getLocal<SchoolInfo | null>(STORAGE_KEYS.SCHOOL_INFO, null);
+    const existingCustomLogo = localStorage.getItem(STORAGE_KEYS.SCHOOL_LOGO) || existingSchoolInfo?.logoUrl;
+    setLocal(STORAGE_KEYS.SCHOOL_INFO, {
+      ...INITIAL_SCHOOL_INFO,
+      ...(existingSchoolInfo || {}),
+      ...(existingCustomLogo ? { logoUrl: existingCustomLogo } : {})
+    });
     setLocal(STORAGE_KEYS.DEPARTMENTS, INITIAL_DEPARTMENTS);
 
     // Merge preserved credentials into INITIAL_USERS so passwords are NEVER lost
@@ -480,14 +487,58 @@ export const StorageService = {
     return updated;
   },
 
-  // --- SCHOOL INFO ---
+  // --- SCHOOL INFO & LOGO ---
   getSchoolInfo(): SchoolInfo {
-    return getLocal<SchoolInfo>(STORAGE_KEYS.SCHOOL_INFO, INITIAL_SCHOOL_INFO);
+    initializeDatabaseIfNeeded();
+    const info = getLocal<SchoolInfo>(STORAGE_KEYS.SCHOOL_INFO, INITIAL_SCHOOL_INFO);
+    const customLogo = localStorage.getItem(STORAGE_KEYS.SCHOOL_LOGO);
+    if (customLogo) {
+      info.logoUrl = customLogo;
+    }
+    return info;
   },
 
   saveSchoolInfo(info: SchoolInfo): SchoolInfo {
+    if (info.logoUrl) {
+      try {
+        localStorage.setItem(STORAGE_KEYS.SCHOOL_LOGO, info.logoUrl);
+      } catch (e) {
+        console.warn('Could not store logo into dedicated key:', e);
+      }
+    } else {
+      try {
+        localStorage.removeItem(STORAGE_KEYS.SCHOOL_LOGO);
+      } catch {}
+    }
     setLocal(STORAGE_KEYS.SCHOOL_INFO, info);
+
+    // Sync to Firestore metadata/schoolInfo immediately
+    try {
+      const { db, isReady } = getFirebaseInstance();
+      if (isReady && db) {
+        const payload = cleanFirestorePayload(info);
+        setDoc(doc(db, 'metadata', 'schoolInfo'), payload, { merge: true }).catch(err => {
+          console.warn('Firestore schoolInfo save error:', err);
+        });
+      }
+    } catch (e) {
+      console.warn('Firebase error during schoolInfo save:', e);
+    }
+
     return info;
+  },
+
+  saveSchoolLogo(logoUrl: string): SchoolInfo {
+    const current = this.getSchoolInfo();
+    const updated = { ...current, logoUrl };
+    return this.saveSchoolInfo(updated);
+  },
+
+  removeSchoolLogo(): SchoolInfo {
+    const current = this.getSchoolInfo();
+    const updated = { ...current };
+    delete updated.logoUrl;
+    return this.saveSchoolInfo(updated);
   },
 
   // --- CLOUD FIRESTORE SYNC ALL ---
@@ -517,9 +568,9 @@ export const StorageService = {
       for (const s of submissions) {
         await setDoc(doc(db, 'submissions', s.id), s);
       }
-      await setDoc(doc(db, 'metadata', 'schoolInfo'), schoolInfo);
+      await setDoc(doc(db, 'metadata', 'schoolInfo'), cleanFirestorePayload(schoolInfo));
 
-      const totalItems = users.length + depts.length + periods.length + submissions.length;
+      const totalItems = users.length + depts.length + periods.length + submissions.length + 1;
       return { 
         success: true, 
         count: totalItems, 
@@ -564,6 +615,22 @@ export const StorageService = {
         const subs: ReportSubmission[] = subsSnap.docs.map(d => d.data() as ReportSubmission);
         setLocal(STORAGE_KEYS.SUBMISSIONS, subs);
         importedCount += subs.length;
+      }
+
+      // Check metadata/schoolInfo
+      try {
+        const metaDoc = await getDoc(doc(db, 'metadata', 'schoolInfo'));
+        if (metaDoc.exists()) {
+          const remoteInfo = metaDoc.data() as SchoolInfo;
+          if (remoteInfo && (remoteInfo.name || remoteInfo.logoUrl)) {
+            const current = this.getSchoolInfo();
+            const merged = { ...current, ...remoteInfo };
+            this.saveSchoolInfo(merged);
+            importedCount += 1;
+          }
+        }
+      } catch (err) {
+        console.warn('Could not fetch metadata/schoolInfo from Firestore:', err);
       }
 
       return { 

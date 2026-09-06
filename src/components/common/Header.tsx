@@ -13,7 +13,9 @@ import {
   UserCheck,
   KeyRound,
   ShieldCheck,
-  Plus
+  Plus,
+  Pencil,
+  Image as ImageIcon
 } from 'lucide-react';
 import { UserRole } from '../../types';
 
@@ -25,6 +27,7 @@ interface HeaderProps {
   onToggleMobileMenu?: () => void;
   onNavigate?: (tab: any) => void;
   onOpenChangePassword?: () => void;
+  onOpenLogoModal?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -34,7 +37,8 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenReportDetail,
   onToggleMobileMenu,
   onNavigate,
-  onOpenChangePassword
+  onOpenChangePassword,
+  onOpenLogoModal
 }) => {
   const { currentUser, allUsers = [], switchUser, logout, isAdmin, isPrincipal } = useAuth();
   const { 
@@ -93,19 +97,53 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
           )}
 
-          {/* School Badge Icon */}
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-700 to-teal-600 flex items-center justify-center text-white shadow-xs shrink-0 ring-1 ring-emerald-600/20">
-            <School className="w-5 h-5" />
+          {/* School Badge / Logo Icon */}
+          <div 
+            onClick={isAdmin && onOpenLogoModal ? onOpenLogoModal : undefined}
+            className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-white flex items-center justify-center shadow-xs shrink-0 ring-1 ring-emerald-600/20 overflow-hidden relative group ${
+              isAdmin && onOpenLogoModal ? 'cursor-pointer hover:ring-emerald-500 hover:shadow-md transition' : ''
+            }`}
+            title={isAdmin ? "Nhấn để đổi logo nhà trường (Quản trị viên)" : (schoolInfo.formalName || "THCS & THPT Đốc Binh Kiều")}
+          >
+            {schoolInfo.logoUrl ? (
+              <img 
+                src={schoolInfo.logoUrl} 
+                alt="Logo Trường Đốc Binh Kiều" 
+                className="w-full h-full object-contain p-0.5" 
+              />
+            ) : (
+              <div className="w-full h-full bg-gradient-to-tr from-emerald-700 to-teal-600 flex items-center justify-center text-white">
+                <School className="w-5 h-5" />
+              </div>
+            )}
+
+            {/* Admin hover indicator */}
+            {isAdmin && onOpenLogoModal && (
+              <div className="absolute inset-0 bg-slate-900/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white">
+                <Pencil className="w-3.5 h-3.5 drop-shadow-xs" />
+              </div>
+            )}
           </div>
 
           <div className="min-w-0">
             <div className="flex items-center gap-2">
               <h1 className="text-sm sm:text-base font-extrabold text-slate-900 tracking-tight truncate uppercase">
-                THCS & THPT ĐỐC BINH KIỀU
+                {schoolInfo.name || 'THCS & THPT ĐỐC BINH KIỀU'}
               </h1>
               <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
                 Đồng Tháp
               </span>
+              {isAdmin && onOpenLogoModal && (
+                <button
+                  type="button"
+                  onClick={onOpenLogoModal}
+                  className="hidden md:inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 transition cursor-pointer"
+                  title="Nhấn để đổi logo nhà trường"
+                >
+                  <Pencil className="w-2.5 h-2.5" />
+                  <span>Sửa logo</span>
+                </button>
+              )}
             </div>
             <p className="text-[11px] text-slate-500 truncate hidden xs:block">
               Hệ thống Quản lý & Nộp Báo Cáo Định Kỳ • Năm học 2026 - 2027
@@ -324,32 +362,49 @@ export const Header: React.FC<HeaderProps> = ({
                 </div>
 
                 {/* Dropdown footer with Change Password & Logout actions */}
-                <div className="p-2 border-t border-slate-100 bg-slate-50/70 flex items-center justify-between gap-2">
-                  {onOpenChangePassword && (
+                <div className="p-2 border-t border-slate-100 bg-slate-50/70 space-y-1.5">
+                  {isAdmin && onOpenLogoModal && (
                     <button
                       type="button"
                       onClick={() => {
                         setShowRoleMenu(false);
-                        onOpenChangePassword();
+                        onOpenLogoModal();
                       }}
-                      className="px-2.5 py-1.5 rounded-lg text-xs font-bold text-slate-700 hover:text-emerald-800 bg-white hover:bg-emerald-50 border border-slate-200 hover:border-emerald-200 transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
-                      title="Đổi mật khẩu tài khoản"
+                      className="w-full px-2.5 py-1.5 rounded-lg text-xs font-bold text-emerald-800 hover:text-emerald-950 bg-emerald-50 hover:bg-emerald-100/80 border border-emerald-200 transition flex items-center gap-2 cursor-pointer"
+                      title="Chỉnh sửa và đổi logo nhà trường"
                     >
-                      <KeyRound className="w-3.5 h-3.5 text-emerald-600" />
-                      <span>Đổi mật khẩu</span>
+                      <ImageIcon className="w-3.5 h-3.5 text-emerald-700" />
+                      <span>Đổi logo nhà trường (Admin)</span>
                     </button>
                   )}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowRoleMenu(false);
-                      logout();
-                    }}
-                    className="px-3 py-1.5 rounded-lg text-xs font-bold text-rose-700 hover:text-white bg-rose-50 hover:bg-rose-600 transition flex items-center gap-1.5 cursor-pointer shadow-2xs ml-auto"
-                  >
-                    <LogOut className="w-3.5 h-3.5" />
-                    <span>Đăng xuất</span>
-                  </button>
+
+                  <div className="flex items-center justify-between gap-2">
+                    {onOpenChangePassword && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowRoleMenu(false);
+                          onOpenChangePassword();
+                        }}
+                        className="px-2.5 py-1.5 rounded-lg text-xs font-bold text-slate-700 hover:text-emerald-800 bg-white hover:bg-emerald-50 border border-slate-200 hover:border-emerald-200 transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                        title="Đổi mật khẩu tài khoản"
+                      >
+                        <KeyRound className="w-3.5 h-3.5 text-emerald-600" />
+                        <span>Đổi mật khẩu</span>
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowRoleMenu(false);
+                        logout();
+                      }}
+                      className="px-3 py-1.5 rounded-lg text-xs font-bold text-rose-700 hover:text-white bg-rose-50 hover:bg-rose-600 transition flex items-center gap-1.5 cursor-pointer shadow-2xs ml-auto"
+                    >
+                      <LogOut className="w-3.5 h-3.5" />
+                      <span>Đăng xuất</span>
+                    </button>
+                  </div>
                 </div>
               </div>
             )}

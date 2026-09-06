@@ -16,6 +16,8 @@ import { ReportDetailModal } from './components/reports/ReportDetailModal';
 import { ForceChangePasswordModal } from './components/auth/ForceChangePasswordModal';
 import { CreatePeriodModal } from './components/periods/CreatePeriodModal';
 import { PeriodConsolidationModal } from './components/reports/PeriodConsolidationModal';
+import { FirebaseSettingsModal } from './components/admin/FirebaseSettingsModal';
+import { LogoManagementModal } from './components/admin/LogoManagementModal';
 import { StorageService } from './services/storage';
 import { ReportSubmission } from './types';
 
@@ -28,6 +30,7 @@ const MainLayout: React.FC = () => {
   const [isConsolidationModalOpen, setIsConsolidationModalOpen] = useState(false);
   const [consolidationPeriodId, setConsolidationPeriodId] = useState<string | undefined>(undefined);
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
+  const [isLogoModalOpen, setIsLogoModalOpen] = useState(false);
   const [dismissedFirstTimeUserIds, setDismissedFirstTimeUserIds] = useState<Record<string, boolean>>(() => {
     try {
       const saved = localStorage.getItem('dbk_dismissed_pwd_modal');
@@ -126,6 +129,7 @@ const MainLayout: React.FC = () => {
         onToggleMobileMenu={() => setIsMobileSidebarOpen(true)}
         onNavigate={handleNavigate}
         onOpenChangePassword={() => setIsChangePasswordOpen(true)}
+        onOpenLogoModal={() => setIsLogoModalOpen(true)}
       />
 
       {/* Slide-out Navigation Drawer (Appears when clicking hamburger menu ☰) */}
@@ -136,6 +140,7 @@ const MainLayout: React.FC = () => {
         onOpenCreatePeriod={handleOpenCreatePeriod}
         isMobileOpen={isMobileSidebarOpen}
         onCloseMobile={() => setIsMobileSidebarOpen(false)}
+        onOpenLogoModal={() => setIsLogoModalOpen(true)}
       />
 
       {/* Main Container: Full width clean layout */}
@@ -187,6 +192,12 @@ const MainLayout: React.FC = () => {
               onOpenConsolidation={handleOpenConsolidation}
             />
           )}
+
+          {activeView === 'settings' && isAdmin && (
+            <FirebaseSettingsModal
+              onOpenLogoModal={() => setIsLogoModalOpen(true)}
+            />
+          )}
         </main>
       </div>
 
@@ -225,6 +236,14 @@ const MainLayout: React.FC = () => {
         }}
         defaultPeriodId={consolidationPeriodId}
       />
+
+      {/* Admin Logo Management Modal */}
+      {isAdmin && (
+        <LogoManagementModal
+          isOpen={isLogoModalOpen}
+          onClose={() => setIsLogoModalOpen(false)}
+        />
+      )}
 
       {/* Mandatory First-Time or Manual Password Change Modal */}
       <ForceChangePasswordModal

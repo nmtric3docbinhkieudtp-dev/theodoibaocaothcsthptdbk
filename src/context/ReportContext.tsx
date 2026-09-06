@@ -12,7 +12,7 @@ import {
 } from '../types';
 import { StorageService, setLocal, VALID_DEPT_IDS } from '../services/storage';
 import { getStoredFirebaseConfig, saveStoredFirebaseConfig, testFirebaseConnection, getFirebaseInstance } from '../services/firebase';
-import { collection, doc, onSnapshot, getDocs, setDoc, deleteDoc } from 'firebase/firestore';
+import { collection, doc, onSnapshot, getDocs, getDoc, setDoc, deleteDoc } from 'firebase/firestore';
 import { OFFICIAL_DEPARTMENTS, OFFICIAL_USERS } from '../data/staffRoster';
 import { INITIAL_SUBMISSIONS, INITIAL_PERIODS } from '../data/initialData';
 import { EmailService } from '../services/emailService';
@@ -82,8 +82,10 @@ interface ReportContextType {
   sendDeadlineReminderToUser: (teacher: User, period: ReportPeriod) => void;
   sendBulkReminders: (period: ReportPeriod, users: User[]) => void;
 
-  // School info
+  // School info & Logo
   updateSchoolInfo: (info: SchoolInfo) => void;
+  updateSchoolLogo: (logoUrl: string) => void;
+  removeSchoolLogo: () => void;
   resetAllData: () => void;
 }
 
@@ -107,10 +109,41 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     let unsubscribeSubs: (() => void) | null = null;
     let unsubscribePeriods: (() => void) | null = null;
     let unsubscribeDepts: (() => void) | null = null;
+    let unsubscribeMeta: (() => void) | null = null;
 
     const setupFirestoreRealtime = async () => {
       const validStaffIds = new Set(OFFICIAL_USERS.map(u => u.id));
       try {
+        // Check and sync schoolInfo & custom logo from Firestore
+        try {
+          const metaSnap = await getDoc(doc(db, 'metadata', 'schoolInfo'));
+          if (metaSnap.exists()) {
+            const data = metaSnap.data() as SchoolInfo;
+            if (data && (data.name || data.logoUrl)) {
+              setSchoolInfo(prev => {
+                const merged = { ...prev, ...data };
+                StorageService.saveSchoolInfo(merged);
+                return merged;
+              });
+            }
+          }
+        } catch (mErr) {
+          console.warn('Firestore schoolInfo load error:', mErr);
+        }
+
+        // Listen to live metadata updates (e.g. logo changes from admin)
+        unsubscribeMeta = onSnapshot(doc(db, 'metadata', 'schoolInfo'), (snap) => {
+          if (snap.exists()) {
+            const remote = snap.data() as SchoolInfo;
+            if (remote) {
+              setSchoolInfo(prev => {
+                const merged = { ...prev, ...remote };
+                StorageService.saveSchoolInfo(merged);
+                return merged;
+              });
+            }
+          }
+        }, (err) => console.warn('SchoolInfo snapshot error:', err));
         // Check and sync user_credentials from Firestore
         try {
           const credsSnap = await getDocs(collection(db, 'user_credentials'));
@@ -257,8 +290,26 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       if (unsubscribeSubs) unsubscribeSubs();
       if (unsubscribePeriods) unsubscribePeriods();
       if (unsubscribeDepts) unsubscribeDepts();
+      if (unsubscribeMeta) unsubscribeMeta();
     };
   }, []);
+
+  // Update browser tab favicon dynamically if logo changes
+  useEffect(() => {
+    if (schoolInfo.logoUrl) {
+      try {
+        let link: HTMLLinkElement | null = document.querySelector("link[rel*='icon']");
+        if (!link) {
+          link = document.createElement('link');
+          link.rel = 'shortcut icon';
+          document.getElementsByTagName('head')[0].appendChild(link);
+        }
+        link.href = schoolInfo.logoUrl;
+      } catch (e) {
+        console.warn('Could not update favicon:', e);
+      }
+    }
+  }, [schoolInfo.logoUrl]);
 
   // Refresh notifications when user changes
   useEffect(() => {
@@ -655,6 +706,16 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     setSchoolInfo(updated);
   };
 
+  const updateSchoolLogo = (logoUrl: string) => {
+    const updated = StorageService.saveSchoolLogo(logoUrl);
+    setSchoolInfo(updated);
+  };
+
+  const removeSchoolLogo = () => {
+    const updated = StorageService.removeSchoolLogo();
+    setSchoolInfo(updated);
+  };
+
   const resetAllData = () => {
     StorageService.resetToInitialData();
     setSubmissions(StorageService.getSubmissions());
@@ -696,6 +757,8 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         sendDeadlineReminderToUser,
         sendBulkReminders,
         updateSchoolInfo,
+        updateSchoolLogo,
+        removeSchoolLogo,
         resetAllData
       }}
     >

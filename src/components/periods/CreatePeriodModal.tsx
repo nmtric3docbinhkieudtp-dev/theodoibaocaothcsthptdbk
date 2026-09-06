@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Modal } from '../common/Modal';
 import { useReports } from '../../context/ReportContext';
+import { useAuth } from '../../context/AuthContext';
 import { 
   CalendarRange, 
   Clock, 
@@ -16,7 +17,14 @@ import {
   X,
   Eye,
   Layers,
-  ChevronDown
+  ChevronDown,
+  UserCheck,
+  Search,
+  CheckSquare,
+  Square,
+  UserPlus,
+  Check,
+  RotateCcw
 } from 'lucide-react';
 import { 
   ReportPeriod, 
@@ -44,6 +52,7 @@ export const CreatePeriodModal: React.FC<CreatePeriodModalProps> = ({
   onSuccess
 }) => {
   const { createPeriod, updatePeriod, departments = [] } = useReports();
+  const { allUsers = [] } = useAuth();
 
   // Basic info
   const [title, setTitle] = useState('');
@@ -54,6 +63,66 @@ export const CreatePeriodModal: React.FC<CreatePeriodModalProps> = ({
   const [reportType, setReportType] = useState<ReportType>('hybrid');
   const [targetAudience, setTargetAudience] = useState<TargetAudienceType>('all');
   const [selectedDepts, setSelectedDepts] = useState<string[]>(['all']);
+
+  // Specific individual users selection
+  const [targetUserIds, setTargetUserIds] = useState<string[]>([]);
+  const [userSearchQuery, setUserSearchQuery] = useState('');
+  const [userCampusFilter, setUserCampusFilter] = useState<'all' | 'THPT' | 'THCS_DBK' | 'THCS_TK'>('all');
+  const [userDeptFilter, setUserDeptFilter] = useState<string>('all');
+
+  // Filtered staff list for specific_users picker
+  const selectableStaff = useMemo(() => {
+    return allUsers.filter(u => {
+      // Exclude BGH from standard lists unless searched
+      if (!userSearchQuery.trim() && (u.departmentId === 'bgh' || u.role === 'principal')) {
+        return false;
+      }
+
+      // Search query
+      if (userSearchQuery.trim()) {
+        const q = userSearchQuery.toLowerCase().trim();
+        const matchName = u.name.toLowerCase().includes(q);
+        const matchDept = u.departmentName.toLowerCase().includes(q);
+        const matchSchool = (u.originalSchool || '').toLowerCase().includes(q);
+        const matchRole = (u.roleTitle || '').toLowerCase().includes(q);
+        const matchSubject = (u.subject || '').toLowerCase().includes(q);
+        const matchClass = (u.homeroomClass || '').toLowerCase().includes(q);
+        if (!matchName && !matchDept && !matchSchool && !matchRole && !matchSubject && !matchClass) {
+          return false;
+        }
+      }
+
+      // Campus filter
+      if (userCampusFilter !== 'all') {
+        const sch = (u.originalSchool || '').toLowerCase();
+        if (userCampusFilter === 'THPT' && !sch.includes('thpt')) return false;
+        if (userCampusFilter === 'THCS_DBK' && !sch.includes('đốc binh kiều') && !sch.includes('doc binh kieu')) return false;
+        if (userCampusFilter === 'THCS_TK' && !sch.includes('tân kiều') && !sch.includes('tan kieu')) return false;
+      }
+
+      // Department filter
+      if (userDeptFilter !== 'all') {
+        if (u.departmentId !== userDeptFilter) return false;
+      }
+
+      return true;
+    });
+  }, [allUsers, userSearchQuery, userCampusFilter, userDeptFilter]);
+
+  const toggleUserSelection = (userId: string) => {
+    setTargetUserIds(prev => 
+      prev.includes(userId) ? prev.filter(id => id !== userId) : [...prev, userId]
+    );
+  };
+
+  const selectAllFilteredUsers = () => {
+    const idsToAdd = selectableStaff.map(u => u.id);
+    setTargetUserIds(prev => Array.from(new Set([...prev, ...idsToAdd])));
+  };
+
+  const deselectAllUsers = () => {
+    setTargetUserIds([]);
+  };
 
   // Deadline & Time Setting (Ấn định thời gian)
   const [deadline, setDeadline] = useState('');
@@ -115,6 +184,10 @@ export const CreatePeriodModal: React.FC<CreatePeriodModalProps> = ({
       setReportType(editingPeriod.reportType || 'hybrid');
       setTargetAudience(editingPeriod.targetAudience || 'all');
       setSelectedDepts(editingPeriod.targetDepartmentIds || ['all']);
+      setTargetUserIds(editingPeriod.targetUserIds || []);
+      setUserSearchQuery('');
+      setUserCampusFilter('all');
+      setUserDeptFilter('all');
       
       if (editingPeriod.deadline) {
         const d = new Date(editingPeriod.deadline);
@@ -137,6 +210,10 @@ export const CreatePeriodModal: React.FC<CreatePeriodModalProps> = ({
       setReportType('hybrid');
       setTargetAudience(initialAudience);
       setSelectedDepts(['all']);
+      setTargetUserIds([]);
+      setUserSearchQuery('');
+      setUserCampusFilter('all');
+      setUserDeptFilter('all');
       setImportedTemplate(null);
       setParseFileName(null);
 
@@ -243,6 +320,11 @@ export const CreatePeriodModal: React.FC<CreatePeriodModalProps> = ({
       return;
     }
 
+    if (targetAudience === 'specific_users' && targetUserIds.length === 0) {
+      alert('Vui lòng chọn ít nhất một Thầy/Cô được chỉ định trong danh sách!');
+      return;
+    }
+
     const deadlineIso = new Date(deadline).toISOString();
     const isPast = new Date(deadline).getTime() < Date.now();
 
@@ -255,6 +337,7 @@ export const CreatePeriodModal: React.FC<CreatePeriodModalProps> = ({
         deadline: deadlineIso,
         reportType,
         targetAudience,
+        targetUserIds: targetAudience === 'specific_users' ? targetUserIds : undefined,
         isRequired: true,
         targetDepartmentIds: selectedDepts,
         status: isPast ? 'closed' : 'active',
@@ -272,6 +355,7 @@ export const CreatePeriodModal: React.FC<CreatePeriodModalProps> = ({
         deadline: deadlineIso,
         reportType,
         targetAudience,
+        targetUserIds: targetAudience === 'specific_users' ? targetUserIds : undefined,
         isRequired: true,
         targetDepartmentIds: selectedDepts,
         targetRoles: ['teacher', 'dept_head'],
@@ -606,9 +690,9 @@ export const CreatePeriodModal: React.FC<CreatePeriodModalProps> = ({
             >
               <Users className={`w-4 h-4 shrink-0 mt-0.5 ${targetAudience === 'dept_heads_only' ? 'text-white' : 'text-blue-600'}`} />
               <div>
-                <div className="font-bold text-xs">Chỉ Tổ Trưởng & Tổ Phó Chuyên Môn (15 Thầy/Cô)</div>
+                <div className="font-bold text-xs">Chỉ Tổ Trưởng & Tổ Phó Chuyên Môn (19 Thầy/Cô)</div>
                 <div className={`text-[11px] ${targetAudience === 'dept_heads_only' ? 'text-blue-100' : 'text-slate-500'}`}>
-                  Báo cáo tổng kết tổ, sinh hoạt chuyên môn, kiểm tra giáo án.
+                  Báo cáo hoạt động tổ, sinh hoạt chuyên môn, kiểm tra hồ sơ giáo án (6 tổ CM).
                 </div>
               </div>
             </button>
@@ -630,7 +714,233 @@ export const CreatePeriodModal: React.FC<CreatePeriodModalProps> = ({
                 </div>
               </div>
             </button>
+
+            <button
+              type="button"
+              onClick={() => setTargetAudience('specific_users')}
+              className={`col-span-1 sm:col-span-2 p-3 rounded-xl border text-left flex items-start gap-2.5 transition cursor-pointer ${
+                targetAudience === 'specific_users'
+                  ? 'bg-indigo-600 text-white border-indigo-700 shadow-sm'
+                  : 'bg-indigo-50/50 text-indigo-950 border-indigo-200 hover:bg-indigo-50'
+              }`}
+            >
+              <UserCheck className={`w-5 h-5 shrink-0 mt-0.5 ${targetAudience === 'specific_users' ? 'text-white' : 'text-indigo-600'}`} />
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="font-bold text-xs flex items-center gap-1.5">
+                    <span>⭐ Chỉ Định Đích Danh Từng Cá Nhân (Chọn một số Thầy / Cô cụ thể)</span>
+                  </div>
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                    targetAudience === 'specific_users' ? 'bg-indigo-500 text-white' : 'bg-indigo-100 text-indigo-800'
+                  }`}>
+                    {targetUserIds.length > 0 ? `Đã chọn ${targetUserIds.length} người` : 'Chưa chọn'}
+                  </span>
+                </div>
+                <div className={`text-[11px] mt-0.5 ${targetAudience === 'specific_users' ? 'text-indigo-100' : 'text-slate-600'}`}>
+                  Chỉ những Thầy/Cô được tích chọn đích danh mới nhận được yêu cầu và nộp báo cáo (Ban Giám Hiệu giao việc riêng cho từng cá nhân).
+                </div>
+              </div>
+            </button>
           </div>
+
+          {/* Interactive User Picker when targetAudience === 'specific_users' */}
+          {targetAudience === 'specific_users' && (
+            <div className="mt-3 p-3.5 rounded-2xl bg-indigo-50/40 border border-indigo-200/80 space-y-3 animate-in fade-in duration-200">
+              {/* Header & stats */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-indigo-100">
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-lg bg-indigo-600 text-white flex items-center justify-center text-xs font-bold shadow-2xs">
+                    <UserPlus className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <div className="text-xs font-bold text-indigo-950 flex items-center gap-1.5">
+                      <span>Chọn Danh Sách Thầy / Cô Cần Nộp Báo Cáo</span>
+                      <span className="px-2 py-0.5 rounded-full bg-indigo-600 text-white text-[10px] font-bold">
+                        Đã chọn {targetUserIds.length} / {allUsers.length} Thầy Cô
+                      </span>
+                    </div>
+                    <div className="text-[11px] text-slate-500">
+                      Tích chọn từng cá nhân bên dưới. Có thể tìm kiếm nhanh theo tên, tổ hoặc lọc theo cơ sở.
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-1.5 self-end sm:self-auto">
+                  <button
+                    type="button"
+                    onClick={selectAllFilteredUsers}
+                    className="px-2.5 py-1 rounded-lg bg-indigo-100 hover:bg-indigo-200 text-indigo-900 text-xs font-bold transition flex items-center gap-1 cursor-pointer"
+                  >
+                    <CheckSquare className="w-3.5 h-3.5" />
+                    <span>Chọn tất cả ({selectableStaff.length})</span>
+                  </button>
+                  {targetUserIds.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={deselectAllUsers}
+                      className="px-2.5 py-1 rounded-lg bg-white hover:bg-slate-100 text-slate-600 border border-slate-200 text-xs font-semibold transition flex items-center gap-1 cursor-pointer"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5" />
+                      <span>Bỏ chọn hết</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Search & Filters */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <div className="relative sm:col-span-1">
+                  <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type="text"
+                    placeholder="Tìm theo tên, môn dạy..."
+                    value={userSearchQuery}
+                    onChange={(e) => setUserSearchQuery(e.target.value)}
+                    className="w-full pl-8 pr-3 py-1.5 text-xs rounded-xl bg-white border border-slate-300 focus:outline-indigo-600"
+                  />
+                  {userSearchQuery && (
+                    <button
+                      type="button"
+                      onClick={() => setUserSearchQuery('')}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+
+                <div>
+                  <select
+                    value={userCampusFilter}
+                    onChange={(e) => setUserCampusFilter(e.target.value as any)}
+                    className="w-full py-1.5 px-2.5 text-xs rounded-xl bg-white border border-slate-300 focus:outline-indigo-600"
+                  >
+                    <option value="all">Tất cả Điểm trường / Cơ sở</option>
+                    <option value="THPT">Điểm THPT Đốc Binh Kiều</option>
+                    <option value="THCS_DBK">Điểm THCS Đốc Binh Kiều</option>
+                    <option value="THCS_TK">Điểm THCS Tân Kiều</option>
+                  </select>
+                </div>
+
+                <div>
+                  <select
+                    value={userDeptFilter}
+                    onChange={(e) => setUserDeptFilter(e.target.value)}
+                    className="w-full py-1.5 px-2.5 text-xs rounded-xl bg-white border border-slate-300 focus:outline-indigo-600"
+                  >
+                    <option value="all">Tất cả Tổ Chuyên Môn</option>
+                    {departments.map(d => (
+                      <option key={d.id} value={d.id}>{d.name}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Selected pills list */}
+              {targetUserIds.length > 0 && (
+                <div className="p-2 rounded-xl bg-white border border-indigo-100">
+                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 flex items-center justify-between">
+                    <span>Đang chọn ({targetUserIds.length} Thầy/Cô):</span>
+                    <button
+                      type="button"
+                      onClick={deselectAllUsers}
+                      className="text-rose-600 hover:underline text-[10px] font-semibold cursor-pointer"
+                    >
+                      Xóa toàn bộ lựa chọn
+                    </button>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto">
+                    {targetUserIds.map(id => {
+                      const u = allUsers.find(x => x.id === id);
+                      if (!u) return null;
+                      return (
+                        <span
+                          key={id}
+                          className="inline-flex items-center gap-1 pl-2 pr-1.5 py-0.5 rounded-md bg-indigo-50 border border-indigo-200 text-indigo-900 text-[11px] font-semibold"
+                        >
+                          <span>{u.name}</span>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleUserSelection(id);
+                            }}
+                            className="p-0.5 hover:bg-indigo-200 rounded text-indigo-700 cursor-pointer"
+                            title="Bỏ chọn"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </span>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Staff table / list */}
+              <div className="border border-slate-200 rounded-xl bg-white overflow-hidden shadow-2xs">
+                <div className="max-h-60 overflow-y-auto divide-y divide-slate-100">
+                  {selectableStaff.length === 0 ? (
+                    <div className="p-6 text-center text-xs text-slate-500">
+                      Không tìm thấy Thầy/Cô nào phù hợp với bộ lọc hiện tại.
+                    </div>
+                  ) : (
+                    selectableStaff.map((u, idx) => {
+                      const isSelected = targetUserIds.includes(u.id);
+                      return (
+                        <div
+                          key={u.id}
+                          onClick={() => toggleUserSelection(u.id)}
+                          className={`p-2.5 flex items-center gap-3 transition cursor-pointer select-none ${
+                            isSelected ? 'bg-indigo-50/70 hover:bg-indigo-50' : 'hover:bg-slate-50'
+                          }`}
+                        >
+                          <div className="shrink-0 text-indigo-600">
+                            {isSelected ? (
+                              <CheckSquare className="w-4 h-4 text-indigo-600" />
+                            ) : (
+                              <Square className="w-4 h-4 text-slate-300" />
+                            )}
+                          </div>
+
+                          <div className="w-7 text-center shrink-0 text-[11px] font-bold text-slate-400">
+                            #{u.orderNo || idx + 1}
+                          </div>
+
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className={`text-xs font-bold ${isSelected ? 'text-indigo-950 font-black' : 'text-slate-900'}`}>
+                                {u.name}
+                              </span>
+                              <span className="text-[10px] text-slate-500">
+                                {u.roleTitle}
+                              </span>
+                              {u.isHomeroomTeacher && u.homeroomClass && (
+                                <span className="px-1.5 py-0.2 rounded bg-amber-50 text-amber-800 border border-amber-200 text-[10px] font-bold">
+                                  GVCN {u.homeroomClass}
+                                </span>
+                              )}
+                            </div>
+                            <div className="text-[11px] text-slate-400 flex items-center gap-2 mt-0.5">
+                              <span>{u.departmentName}</span>
+                              {u.subject && <span>• Môn: {u.subject}</span>}
+                              {u.originalSchool && <span>• {u.originalSchool}</span>}
+                            </div>
+                          </div>
+
+                          {isSelected && (
+                            <span className="shrink-0 px-2 py-0.5 rounded-full bg-indigo-600 text-white text-[10px] font-bold">
+                              Đã chọn
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* 5. Description & Instructions */}

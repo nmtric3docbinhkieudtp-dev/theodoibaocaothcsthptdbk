@@ -74,6 +74,7 @@ export const PersonnelRosterView: React.FC = () => {
 
       if (selectedRole !== 'all') {
         if (selectedRole === 'principal' && u.role !== 'principal') return false;
+        if (selectedRole === 'dept_head_cm' && (u.role !== 'dept_head' || u.departmentId === 'van_phong' || u.departmentId === 'bgh')) return false;
         if (selectedRole === 'dept_head' && u.role !== 'dept_head') return false;
         if (selectedRole === 'teacher' && u.role !== 'teacher') return false;
         if (selectedRole === 'admin' && u.role !== 'admin') return false;
@@ -99,6 +100,7 @@ export const PersonnelRosterView: React.FC = () => {
     const partyCount = allUsers.filter(u => u.partyMember).length;
     const mastersCount = allUsers.filter(u => u.qualification?.includes('Thạc')).length;
     const homeroomCount = allUsers.filter(u => u.isHomeroomTeacher).length;
+    const deptHeadCmCount = allUsers.filter(u => u.role === 'dept_head' && u.departmentId !== 'van_phong' && u.departmentId !== 'bgh').length;
     const thptCount = allUsers.filter(u => u.originalSchool === 'THPTĐBK').length;
     const thcsDbkCount = allUsers.filter(u => u.originalSchool === 'THCSĐBK').length;
     const thcsTkCount = allUsers.filter(u => u.originalSchool === 'THCSTK').length;
@@ -109,6 +111,7 @@ export const PersonnelRosterView: React.FC = () => {
       partyPercentage: totalStaff ? Math.round((partyCount / totalStaff) * 100) : 0,
       mastersCount,
       homeroomCount,
+      deptHeadCmCount,
       thptCount,
       thcsDbkCount,
       thcsTkCount
@@ -228,47 +231,81 @@ export const PersonnelRosterView: React.FC = () => {
         )}
 
         {/* High Density Metric Cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-2.5 mt-4 pt-4 border-t border-slate-100">
-          <div className="bg-slate-50 rounded-xl p-2.5 border border-slate-200/60">
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2 mt-4 pt-4 border-t border-slate-100">
+          <div className="bg-slate-50 rounded-xl p-2 border border-slate-200/60">
             <div className="text-[11px] font-semibold text-slate-500">Tổng nhân sự</div>
             <div className="text-lg font-black text-slate-900 mt-0.5">{stats.totalStaff}</div>
             <div className="text-[10px] text-slate-500 font-medium">6 tổ CM + 1 tổ VP</div>
           </div>
 
-          <div className="bg-amber-50/70 rounded-xl p-2.5 border border-amber-200/80">
+          <div 
+            onClick={() => {
+              setFilterHomeroom('gvcn_only');
+              setSelectedRole('all');
+              setSelectedDept('all');
+            }}
+            className={`rounded-xl p-2 border cursor-pointer transition ${
+              filterHomeroom === 'gvcn_only'
+                ? 'bg-amber-100 border-amber-400 ring-2 ring-amber-400'
+                : 'bg-amber-50/70 border-amber-200/80 hover:bg-amber-100/60'
+            }`}
+            title="Nhấp để xem 53 GVCN"
+          >
             <div className="text-[11px] font-semibold text-amber-800 flex items-center gap-1">
               <GraduationCap className="w-3.5 h-3.5 text-amber-600" />
-              <span>GVCN</span>
+              <span>53 GVCN</span>
             </div>
             <div className="text-lg font-black text-amber-900 mt-0.5">{stats.homeroomCount || 53}</div>
-            <div className="text-[10px] text-amber-700 font-bold">53 Lớp toàn trường</div>
+            <div className="text-[10px] text-amber-700 font-bold">53 Lớp chủ nhiệm</div>
           </div>
 
-          <div className="bg-red-50/50 rounded-xl p-2.5 border border-red-200/60">
+          <div 
+            onClick={() => {
+              setSelectedRole('dept_head_cm');
+              setFilterHomeroom('all');
+              setSelectedDept('all');
+              setSelectedSchool('all');
+            }}
+            className={`rounded-xl p-2 border cursor-pointer transition ${
+              selectedRole === 'dept_head_cm'
+                ? 'bg-blue-100 border-blue-400 ring-2 ring-blue-500'
+                : 'bg-blue-50/70 border-blue-200/80 hover:bg-blue-100/60'
+            }`}
+            title="Nhấp để lọc danh sách 19 Tổ trưởng & Tổ phó chuyên môn"
+          >
+            <div className="text-[11px] font-semibold text-blue-800 flex items-center gap-1">
+              <Users className="w-3.5 h-3.5 text-blue-600" />
+              <span>Tổ Trưởng/Phó</span>
+            </div>
+            <div className="text-lg font-black text-blue-900 mt-0.5">{stats.deptHeadCmCount || 19}</div>
+            <div className="text-[10px] text-blue-700 font-bold">19 Thầy Cô (6 tổ CM)</div>
+          </div>
+
+          <div className="bg-red-50/50 rounded-xl p-2 border border-red-200/60">
             <div className="text-[11px] font-semibold text-red-700">Đảng viên</div>
             <div className="text-lg font-black text-red-900 mt-0.5">{stats.partyCount}</div>
             <div className="text-[10px] text-red-600 font-bold">Tỷ lệ {stats.partyPercentage}%</div>
           </div>
 
-          <div className="bg-amber-50/50 rounded-xl p-2.5 border border-amber-200/60">
+          <div className="bg-amber-50/50 rounded-xl p-2 border border-amber-200/60">
             <div className="text-[11px] font-semibold text-amber-700">Thạc sỹ</div>
             <div className="text-lg font-black text-amber-900 mt-0.5">{stats.mastersCount}</div>
             <div className="text-[10px] text-amber-600">Trình độ cao</div>
           </div>
 
-          <div className="bg-sky-50/50 rounded-xl p-2.5 border border-sky-200/60">
+          <div className="bg-sky-50/50 rounded-xl p-2 border border-sky-200/60">
             <div className="text-[11px] font-semibold text-sky-700">THPT ĐBK</div>
             <div className="text-lg font-black text-sky-900 mt-0.5">{stats.thptCount}</div>
             <div className="text-[10px] text-sky-600">14 lớp THPT</div>
           </div>
 
-          <div className="bg-indigo-50/50 rounded-xl p-2.5 border border-indigo-200/60">
+          <div className="bg-indigo-50/50 rounded-xl p-2 border border-indigo-200/60">
             <div className="text-[11px] font-semibold text-indigo-700">THCS ĐBK</div>
             <div className="text-lg font-black text-indigo-900 mt-0.5">{stats.thcsDbkCount}</div>
             <div className="text-[10px] text-indigo-600">24 lớp ĐBK</div>
           </div>
 
-          <div className="bg-teal-50/50 rounded-xl p-2.5 border border-teal-200/60">
+          <div className="bg-teal-50/50 rounded-xl p-2 border border-teal-200/60">
             <div className="text-[11px] font-semibold text-teal-700">THCS Tân Kiều</div>
             <div className="text-lg font-black text-teal-900 mt-0.5">{stats.thcsTkCount}</div>
             <div className="text-[10px] text-teal-600">15 lớp Tân Kiều</div>
@@ -346,8 +383,9 @@ export const PersonnelRosterView: React.FC = () => {
               className="w-full py-2 px-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-emerald-600 transition"
             >
               <option value="all">Tất cả Chức vụ</option>
-              <option value="principal">Ban Giám Hiệu</option>
-              <option value="dept_head">Tổ trưởng / Tổ phó</option>
+              <option value="principal">Ban Giám Hiệu (4)</option>
+              <option value="dept_head_cm">⭐ 19 Tổ trưởng & Tổ phó Chuyên môn</option>
+              <option value="dept_head">Tất cả 22 Tổ trưởng & Tổ phó (gồm VP)</option>
               <option value="teacher">Giáo viên / Nhân viên</option>
             </select>
           </div>
@@ -360,6 +398,11 @@ export const PersonnelRosterView: React.FC = () => {
             {filterHomeroom === 'gvcn_only' && (
               <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 text-[10px] font-bold">
                 Đang lọc 53 GVCN
+              </span>
+            )}
+            {selectedRole === 'dept_head_cm' && (
+              <span className="px-2 py-0.5 rounded-full bg-blue-100 text-blue-900 text-[10px] font-bold">
+                ⭐ Đang lọc 19 Tổ trưởng & Tổ phó Chuyên môn
               </span>
             )}
           </div>

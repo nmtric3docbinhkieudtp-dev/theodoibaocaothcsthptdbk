@@ -383,3 +383,8 @@ export const OFFICIAL_USERS: User[] = RAW_120_DATA.map((item) => {
     homeroomGrade: hrInfo?.grade
   } as User;
 });
+
+// 19 Tổ trưởng & Tổ phó thuộc 6 Tổ chuyên môn (không bao gồm Tổ Văn phòng)
+export const SPECIALIZED_DEPT_HEADS_19: User[] = OFFICIAL_USERS.filter(u => 
+  u.role === 'dept_head' && u.departmentId !== 'van_phong' && u.departmentId !== 'bgh'
+);

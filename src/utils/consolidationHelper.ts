@@ -9,7 +9,24 @@ import {
   CustomFormField,
   CustomDynamicTable
 } from '../types';
-import { HOMEROOM_ROSTER_53 } from '../data/staffRoster';
+import { HOMEROOM_ROSTER_53, SPECIALIZED_DEPT_HEADS_19 } from '../data/staffRoster';
+
+export interface ConsolidatedDeptHeadStat {
+  stt: number;
+  orderNo: number;
+  userId: string;
+  teacherName: string;
+  roleTitle: string;
+  departmentId: string;
+  departmentName: string;
+  originalSchool: string;
+  subject: string;
+  hasSubmitted: boolean;
+  submittedAt: string | null;
+  submissionId: string | null;
+  reportTitle?: string;
+  summaryNote?: string;
+}
 
 export interface ConsolidatedStudent {
   stt: number;
@@ -154,6 +171,16 @@ export interface PeriodConsolidationResult {
   talents: ConsolidatedTalent[];
   cadres: ConsolidatedCadre[];
   feedbacks: ConsolidatedFeedback[];
+
+  // Specialized department heads (19 Thầy/Cô)
+  isDeptHeadAudience: boolean;
+  totalDeptHeads: number;
+  deptHeadStats: ConsolidatedDeptHeadStat[];
+
+  // Specific users targeted (Chỉ định đích danh từng cá nhân)
+  isSpecificUsersAudience: boolean;
+  totalSpecificUsers: number;
+  specificUserStats: ConsolidatedDeptHeadStat[];
 }
 
 /**
@@ -587,10 +614,79 @@ export function aggregatePeriodReportData(
   };
 
   // 5. Tính toán tỷ lệ & số liệu tổng quan
+  const isDeptHeadAudience = period?.targetAudience === 'dept_heads_only';
+  const isSpecificUsersAudience = period?.targetAudience === 'specific_users';
+  const targetUserIds = period?.targetUserIds || [];
+
+  // Thống kê 19 Tổ trưởng & Tổ phó thuộc 6 tổ chuyên môn
+  const deptHeadStats: ConsolidatedDeptHeadStat[] = SPECIALIZED_DEPT_HEADS_19.map((dh, idx) => {
+    const sub = periodSubs.find(s => 
+      s.authorId === dh.id || 
+      (s.authorName && s.authorName.trim().toLowerCase() === dh.name.trim().toLowerCase())
+    );
+    const hasSubmitted = !!sub && sub.status !== 'draft';
+    return {
+      stt: idx + 1,
+      orderNo: dh.orderNo || idx + 1,
+      userId: dh.id,
+      teacherName: dh.name,
+      roleTitle: dh.roleTitle,
+      departmentId: dh.departmentId,
+      departmentName: dh.departmentName,
+      originalSchool: dh.originalSchool || '',
+      subject: dh.subject || '',
+      hasSubmitted,
+      submittedAt: sub?.submittedAt || null,
+      submissionId: sub?.id || null,
+      reportTitle: sub?.title || '',
+      summaryNote: sub?.content ? (sub.content.length > 90 ? sub.content.slice(0, 90) + '...' : sub.content) : ''
+    };
+  });
+
+  // Thống kê các Thầy/Cô được chỉ định đích danh (nếu đợt chỉ định riêng từng cá nhân)
+  const specificUserStats: ConsolidatedDeptHeadStat[] = targetUserIds.map((userId, idx) => {
+    const u = allUsers.find(x => x.id === userId);
+    const sub = periodSubs.find(s => 
+      s.authorId === userId || 
+      (u && s.authorName && s.authorName.trim().toLowerCase() === u.name.trim().toLowerCase())
+    );
+    const hasSubmitted = !!sub && sub.status !== 'draft';
+    return {
+      stt: idx + 1,
+      orderNo: u?.orderNo || idx + 1,
+      userId: userId,
+      teacherName: u?.name || 'Thầy/Cô ' + userId,
+      roleTitle: u?.roleTitle || 'Giáo viên',
+      departmentId: u?.departmentId || '',
+      departmentName: u?.departmentName || '',
+      originalSchool: u?.originalSchool || '',
+      subject: u?.subject || '',
+      hasSubmitted,
+      submittedAt: sub?.submittedAt || null,
+      submissionId: sub?.id || null,
+      reportTitle: sub?.title || '',
+      summaryNote: sub?.content ? (sub.content.length > 90 ? sub.content.slice(0, 90) + '...' : sub.content) : ''
+    };
+  });
+
   const submittedClasses = classStats.filter(c => c.hasSubmitted);
-  const submittedCount = submittedClasses.length;
-  const pendingCount = 53 - submittedCount;
-  const completionRate = Math.round((submittedCount / 53) * 100);
+  const submittedDeptHeads = deptHeadStats.filter(d => d.hasSubmitted);
+  const submittedSpecificUsers = specificUserStats.filter(s => s.hasSubmitted);
+
+  const totalTargetCount = isSpecificUsersAudience 
+    ? (targetUserIds.length || 1)
+    : isDeptHeadAudience 
+    ? 19 
+    : 53;
+
+  const submittedCount = isSpecificUsersAudience
+    ? submittedSpecificUsers.length
+    : isDeptHeadAudience 
+    ? submittedDeptHeads.length 
+    : submittedClasses.length;
+
+  const pendingCount = Math.max(0, totalTargetCount - submittedCount);
+  const completionRate = totalTargetCount > 0 ? Math.round((submittedCount / totalTargetCount) * 100) : 0;
 
   const totalEnrolled = submittedClasses.reduce((sum, c) => sum + c.totalStudents, 0);
   const totalMale = submittedClasses.reduce((sum, c) => sum + c.maleStudents, 0);
@@ -604,7 +700,11 @@ export function aggregatePeriodReportData(
   return {
     period,
     periodTitle,
-    targetAudienceLabel,
+    targetAudienceLabel: isSpecificUsersAudience
+      ? `Chỉ định đích danh (${targetUserIds.length} Thầy/Cô)`
+      : isDeptHeadAudience 
+      ? '19 Tổ trưởng & Tổ phó chuyên môn' 
+      : targetAudienceLabel,
     totalHomeroomClasses: 53,
     submittedCount,
     pendingCount,
@@ -623,7 +723,13 @@ export function aggregatePeriodReportData(
     absentStudents,
     talents,
     cadres,
-    feedbacks
+    feedbacks,
+    isDeptHeadAudience,
+    totalDeptHeads: 19,
+    deptHeadStats,
+    isSpecificUsersAudience,
+    totalSpecificUsers: targetUserIds.length,
+    specificUserStats
   };
 }
 
@@ -931,6 +1037,125 @@ export function generateSample53Submissions(
       isLate: false,
       reviewHistory: [],
       version: 1
+    });
+  });
+
+  return submissions;
+}
+
+/**
+ * Sinh bộ dữ liệu báo cáo mẫu cho 19 Thầy/Cô Tổ trưởng & Tổ phó chuyên môn
+ * Phục vụ kiểm tra, thẩm định bảng tổng hợp và thử nghiệm luồng báo cáo chuyên môn
+ */
+export function generateSample19DeptHeadSubmissions(
+  periodId: string,
+  periodTitle: string,
+  allUsers: User[]
+): ReportSubmission[] {
+  const submissions: ReportSubmission[] = [];
+  const baseTime = new Date('2026-09-02T08:30:00Z');
+
+  SPECIALIZED_DEPT_HEADS_19.forEach((dh, index) => {
+    const user = allUsers.find(u => u.name.trim().toLowerCase() === dh.name.trim().toLowerCase()) 
+      || allUsers.find(u => u.id === dh.id);
+
+    const submitTime = new Date(baseTime.getTime() + (index * 25 * 60 * 1000)).toISOString();
+    const isPho = dh.roleTitle.toLowerCase().includes('tổ phó');
+    const roleName = isPho ? 'Tổ phó' : 'Tổ trưởng';
+
+    // Tạo tiêu đề báo cáo thực tế
+    const reportTitle = `${roleName} báo cáo: ${periodTitle || 'Hoạt động chuyên môn và nền nếp giảng dạy'} - ${dh.departmentName}`;
+
+    // Bảng dữ liệu thao giảng / dự giờ mẫu
+    const demoTable: CustomDynamicTable = {
+      id: `table-thao-giang-${dh.orderNo}`,
+      title: `Thống kê thao giảng và sinh hoạt chuyên môn - ${dh.departmentName}`,
+      headers: ['STT', 'Giáo viên thực hiện', 'Môn / Phân môn', 'Nội dung bài dạy / Chuyên đề', 'Cơ sở / Điểm trường', 'Xếp loại'],
+      rows: [
+        {
+          'STT': '1',
+          'Giáo viên thực hiện': dh.name,
+          'Môn / Phân môn': dh.subject || 'Chuyên môn',
+          'Nội dung bài dạy / Chuyên đề': `Đổi mới PPDH và ứng dụng CNTT môn ${dh.subject || 'chuyên môn'}`,
+          'Cơ sở / Điểm trường': dh.originalSchool || 'Điểm trường chính',
+          'Xếp loại': 'Tốt'
+        },
+        {
+          'STT': '2',
+          'Giáo viên thực hiện': `Giáo viên ${dh.subject || 'bộ môn'}`,
+          'Môn / Phân môn': dh.subject || 'Chuyên môn',
+          'Nội dung bài dạy / Chuyên đề': 'Dạy học theo định hướng phát triển phẩm chất, năng lực HS',
+          'Cơ sở / Điểm trường': dh.originalSchool === 'THCSTK' ? 'Điểm THCS Tân Kiều' : 'Điểm THCS Đốc Binh Kiều',
+          'Xếp loại': 'Tốt'
+        }
+      ]
+    };
+
+    // Trường chỉ số mẫu
+    const demoFields: CustomFormField[] = [
+      { id: 'so_tiet_thao_giang', label: 'Số tiết thao giảng / dự giờ đã tổ chức', type: 'number', required: false },
+      { id: 'so_gv_kiem_tra_giao_an', label: 'Số giáo viên được kiểm tra hồ sơ giáo án', type: 'number', required: false },
+      { id: 'ty_le_ho_so_tot', label: 'Tỷ lệ hồ sơ giáo án xếp loại Tốt (%)', type: 'number', required: false },
+      { id: 'kien_nghi_chuyen_mon', label: 'Đề xuất & kiến nghị của Tổ với Ban Giám Hiệu', type: 'textarea', required: false }
+    ];
+
+    const demoFieldValues: Record<string, any> = {
+      'so_tiet_thao_giang': (index % 3) + 2,
+      'so_gv_kiem_tra_giao_an': Math.floor((dh.orderNo % 5) + 3),
+      'ty_le_ho_so_tot': 90 + (index % 10),
+      'kien_nghi_chuyen_mon': `Đề nghị BGH tiếp tục trang bị thêm máy chiếu, tivi thông minh tại các phòng học bộ môn của ${dh.originalSchool}; cung cấp thêm thiết bị thực hành thí nghiệm.`
+    };
+
+    const content = `
+Kính gửi: Ban Giám Hiệu Trường THCS & THPT Đốc Binh Kiều
+
+Tổ chuyên môn: ${dh.departmentName}
+Người báo cáo: ${dh.name} - Chức vụ: ${dh.roleTitle} (Đơn vị trước sáp nhập: ${dh.originalSchool})
+
+1. TÌNH HÌNH THỰC HIỆN KẾ HOẠCH DẠY HỌC:
+- Toàn bộ giáo viên trong tổ bộ môn đã thực hiện nghiêm túc tiến độ phân phối chương trình môn học theo quy định GDPT 2018.
+- 100% giáo viên đã hoàn thành soạn giảng kế hoạch bài dạy (giáo án) trên hệ thống điện tử và nộp kiểm tra đúng quy định.
+- Tinh thần đoàn kết, hỗ trợ chuyên môn liên cấp giữa các cơ sở (THPT Đốc Binh Kiều, THCS Đốc Binh Kiều và THCS Tân Kiều) được duy trì rất tốt.
+
+2. CÔNG TÁC THAO GIẢNG, DỰ GIỜ VÀ SINH HOẠT CHUYÊN MÔN THEO NGHIÊN CỨU BÀI HỌC:
+- Trong đợt đã tổ chức được ${(index % 3) + 2} tiết thao giảng cấp tổ tại các cơ sở, tập trung đổi mới phương pháp dạy học, tăng cường tương tác và hoạt động nhóm của học sinh.
+- Các buổi sinh hoạt chuyên môn tập trung tháo gỡ khó khăn về nội dung bài khó, xây dựng ngân hàng câu hỏi ma trận đề kiểm tra đánh giá định kỳ.
+
+3. KIỂM TRA HỒ SƠ CHUYÊN MÔN VÀ NỀN NẾP:
+- Đã tiến hành kiểm tra hồ sơ giáo án của ${Math.floor((dh.orderNo % 5) + 3)} đồng chí giáo viên trong tổ; kết quả ${90 + (index % 10)}% đạt loại Tốt, không có hồ sơ xếp loại Trung bình.
+- Các tổ viên thực hiện nghiêm túc việc ghi chép sổ điểm, nhật ký giảng dạy và theo dõi học sinh yếu kém.
+
+4. KIẾN NGHỊ VÀ ĐỀ XUẤT VỚI BAN GIÁM HIỆU:
+- Đề nghị BGH tiếp tục hỗ trợ thiết bị dạy học số và bảo trì đường truyền mạng Internet tại điểm trường ${dh.originalSchool}.
+- Tạo điều kiện cho giáo viên trẻ của tổ tham gia các lớp tập huấn bồi dưỡng chuyên sâu do Sở GD&ĐT tổ chức.
+`.trim();
+
+    submissions.push({
+      id: `sub-depthead-${dh.orderNo}-${periodId}`,
+      periodId,
+      periodTitle,
+      authorId: user?.id || dh.id,
+      authorName: dh.name,
+      authorEmail: user?.email || `${dh.id}@thpt-thpt-tk-dbk.edu.vn`,
+      authorRole: (user?.role || 'dept_head'),
+      authorRoleTitle: dh.roleTitle,
+      departmentId: dh.departmentId,
+      departmentName: dh.departmentName,
+      title: reportTitle,
+      content,
+      submittedAt: submitTime,
+      updatedAt: submitTime,
+      status: 'submitted',
+      isLate: false,
+      reviewHistory: [],
+      version: 1,
+      attachments: [],
+      structuredData: {
+        customTables: [demoTable],
+        customFields: demoFields,
+        customFieldValues: demoFieldValues,
+        customNotes: `Báo cáo chính thức của ${dh.roleTitle} ${dh.name} (${dh.departmentName})`
+      }
     });
   });
 

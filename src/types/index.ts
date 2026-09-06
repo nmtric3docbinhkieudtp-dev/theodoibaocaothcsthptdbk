@@ -70,9 +70,10 @@ export interface ReportAttachment {
 export type TargetAudienceType = 
   | 'all'                 // Tất cả 120 cán bộ, GV, NV
   | 'homeroom_teachers'   // Chỉ 53 Giáo viên chủ nhiệm (GVCN)
-  | 'dept_heads_only'     // Chỉ Tổ trưởng / Tổ phó
+  | 'dept_heads_only'     // Chỉ 19 Tổ trưởng & Tổ phó chuyên môn
   | 'teachers_only'       // Chỉ Giáo viên bộ môn (không tính NV VP)
-  | 'staff_only';         // Chỉ Nhân viên văn phòng
+  | 'staff_only'          // Chỉ Nhân viên văn phòng
+  | 'specific_users';     // Chỉ định danh sách cá nhân / Thầy Cô cụ thể
 
 export interface CustomFormField {
   id: string;
@@ -111,7 +112,8 @@ export interface ReportPeriod {
   maxFileSizeMb?: number;
   targetDepartmentIds: string[]; // ['all'] or specific departments
   targetRoles: UserRole[]; // Which roles need to submit
-  targetAudience?: TargetAudienceType; // Phân nhóm đối tượng nộp báo cáo (GVCN, Tổ trưởng, toàn trường...)
+  targetAudience?: TargetAudienceType; // Phân nhóm đối tượng nộp báo cáo (GVCN, Tổ trưởng, toàn trường, cá nhân cụ thể...)
+  targetUserIds?: string[]; // Danh sách ID các Thầy Cô được chỉ định đích danh khi targetAudience === 'specific_users'
   isRequired: boolean;
   status: 'active' | 'closed' | 'upcoming';
   createdBy: string;
@@ -208,6 +210,7 @@ export interface SchoolInfo {
   website?: string;
   principalName: string;
   vicePrincipals: string[];
+  logoUrl?: string; // URL hoặc data base64 ảnh logo nhà trường
 }
 
 export interface FirebaseConfig {

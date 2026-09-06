@@ -7,13 +7,24 @@ export function isUserEligibleForPeriod(user: User, period: ReportPeriod): boole
   // If user is Admin or Principal, they have oversight access to all periods
   // but for actual submission eligibility:
   
+  // 0. Specific individual users target (Chỉ định đích danh từng cá nhân)
+  if (period.targetAudience === 'specific_users') {
+    return Boolean(period.targetUserIds && period.targetUserIds.includes(user.id));
+  }
+
   // 1. Homeroom Teachers target
   if (period.targetAudience === 'homeroom_teachers') {
     return Boolean(user.isHomeroomTeacher);
   }
 
-  // 2. Department heads only
+  // 2. Department heads only (Chỉ Tổ trưởng & Tổ phó chuyên môn - 19 Thầy/Cô)
   if (period.targetAudience === 'dept_heads_only') {
+    if (user.departmentId === 'van_phong' && (!period.targetDepartmentIds || !period.targetDepartmentIds.includes('van_phong'))) {
+      return false;
+    }
+    if (user.departmentId === 'bgh' || user.role === 'principal' || user.role === 'admin') {
+      return false;
+    }
     return user.role === 'dept_head';
   }
 
@@ -49,6 +60,10 @@ export function isUserEligibleForPeriod(user: User, period: ReportPeriod): boole
  * Get all users who are required to submit for a given period
  */
 export function getRequiredUsersForPeriod(period: ReportPeriod, allUsers: User[]): User[] {
+  if (period.targetAudience === 'specific_users') {
+    const userIds = period.targetUserIds || [];
+    return allUsers.filter(u => userIds.includes(u.id));
+  }
   return allUsers.filter(user => {
     // Exclude BGH from standard required lists unless explicitly targeted
     if (user.role === 'principal' || (user.role === 'admin' && user.id === 'staff-2')) {
@@ -61,16 +76,18 @@ export function getRequiredUsersForPeriod(period: ReportPeriod, allUsers: User[]
 /**
  * Return friendly label for target audience
  */
-export function getAudienceLabel(audience?: TargetAudienceType, depts?: string[]): string {
+export function getAudienceLabel(audience?: TargetAudienceType, depts?: string[], targetUserIds?: string[]): string {
   switch (audience) {
     case 'homeroom_teachers':
       return 'Chỉ 53 Giáo viên chủ nhiệm (GVCN)';
     case 'dept_heads_only':
-      return 'Chỉ Tổ trưởng & Tổ phó chuyên môn';
+      return 'Chỉ Tổ trưởng & Tổ phó chuyên môn (19 Thầy/Cô)';
     case 'teachers_only':
       return 'Tất cả Giáo viên bộ môn';
     case 'staff_only':
       return 'Nhân viên Tổ Văn phòng';
+    case 'specific_users':
+      return `Chỉ định đích danh (${targetUserIds?.length || 0} Thầy/Cô)`;
     case 'all':
     default:
       if (depts && depts.length > 0 && !depts.includes('all')) {

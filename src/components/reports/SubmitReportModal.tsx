@@ -36,6 +36,7 @@ import { HomeroomMeetingMinutesForm } from './HomeroomMeetingMinutesForm';
 import { CustomReportFormBuilder } from './CustomReportFormBuilder';
 import { ImportFormFromDocModal } from '../common/ImportFormFromDocModal';
 import { ParsedTemplateResult } from '../../utils/formFileParser';
+import { isUserEligibleForPeriod } from '../../utils/reportFilters';
 
 interface SubmitReportModalProps {
   isOpen: boolean;
@@ -73,12 +74,7 @@ export const SubmitReportModal: React.FC<SubmitReportModalProps> = ({
   const activePeriods = periods.filter(p => p.status === 'active');
   const eligiblePeriods = periods.filter(p => {
     if (currentUser.role === 'admin' || currentUser.role === 'principal') return true;
-    if (p.targetAudience === 'all') return true;
-    if (p.targetAudience === 'homeroom_teachers' && currentUser.isHomeroomTeacher) return true;
-    if (p.targetAudience === 'dept_heads_only' && currentUser.role === 'dept_head') return true;
-    if (p.targetAudience === 'teachers_only' && (currentUser.role === 'teacher' || currentUser.role === 'dept_head')) return true;
-    if (p.targetAudience === 'staff_only' && (currentUser.roleTitle.includes('Nhân viên') || currentUser.departmentId === 'van_phong')) return true;
-    return false;
+    return isUserEligibleForPeriod(currentUser, p);
   }).sort((a, b) => {
     if (a.status === 'active' && b.status !== 'active') return -1;
     if (a.status !== 'active' && b.status === 'active') return 1;

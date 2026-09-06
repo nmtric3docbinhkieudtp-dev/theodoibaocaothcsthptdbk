@@ -532,6 +532,70 @@ export const ExportService = {
     const wsClasses = XLSX.utils.json_to_sheet(classRows);
     XLSX.utils.book_append_sheet(wb, wsClasses, 'Tong_Hop_Si_So_53_Lop');
 
+    // 5.b Sheet Tiến Độ 19 Tổ Trưởng & Tổ Phó Chuyên Môn
+    if (data.isDeptHeadAudience && data.deptHeadStats && data.deptHeadStats.length > 0) {
+      const deptHeadRows = data.deptHeadStats.map(dh => ({
+        'STT': dh.stt,
+        'Họ và Tên Thầy Cô': dh.teacherName,
+        'Chức Vụ': dh.roleTitle,
+        'Tổ Chuyên Môn': dh.departmentName,
+        'Môn Giảng Dạy': dh.subject || '-',
+        'Đơn Vị Cũ': dh.originalSchool || '-',
+        'Trạng Thái Nộp': dh.hasSubmitted ? 'Đã nộp báo cáo' : 'Chưa nộp',
+        'Thời Gian Nộp': dh.submittedAt ? new Date(dh.submittedAt).toLocaleString('vi-VN') : 'Chưa nộp',
+        'Tiêu Đề Báo Cáo': dh.reportTitle || '',
+        'Trích Yếu Nội Dung': dh.summaryNote || ''
+      }));
+
+      deptHeadRows.push({
+        'STT': 0,
+        'Họ và Tên Thầy Cô': 'TỔNG CỘNG 19 TỔ TRƯỞNG & TỔ PHÓ',
+        'Chức Vụ': `Đã nộp: ${data.submittedCount}/19 (${data.completionRate}%)`,
+        'Tổ Chuyên Môn': '6 Tổ chuyên môn',
+        'Môn Giảng Dạy': '-',
+        'Đơn Vị Cũ': '-',
+        'Trạng Thái Nộp': `${data.submittedCount}/19 người`,
+        'Thời Gian Nộp': '-',
+        'Tiêu Đề Báo Cáo': '-',
+        'Trích Yếu Nội Dung': `Còn ${data.pendingCount} người chưa nộp`
+      });
+
+      const wsDeptHeads = XLSX.utils.json_to_sheet(deptHeadRows);
+      XLSX.utils.book_append_sheet(wb, wsDeptHeads, 'Tien_Do_19_To_Truong_Pho');
+    }
+
+    // 5.c Sheet Tiến Độ Chỉ Định Đích Danh Từng Cá Nhân
+    if (data.isSpecificUsersAudience && data.specificUserStats && data.specificUserStats.length > 0) {
+      const specificRows = data.specificUserStats.map(u => ({
+        'STT': u.stt,
+        'Họ và Tên Thầy Cô': u.teacherName,
+        'Chức Vụ': u.roleTitle,
+        'Tổ / Bộ Phận': u.departmentName,
+        'Môn Giảng Dạy': u.subject || '-',
+        'Cơ sở / Đơn vị': u.originalSchool || '-',
+        'Trạng Thái Nộp': u.hasSubmitted ? 'Đã nộp báo cáo' : 'Chưa nộp',
+        'Thời Gian Nộp': u.submittedAt ? new Date(u.submittedAt).toLocaleString('vi-VN') : 'Chưa nộp',
+        'Tiêu Đề Báo Cáo': u.reportTitle || '',
+        'Trích Yếu Nội Dung': u.summaryNote || ''
+      }));
+
+      specificRows.push({
+        'STT': 0,
+        'Họ và Tên Thầy Cô': `TỔNG CỘNG ${data.totalSpecificUsers || data.specificUserStats.length} THẦY/CÔ CHỈ ĐỊNH`,
+        'Chức Vụ': `Đã nộp: ${data.submittedCount}/${data.totalSpecificUsers || data.specificUserStats.length} (${data.completionRate}%)`,
+        'Tổ / Bộ Phận': '-',
+        'Môn Giảng Dạy': '-',
+        'Cơ sở / Đơn vị': '-',
+        'Trạng Thái Nộp': `${data.submittedCount}/${data.totalSpecificUsers || data.specificUserStats.length} người`,
+        'Thời Gian Nộp': '-',
+        'Tiêu Đề Báo Cáo': '-',
+        'Trích Yếu Nội Dung': `Còn ${data.pendingCount} người chưa nộp`
+      });
+
+      const wsSpecific = XLSX.utils.json_to_sheet(specificRows);
+      XLSX.utils.book_append_sheet(wb, wsSpecific, 'Tien_Do_Chi_Dinh_Dich_Danh');
+    }
+
     // 6. Sheet Học Sinh Năng Khiếu Toàn Trường
     if (data.talents.length > 0) {
       const talentRows = data.talents.map((t, idx) => ({

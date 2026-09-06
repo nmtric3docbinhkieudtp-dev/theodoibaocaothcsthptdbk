@@ -13,7 +13,8 @@ import {
   GraduationCap,
   ShieldCheck,
   Users,
-  X
+  X,
+  Image as ImageIcon
 } from 'lucide-react';
 
 export type NavTab = 
@@ -37,6 +38,7 @@ interface SidebarProps {
   onOpenCreatePeriod?: () => void;
   isMobileOpen?: boolean;
   onCloseMobile?: () => void;
+  onOpenLogoModal?: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -47,10 +49,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onOpenSubmit,
   onOpenCreatePeriod,
   isMobileOpen = false,
-  onCloseMobile
+  onCloseMobile,
+  onOpenLogoModal
 }) => {
   const currentTab = activeView || activeTab || 'dashboard';
   const { currentUser, isPrincipal, isDeptHead, isAdmin } = useAuth();
+  const { schoolInfo } = useReports();
 
   const handleSelect = (tab: NavTab) => {
     if (tab === 'export' && !isAdmin && !isPrincipal) {
@@ -154,6 +158,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
       icon: FileSpreadsheet,
       badge: '53 Lớp',
       badgeColor: 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+    }] : []),
+    ...(isAdmin ? [{
+      id: 'settings' as NavTab,
+      label: 'Cài Đặt & Logo Trường',
+      icon: Settings,
+      badge: 'Quản trị',
+      badgeColor: 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
     }] : [])
   ];
 
@@ -178,12 +189,26 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {/* Drawer Header with Title & Close button */}
         <div className="p-4 border-b border-slate-800/90 flex items-center justify-between bg-slate-950/60">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-500 flex items-center justify-center text-white font-bold shadow-xs">
-              <GraduationCap className="w-5 h-5" />
+            <div 
+              onClick={isAdmin && onOpenLogoModal ? () => { onCloseMobile?.(); onOpenLogoModal(); } : undefined}
+              className={`w-8 h-8 rounded-xl bg-white flex items-center justify-center font-bold shadow-xs overflow-hidden ring-1 ring-emerald-500/30 ${
+                isAdmin && onOpenLogoModal ? 'cursor-pointer hover:ring-emerald-400' : ''
+              }`}
+              title={isAdmin ? "Nhấn để đổi logo nhà trường (Admin)" : schoolInfo.name}
+            >
+              {schoolInfo.logoUrl ? (
+                <img src={schoolInfo.logoUrl} alt="Logo" className="w-full h-full object-contain p-0.5" />
+              ) : (
+                <div className="w-full h-full bg-gradient-to-tr from-emerald-600 to-teal-500 flex items-center justify-center text-white">
+                  <GraduationCap className="w-5 h-5" />
+                </div>
+              )}
             </div>
             <div>
               <div className="font-extrabold text-sm text-white tracking-wide">MENU HỆ THỐNG</div>
-              <div className="text-[10px] text-emerald-400 font-medium">THCS & THPT Đốc Binh Kiều</div>
+              <div className="text-[10px] text-emerald-400 font-medium truncate max-w-[140px]">
+                {schoolInfo.name || 'THCS & THPT Đốc Binh Kiều'}
+              </div>
             </div>
           </div>
           <button
@@ -233,7 +258,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
 
         {/* User Profile Footer in Sidebar */}
-        <div className="p-3 m-3 rounded-2xl bg-slate-950/70 border border-slate-800/80 shrink-0">
+        <div className="p-3 m-3 rounded-2xl bg-slate-950/70 border border-slate-800/80 shrink-0 space-y-2.5">
           <div className="flex items-center gap-2.5">
             <img
               src={currentUser.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100'}
@@ -249,10 +274,25 @@ export const Sidebar: React.FC<SidebarProps> = ({
               </div>
             </div>
           </div>
-          <div className="mt-2 pt-2 border-t border-slate-800 flex items-center justify-between text-[10px] text-slate-400">
+          <div className="pt-2 border-t border-slate-800 flex items-center justify-between text-[10px] text-slate-400">
             <span className="truncate">{currentUser.departmentName}</span>
             <span className="text-emerald-400 font-semibold shrink-0">Trực tuyến</span>
           </div>
+
+          {/* Admin Logo Button */}
+          {isAdmin && onOpenLogoModal && (
+            <button
+              type="button"
+              onClick={() => {
+                onCloseMobile?.();
+                onOpenLogoModal();
+              }}
+              className="w-full py-1.5 px-2.5 rounded-xl bg-slate-800 hover:bg-emerald-950/60 text-emerald-300 hover:text-emerald-200 border border-slate-700/80 hover:border-emerald-500/40 flex items-center justify-center gap-1.5 text-xs font-bold transition cursor-pointer"
+            >
+              <ImageIcon className="w-3.5 h-3.5" />
+              <span>Đổi Logo Nhà Trường</span>
+            </button>
+          )}
         </div>
       </aside>
     </>

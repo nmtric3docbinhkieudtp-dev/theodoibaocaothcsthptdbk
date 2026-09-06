@@ -20,7 +20,8 @@ import {
   School,
   Users,
   Plus,
-  FileSpreadsheet
+  FileSpreadsheet,
+  UserCheck
 } from 'lucide-react';
 import { ReportPeriod, ReportSubmission } from '../../types';
 import { isUserEligibleForPeriod, getAudienceLabel } from '../../utils/reportFilters';
@@ -354,6 +355,16 @@ export const Dashboard: React.FC<DashboardProps> = ({
                           <span className="px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-900 border border-amber-300 text-[11px] font-bold flex items-center gap-1">
                             <GraduationCap className="w-3.5 h-3.5 text-amber-700" />
                             <span>Dành riêng cho 53 GVCN</span>
+                          </span>
+                        ) : period.targetAudience === 'specific_users' ? (
+                          <span className="px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-900 border border-indigo-300 text-[11px] font-bold flex items-center gap-1">
+                            <UserCheck className="w-3.5 h-3.5 text-indigo-700" />
+                            <span>Chỉ định đích danh ({period.targetUserIds?.length || 0} Thầy/Cô)</span>
+                          </span>
+                        ) : period.targetAudience === 'dept_heads_only' ? (
+                          <span className="px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-900 border border-blue-300 text-[11px] font-bold flex items-center gap-1">
+                            <Users className="w-3.5 h-3.5 text-blue-700" />
+                            <span>19 Tổ trưởng & Tổ phó CM</span>
                           </span>
                         ) : (
                           <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 text-[11px] font-medium">

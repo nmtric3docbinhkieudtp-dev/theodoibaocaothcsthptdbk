@@ -20,13 +20,15 @@ import {
   Check
 } from 'lucide-react';
 import { User, UserRole } from '../../types';
+import { StorageService } from '../../services/storage';
 
 export const LoginPage: React.FC = () => {
   const { allUsers = [], login } = useAuth();
+  const schoolInfo = StorageService.getSchoolInfo();
 
   // Search & Filter
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeGroup, setActiveGroup] = useState<'all' | 'gvcn' | 'bgh' | 'dept_head' | 'teacher' | 'office'>('all');
+  const [activeGroup, setActiveGroup] = useState<'all' | 'gvcn' | 'bgh' | 'dept_head_cm' | 'dept_head' | 'teacher' | 'office'>('all');
   
   // Selected user for password modal
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
@@ -38,6 +40,14 @@ export const LoginPage: React.FC = () => {
 
   // Quick stats & Categories
   const bghUsers = allUsers.filter(u => u.departmentId === 'bgh' || u.role === 'principal' || u.role === 'admin');
+  const deptHeadCmUsers = allUsers.filter(u => 
+    (u.role === 'dept_head' || 
+     u.positionAfter?.toLowerCase().includes('tổ trưởng') || 
+     u.positionAfter?.toLowerCase().includes('tổ phó') || 
+     u.roleTitle?.toLowerCase().includes('tổ trưởng') ||
+     u.roleTitle?.toLowerCase().includes('tổ phó')
+    ) && u.departmentId !== 'bgh' && u.departmentId !== 'van_phong'
+  );
   const deptHeadUsers = allUsers.filter(u => 
     (u.role === 'dept_head' || 
      u.positionAfter?.toLowerCase().includes('tổ trưởng') || 
@@ -55,6 +65,8 @@ export const LoginPage: React.FC = () => {
       if (!u.isHomeroomTeacher) return false;
     } else if (activeGroup === 'bgh') {
       if (u.departmentId !== 'bgh' && u.role !== 'principal' && u.role !== 'admin') return false;
+    } else if (activeGroup === 'dept_head_cm') {
+      if (!deptHeadCmUsers.some(d => d.id === u.id)) return false;
     } else if (activeGroup === 'dept_head') {
       if (!deptHeadUsers.some(d => d.id === u.id)) return false;
     } else if (activeGroup === 'teacher') {
@@ -139,8 +151,14 @@ export const LoginPage: React.FC = () => {
       <header className="border-b border-white/10 bg-black/20 backdrop-blur-md px-4 py-3 sm:px-8">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-500 flex items-center justify-center text-white shadow-md ring-2 ring-emerald-400/30">
-              <School className="w-6 h-6" />
+            <div className="w-10 h-10 rounded-2xl bg-white flex items-center justify-center shadow-md ring-2 ring-emerald-400/30 overflow-hidden shrink-0">
+              {schoolInfo.logoUrl ? (
+                <img src={schoolInfo.logoUrl} alt="Logo" className="w-full h-full object-contain p-0.5" />
+              ) : (
+                <div className="w-full h-full bg-gradient-to-tr from-emerald-600 to-teal-500 flex items-center justify-center text-white">
+                  <School className="w-6 h-6" />
+                </div>
+              )}
             </div>
             <div>
               <div className="text-[11px] font-bold tracking-wider text-emerald-300 uppercase">
@@ -247,14 +265,27 @@ export const LoginPage: React.FC = () => {
 
               <button
                 type="button"
-                onClick={() => setActiveGroup('dept_head')}
+                onClick={() => setActiveGroup('dept_head_cm')}
                 className={`px-3 py-1.5 rounded-xl transition cursor-pointer flex items-center gap-1.5 ${
-                  activeGroup === 'dept_head' 
+                  activeGroup === 'dept_head_cm' 
                     ? 'bg-blue-800 text-white shadow-xs font-bold' 
                     : 'bg-blue-50 text-blue-900 border border-blue-200 hover:bg-blue-100'
                 }`}
               >
-                <span>Tổ trưởng, Tổ phó ({deptHeadUsers.length})</span>
+                <Users className="w-3.5 h-3.5" />
+                <span>⭐ 19 Tổ trưởng & Tổ phó CM</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setActiveGroup('dept_head')}
+                className={`px-3 py-1.5 rounded-xl transition cursor-pointer flex items-center gap-1.5 ${
+                  activeGroup === 'dept_head' 
+                    ? 'bg-slate-800 text-white shadow-xs font-bold' 
+                    : 'bg-slate-100 text-slate-700 border border-slate-200 hover:bg-slate-200'
+                }`}
+              >
+                <span>Tất cả TT/TP ({deptHeadUsers.length})</span>
               </button>
 
               <button
