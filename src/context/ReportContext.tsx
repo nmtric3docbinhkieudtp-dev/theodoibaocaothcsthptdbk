@@ -11,7 +11,15 @@ import {
   SubmissionStatus
 } from '../types';
 import { StorageService, setLocal, VALID_DEPT_IDS } from '../services/storage';
-import { getStoredFirebaseConfig, saveStoredFirebaseConfig, testFirebaseConnection, getFirebaseInstance } from '../services/firebase';
+import { 
+  getStoredFirebaseConfig, 
+  saveStoredFirebaseConfig, 
+  testFirebaseConnection, 
+  getFirebaseInstance,
+  safeFirestoreWrite,
+  isFirestoreWriteQuotaExceeded,
+  clearFirestoreWriteQuotaStatus
+} from '../services/firebase';
 import { collection, doc, onSnapshot, getDocs, getDoc, setDoc, deleteDoc } from 'firebase/firestore';
 import { OFFICIAL_DEPARTMENTS, OFFICIAL_USERS } from '../data/staffRoster';
 import { INITIAL_SUBMISSIONS, INITIAL_PERIODS } from '../data/initialData';
@@ -180,24 +188,16 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           console.warn('Firestore user_credentials sync error:', credErr);
         }
 
-        // Check and sanitize departments in Firestore
+        // Check departments in Firestore
         const deptsSnap = await getDocs(collection(db, 'departments'));
-        const hasInvalidDepts = deptsSnap.docs.some(docSnap => {
-          if (!VALID_DEPT_IDS.includes(docSnap.id) || docSnap.id === 'bgh') return true;
-          const data = docSnap.data();
-          if (docSnap.id === 'gdtc_qp_nt' && data.headUserName?.includes('Nguyện')) return true;
-          return false;
-        });
-        if (deptsSnap.empty || hasInvalidDepts || deptsSnap.size !== 7) {
-          // Delete old invalid docs (including 'bgh' which is not a department)
-          for (const d of deptsSnap.docs) {
-            if (!VALID_DEPT_IDS.includes(d.id) || d.id === 'bgh') {
-              await deleteDoc(doc(db, 'departments', d.id));
-            }
-          }
-          // Seed the 7 official departments
+        if (!deptsSnap.empty && deptsSnap.size === 7) {
+          const loadedDepts: Department[] = deptsSnap.docs.map(d => d.data() as Department);
+          setDepartments(loadedDepts);
+          setLocal('dbk_departments_data', loadedDepts);
+        } else if (deptsSnap.empty && !isFirestoreWriteQuotaExceeded()) {
+          // Seed the 7 official departments only once if totally empty and quota is available
           for (const offDept of OFFICIAL_DEPARTMENTS) {
-            await setDoc(doc(db, 'departments', offDept.id), offDept);
+            await safeFirestoreWrite('seed_dept', () => setDoc(doc(db, 'departments', offDept.id), offDept));
           }
           setDepartments(OFFICIAL_DEPARTMENTS);
           setLocal('dbk_departments_data', OFFICIAL_DEPARTMENTS);
@@ -207,7 +207,6 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         const isPeriodsCleared = localStorage.getItem('dbk_periods_cleared_by_user') === 'true';
         const periodsSnap = await getDocs(collection(db, 'periods'));
         if (periodsSnap.empty && !isPeriodsCleared) {
-          // If empty and explicitly cleared, leave empty
           localStorage.setItem('dbk_periods_cleared_by_user', 'true');
         }
 
@@ -215,14 +214,6 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         const isSubmissionsCleared = localStorage.getItem('dbk_submissions_cleared_by_user') === 'true';
         if (subsSnap.empty && !isSubmissionsCleared) {
           localStorage.setItem('dbk_submissions_cleared_by_user', 'true');
-        } else if (!subsSnap.empty) {
-          // Purge any invalid old test docs
-          for (const docSnap of subsSnap.docs) {
-            const data = docSnap.data() as ReportSubmission;
-            if (data.authorId && !validStaffIds.has(data.authorId)) {
-              await deleteDoc(doc(db, 'submissions', docSnap.id)).catch(() => {});
-            }
-          }
         }
       } catch (err) {
         console.warn('Firestore initial check error:', err);
@@ -439,56 +430,26 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   };
 
   const deleteReport = async (id: string) => {
-    const updated = submissions.filter(s => s.id !== id);
+    const updated = StorageService.deleteSubmission(id);
     setSubmissions(updated);
     setLocal('dbk_submissions_data', updated);
-    StorageService.deleteSubmission(id);
-    try {
-      const { db } = getFirebaseInstance();
-      if (db) {
-        await deleteDoc(doc(db, 'submissions', id)).catch(() => {});
-      }
-    } catch (e) {
-      console.warn('Error deleting report from Firestore:', e);
-    }
   };
 
   const bulkDeleteReports = async (ids: string[]) => {
-    const updated = submissions.filter(s => !ids.includes(s.id));
-    setSubmissions(updated);
-    setLocal('dbk_submissions_data', updated);
+    let current = submissions;
     for (const id of ids) {
-      StorageService.deleteSubmission(id);
+      current = StorageService.deleteSubmission(id);
     }
-    try {
-      const { db } = getFirebaseInstance();
-      if (db) {
-        for (const id of ids) {
-          await deleteDoc(doc(db, 'submissions', id)).catch(() => {});
-        }
-      }
-    } catch (e) {
-      console.warn('Error bulk deleting reports from Firestore:', e);
-    }
+    setSubmissions(current);
+    setLocal('dbk_submissions_data', current);
   };
 
   const clearAllReports = async (): Promise<{ count: number }> => {
     const count = submissions.length;
+    StorageService.clearAllSubmissions();
     setSubmissions([]);
     setLocal('dbk_submissions_data', []);
     localStorage.setItem('dbk_submissions_cleared_by_user', 'true');
-    StorageService.clearAllSubmissions();
-    try {
-      const { db } = getFirebaseInstance();
-      if (db) {
-        const snap = await getDocs(collection(db, 'submissions'));
-        snap.forEach(d => {
-          deleteDoc(doc(db, 'submissions', d.id)).catch(() => {});
-        });
-      }
-    } catch (e) {
-      console.warn('Error clearing submissions in Firestore:', e);
-    }
     return { count };
   };
 
@@ -615,14 +576,6 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const deletePeriod = async (id: string) => {
     const updated = StorageService.deletePeriod(id);
     setPeriods(updated);
-    try {
-      const { db } = getFirebaseInstance();
-      if (db) {
-        await deleteDoc(doc(db, 'periods', id)).catch(() => {});
-      }
-    } catch (e) {
-      console.warn('Error deleting period from Firestore:', e);
-    }
   };
 
   const clearAllPeriods = async (): Promise<{ count: number }> => {
@@ -631,17 +584,6 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     setPeriods([]);
     setLocal('dbk_periods_data', []);
     localStorage.setItem('dbk_periods_cleared_by_user', 'true');
-    try {
-      const { db } = getFirebaseInstance();
-      if (db) {
-        const snap = await getDocs(collection(db, 'periods'));
-        for (const d of snap.docs) {
-          await deleteDoc(doc(db, 'periods', d.id)).catch(() => {});
-        }
-      }
-    } catch (e) {
-      console.warn('Error clearing periods from Firestore:', e);
-    }
     return { count };
   };
 

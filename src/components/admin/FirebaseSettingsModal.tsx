@@ -17,6 +17,11 @@ import {
   Image as ImageIcon
 } from 'lucide-react';
 import { FirebaseConfig, SchoolInfo } from '../../types';
+import { 
+  isFirestoreWriteQuotaExceeded, 
+  clearFirestoreWriteQuotaStatus, 
+  getFirestoreQuotaStatus 
+} from '../../services/firebase';
 
 interface FirebaseSettingsModalProps {
   onOpenLogoModal?: () => void;
@@ -50,6 +55,13 @@ export const FirebaseSettingsModal: React.FC<FirebaseSettingsModalProps> = ({ on
   const [syncing, setSyncing] = useState(false);
   const [syncResult, setSyncResult] = useState<string | null>(null);
   const [copiedEnv, setCopiedEnv] = useState(false);
+  const [isQuotaExceeded, setIsQuotaExceeded] = useState(isFirestoreWriteQuotaExceeded());
+
+  const handleClearQuotaStatus = () => {
+    clearFirestoreWriteQuotaStatus();
+    setIsQuotaExceeded(false);
+    alert('Đã xóa cờ ghi nhận hạn ngạch. Bạn có thể nhấn "Kiểm tra Firestore" để thử lại kết nối ghi.');
+  };
 
   const handleSaveFirebase = (e: React.FormEvent) => {
     e.preventDefault();
@@ -132,6 +144,27 @@ export const FirebaseSettingsModal: React.FC<FirebaseSettingsModalProps> = ({ on
               {firebaseConfig.isConfigured ? '● Đang kích hoạt' : 'Local Storage Fallback'}
             </span>
           </div>
+
+          {isQuotaExceeded && (
+            <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs space-y-1.5">
+              <div className="flex items-center justify-between font-bold">
+                <span className="flex items-center gap-1.5 text-amber-800">
+                  <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+                  Hạn ngạch Cloud Firestore hôm nay đã đạt mức tối đa (20.000 lượt ghi)
+                </span>
+                <button
+                  type="button"
+                  onClick={handleClearQuotaStatus}
+                  className="text-[11px] underline text-amber-800 hover:text-amber-950 font-semibold cursor-pointer"
+                >
+                  Thử lại
+                </button>
+              </div>
+              <p className="text-[11px] leading-relaxed text-amber-700">
+                Toàn bộ dữ liệu của nhà trường đang được lưu trữ an toàn 100% trong bộ nhớ <strong>Local Storage</strong> của trình duyệt. Quý Thầy/Cô vẫn tạo, nộp và tổng hợp báo cáo bình thường mà không hề bị gián đoạn.
+              </p>
+            </div>
+          )}
 
           <form onSubmit={handleSaveFirebase} className="space-y-3 text-xs">
             <div>

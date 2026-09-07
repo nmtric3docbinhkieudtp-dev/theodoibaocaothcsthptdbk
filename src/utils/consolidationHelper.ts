@@ -291,8 +291,8 @@ export function aggregatePeriodReportData(
 
     const hasSubmitted = !!sub && sub.status !== 'draft';
     const total = minutes?.totalStudents || sub?.homeroomStudentCount || hr.studentCount || 0;
-    const male = minutes?.maleStudents || Math.round(total * 0.48);
-    const female = minutes?.femaleStudents || (total - male);
+    const male = minutes?.maleStudents || 0;
+    const female = minutes?.femaleStudents || 0;
     const absentCount = minutes?.absentStudents?.length ?? (minutes?.absentCount || 0);
     const present = hasSubmitted ? Math.max(0, total - absentCount) : 0;
     const rate = total > 0 && hasSubmitted ? Math.round((present / total) * 100) : 0;
@@ -775,8 +775,8 @@ export function generateSample53Submissions(
 
     const submitTime = new Date(baseTime.getTime() + (index * 12 * 60 * 1000)).toISOString();
     const totalStudents = hr.studentCount || 40;
-    const maleStudents = Math.round(totalStudents * (0.46 + (index % 5) * 0.02));
-    const femaleStudents = totalStudents - maleStudents;
+    const maleStudents = 0;
+    const femaleStudents = 0;
 
     let customTables: CustomDynamicTable[] = [];
     let customFields: CustomFormField[] = [];

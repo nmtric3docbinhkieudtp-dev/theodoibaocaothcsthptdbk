@@ -503,8 +503,6 @@ export const ExportService = {
       'Khối': `Khối ${c.grade}`,
       'Giáo Viên Chủ Nhiệm': c.teacherName,
       'Sĩ Số Đầu Năm': c.totalStudents,
-      'Nam': c.maleStudents,
-      'Nữ': c.femaleStudents,
       'Hiện Diện': c.presentStudents,
       'Vắng / Chưa Ra Lớp': c.absentStudentsCount,
       'Tỷ Lệ Ra Lớp (%)': c.hasSubmitted ? `${c.attendanceRate}%` : 'Chưa nộp',
@@ -520,8 +518,6 @@ export const ExportService = {
       'Khối': '-',
       'Giáo Viên Chủ Nhiệm': '-',
       'Sĩ Số Đầu Năm': data.totalEnrolledStudents,
-      'Nam': data.totalMaleStudents,
-      'Nữ': data.totalFemaleStudents,
       'Hiện Diện': data.totalPresentStudents,
       'Vắng / Chưa Ra Lớp': data.totalAbsentStudents,
       'Tỷ Lệ Ra Lớp (%)': `${data.overallAttendanceRate}%`,
@@ -672,8 +668,6 @@ export const ExportService = {
         <td style="text-align: center; border: 1px solid #000; padding: 5px; font-weight: bold;">${c.className}</td>
         <td style="border: 1px solid #000; padding: 5px;">${c.teacherName}</td>
         <td style="text-align: center; border: 1px solid #000; padding: 5px;">${c.totalStudents}</td>
-        <td style="text-align: center; border: 1px solid #000; padding: 5px;">${c.maleStudents}</td>
-        <td style="text-align: center; border: 1px solid #000; padding: 5px;">${c.femaleStudents}</td>
         <td style="text-align: center; border: 1px solid #000; padding: 5px;">${c.presentStudents}</td>
         <td style="text-align: center; border: 1px solid #000; padding: 5px; ${c.absentStudentsCount > 0 ? 'color: red; font-weight: bold;' : ''}">${c.absentStudentsCount}</td>
         <td style="text-align: center; border: 1px solid #000; padding: 5px; font-weight: bold;">${c.hasSubmitted ? `${c.attendanceRate}%` : 'Chưa nộp'}</td>
@@ -769,7 +763,7 @@ export const ExportService = {
         <div class="section-title">I. TỔNG QUAN TÌNH HÌNH THỰC HIỆN VÀ TIẾN ĐỘ NỘP BÁO CÁO</div>
         <p>- Tổng số lớp chủ nhiệm toàn trường: <strong>53 lớp</strong> (Gồm 18 lớp THPT, 20 lớp THCS Điểm Đốc Binh Kiều, 15 lớp THCS Điểm Tân Kiều).</p>
         <p>- Số lớp đã nộp báo cáo hoàn tất: <strong>${data.submittedCount} / 53 lớp</strong> (Đạt tỷ lệ: <strong>${data.completionRate}%</strong>).</p>
-        <p>- Tổng sĩ số học sinh ghi nhận: <strong>${data.totalEnrolledStudents.toLocaleString('vi-VN')}</strong> học sinh (Trong đó Nam: ${data.totalMaleStudents}, Nữ: ${data.totalFemaleStudents}).</p>
+        <p>- Tổng sĩ số học sinh ghi nhận: <strong>${data.totalEnrolledStudents.toLocaleString('vi-VN')}</strong> học sinh.</p>
         <p>- Số học sinh hiện diện có mặt: <strong>${data.totalPresentStudents.toLocaleString('vi-VN')}</strong> học sinh. Tỷ lệ ra lớp: <strong>${data.overallAttendanceRate}%</strong>.</p>
         <p>- Tổng số học sinh chưa ra lớp cần tiếp tục vận động: <strong>${data.totalAbsentStudents}</strong> học sinh.</p>
 
@@ -852,8 +846,6 @@ export const ExportService = {
               <th style="width: 55px;">Lớp</th>
               <th style="width: 140px;">GVCN</th>
               <th style="width: 50px;">Sĩ số</th>
-              <th style="width: 45px;">Nam</th>
-              <th style="width: 45px;">Nữ</th>
               <th style="width: 50px;">Hiện diện</th>
               <th style="width: 50px;">Vắng</th>
               <th style="width: 65px;">Tỷ lệ (%)</th>
@@ -865,8 +857,6 @@ export const ExportService = {
             <tr style="font-weight: bold; background-color: #f3f4f6;">
               <td colspan="3" style="text-align: center; border: 1px solid #000; padding: 6px;">TỔNG CỘNG TOÀN TRƯỜNG</td>
               <td style="text-align: center; border: 1px solid #000; padding: 6px;">${data.totalEnrolledStudents}</td>
-              <td style="text-align: center; border: 1px solid #000; padding: 6px;">${data.totalMaleStudents}</td>
-              <td style="text-align: center; border: 1px solid #000; padding: 6px;">${data.totalFemaleStudents}</td>
               <td style="text-align: center; border: 1px solid #000; padding: 6px;">${data.totalPresentStudents}</td>
               <td style="text-align: center; border: 1px solid #000; padding: 6px; color: red;">${data.totalAbsentStudents}</td>
               <td style="text-align: center; border: 1px solid #000; padding: 6px;">${data.overallAttendanceRate}%</td>
@@ -1003,7 +993,7 @@ export const ExportService = {
         <p><strong>I. TỔNG QUAN TIẾN ĐỘ VÀ SĨ SỐ TOÀN TRƯỜNG:</strong></p>
         <ul>
           <li>Đã nộp báo cáo: <strong>${data.submittedCount} / 53 lớp</strong> (Tỷ lệ: <strong>${data.completionRate}%</strong>).</li>
-          <li>Tổng sĩ số ghi nhận: <strong>${data.totalEnrolledStudents}</strong> học sinh (Nam: ${data.totalMaleStudents}, Nữ: ${data.totalFemaleStudents}).</li>
+          <li>Tổng sĩ số ghi nhận: <strong>${data.totalEnrolledStudents}</strong> học sinh.</li>
           <li>Hiện diện có mặt: <strong>${data.totalPresentStudents}</strong> học sinh (Tỷ lệ ra lớp: <strong>${data.overallAttendanceRate}%</strong>).</li>
           <li>Tổng số học sinh chưa ra lớp cần vận động: <strong>${data.totalAbsentStudents}</strong> học sinh.</li>
         </ul>

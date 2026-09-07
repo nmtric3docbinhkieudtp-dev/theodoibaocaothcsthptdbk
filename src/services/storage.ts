@@ -15,7 +15,7 @@ import {
   INITIAL_SUBMISSIONS, 
   INITIAL_NOTIFICATIONS 
 } from '../data/initialData';
-import { getFirebaseInstance } from './firebase';
+import { getFirebaseInstance, safeFirestoreWrite, isFirestoreWriteQuotaExceeded, markFirestoreWriteQuotaExceeded } from './firebase';
 import { collection, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc } from 'firebase/firestore';
 
 const STORAGE_KEYS = {
@@ -123,12 +123,8 @@ export function saveUserCredential(userId: string, data: Partial<UserCredentialD
   // Background sync to Firestore user_credentials
   const { db, isReady } = getFirebaseInstance();
   if (isReady && db) {
-    try {
-      const payload = cleanFirestorePayload(all[userId]);
-      setDoc(doc(db, 'user_credentials', userId), payload).catch(err => console.warn('Firestore credential save err:', err));
-    } catch (e) {
-      console.warn('Sync credential error:', e);
-    }
+    const payload = cleanFirestorePayload(all[userId]);
+    safeFirestoreWrite('user_credentials', () => setDoc(doc(db, 'user_credentials', userId), payload));
   }
 }
 
@@ -173,14 +169,10 @@ export function resetUserPasswordToDefault(userId: string): { success: boolean; 
   // 4. Background sync to Firestore if enabled
   const { db, isReady } = getFirebaseInstance();
   if (isReady && db) {
-    try {
-      const payload = cleanFirestorePayload(creds[userId]);
-      setDoc(doc(db, 'user_credentials', userId), payload).catch(err => console.warn('Firestore credential reset err:', err));
-      if (userIdx >= 0) {
-        setDoc(doc(db, 'users', userId), cleanFirestorePayload(allUsers[userIdx])).catch(err => console.warn('Firestore user reset err:', err));
-      }
-    } catch (e) {
-      console.warn('Sync reset credential error:', e);
+    const payload = cleanFirestorePayload(creds[userId]);
+    safeFirestoreWrite('reset_credential', () => setDoc(doc(db, 'user_credentials', userId), payload));
+    if (userIdx >= 0) {
+      safeFirestoreWrite('reset_user', () => setDoc(doc(db, 'users', userId), cleanFirestorePayload(allUsers[userIdx])));
     }
   }
 
@@ -337,12 +329,8 @@ export const StorageService = {
     // 3. Background sync to Firestore if enabled
     const { db, isReady } = getFirebaseInstance();
     if (isReady && db) {
-      try {
-        const sanitized = cleanFirestorePayload(user);
-        setDoc(doc(db, 'users', user.id), sanitized).catch(err => console.warn('Firestore user save err:', err));
-      } catch (e) {
-        console.warn('Sync user error:', e);
-      }
+      const sanitized = cleanFirestorePayload(user);
+      safeFirestoreWrite('save_user', () => setDoc(doc(db, 'users', user.id), sanitized));
     }
     return updated;
   },
@@ -373,12 +361,8 @@ export const StorageService = {
 
     const { db, isReady } = getFirebaseInstance();
     if (isReady && db) {
-      try {
-        const sanitized = cleanFirestorePayload(dept);
-        setDoc(doc(db, 'departments', dept.id), sanitized).catch(err => console.warn('Firestore dept save err:', err));
-      } catch (e) {
-        console.warn('Sync dept error:', e);
-      }
+      const sanitized = cleanFirestorePayload(dept);
+      safeFirestoreWrite('save_dept', () => setDoc(doc(db, 'departments', dept.id), sanitized));
     }
     return updated;
   },
@@ -414,12 +398,8 @@ export const StorageService = {
 
     const { db, isReady } = getFirebaseInstance();
     if (isReady && db) {
-      try {
-        const sanitized = cleanFirestorePayload(period);
-        setDoc(doc(db, 'periods', period.id), sanitized).catch(err => console.warn('Firestore period save err:', err));
-      } catch (e) {
-        console.warn('Sync period error:', e);
-      }
+      const sanitized = cleanFirestorePayload(period);
+      safeFirestoreWrite('save_period', () => setDoc(doc(db, 'periods', period.id), sanitized));
     }
     return updated;
   },
@@ -430,7 +410,7 @@ export const StorageService = {
 
     const { db, isReady } = getFirebaseInstance();
     if (isReady && db) {
-      deleteDoc(doc(db, 'periods', periodId)).catch(err => console.warn('Firestore period delete err:', err));
+      safeFirestoreWrite('delete_period', () => deleteDoc(doc(db, 'periods', periodId)));
     }
     return periods;
   },
@@ -439,10 +419,10 @@ export const StorageService = {
     setLocal(STORAGE_KEYS.PERIODS, []);
     localStorage.setItem('dbk_periods_cleared_by_user', 'true');
     const { db, isReady } = getFirebaseInstance();
-    if (isReady && db) {
+    if (isReady && db && !isFirestoreWriteQuotaExceeded()) {
       getDocs(collection(db, 'periods')).then(snap => {
         snap.forEach(d => {
-          deleteDoc(doc(db, 'periods', d.id)).catch(() => {});
+          safeFirestoreWrite('clear_period_doc', () => deleteDoc(doc(db, 'periods', d.id)));
         });
       }).catch(err => console.warn('Firestore clear periods err:', err));
     }
@@ -469,12 +449,8 @@ export const StorageService = {
 
     const { db, isReady } = getFirebaseInstance();
     if (isReady && db) {
-      try {
-        const sanitized = cleanFirestorePayload(submission);
-        setDoc(doc(db, 'submissions', submission.id), sanitized).catch(err => console.warn('Firestore submission save err:', err));
-      } catch (e) {
-        console.warn('Sync submission error:', e);
-      }
+      const sanitized = cleanFirestorePayload(submission);
+      safeFirestoreWrite('save_submission', () => setDoc(doc(db, 'submissions', submission.id), sanitized));
     }
     return updated;
   },
@@ -485,7 +461,7 @@ export const StorageService = {
 
     const { db, isReady } = getFirebaseInstance();
     if (isReady && db) {
-      deleteDoc(doc(db, 'submissions', submissionId)).catch(err => console.warn('Firestore submission delete err:', err));
+      safeFirestoreWrite('delete_submission', () => deleteDoc(doc(db, 'submissions', submissionId)));
     }
     return subs;
   },
@@ -494,10 +470,10 @@ export const StorageService = {
     setLocal(STORAGE_KEYS.SUBMISSIONS, []);
     localStorage.setItem('dbk_submissions_cleared_by_user', 'true');
     const { db, isReady } = getFirebaseInstance();
-    if (isReady && db) {
+    if (isReady && db && !isFirestoreWriteQuotaExceeded()) {
       getDocs(collection(db, 'submissions')).then(snap => {
         snap.forEach(d => {
-          deleteDoc(doc(db, 'submissions', d.id)).catch(() => {});
+          safeFirestoreWrite('clear_submission_doc', () => deleteDoc(doc(db, 'submissions', d.id)));
         });
       }).catch(err => console.warn('Firestore clear submissions err:', err));
     }
@@ -571,16 +547,10 @@ export const StorageService = {
     setLocal(STORAGE_KEYS.SCHOOL_INFO, info);
 
     // Sync to Firestore metadata/schoolInfo immediately
-    try {
-      const { db, isReady } = getFirebaseInstance();
-      if (isReady && db) {
-        const payload = cleanFirestorePayload(info);
-        setDoc(doc(db, 'metadata', 'schoolInfo'), payload, { merge: true }).catch(err => {
-          console.warn('Firestore schoolInfo save error:', err);
-        });
-      }
-    } catch (e) {
-      console.warn('Firebase error during schoolInfo save:', e);
+    const { db, isReady } = getFirebaseInstance();
+    if (isReady && db) {
+      const payload = cleanFirestorePayload(info);
+      safeFirestoreWrite('save_school_info', () => setDoc(doc(db, 'metadata', 'schoolInfo'), payload, { merge: true }));
     }
 
     return info;
@@ -606,6 +576,14 @@ export const StorageService = {
       return { success: false, count: 0, message: 'Firebase chưa được kích hoạt hoặc cấu hình không hợp lệ.' };
     }
 
+    if (isFirestoreWriteQuotaExceeded()) {
+      return { 
+        success: false, 
+        count: 0, 
+        message: 'Hạn ngạch ghi miễn phí hàng ngày của Cloud Firestore (20.000 lượt/ngày) đã đạt giới hạn hôm nay. Hệ thống đang bảo lưu toàn bộ dữ liệu an toàn trong Local Storage của trình duyệt. Bạn có thể tiếp tục làm việc bình thường và đồng bộ lại vào ngày mai.' 
+      };
+    }
+
     try {
       const users = this.getUsers();
       const depts = this.getDepartments();
@@ -613,20 +591,35 @@ export const StorageService = {
       const submissions = this.getSubmissions();
       const schoolInfo = this.getSchoolInfo();
 
-      // Batch or set individually
+      let written = 0;
+
       for (const u of users) {
-        await setDoc(doc(db, 'users', u.id), u);
+        const res = await safeFirestoreWrite('sync_user', () => setDoc(doc(db, 'users', u.id), u));
+        if (res.quotaExceeded) {
+          return {
+            success: false,
+            count: written,
+            message: 'Hạn ngạch ghi miễn phí Firestore hôm nay đã đạt giới hạn. Toàn bộ dữ liệu của bạn vẫn an toàn 100% trên Local Storage.'
+          };
+        }
+        written++;
       }
       for (const d of depts) {
-        await setDoc(doc(db, 'departments', d.id), d);
+        const res = await safeFirestoreWrite('sync_dept', () => setDoc(doc(db, 'departments', d.id), d));
+        if (res.quotaExceeded) break;
+        written++;
       }
       for (const p of periods) {
-        await setDoc(doc(db, 'periods', p.id), p);
+        const res = await safeFirestoreWrite('sync_period', () => setDoc(doc(db, 'periods', p.id), p));
+        if (res.quotaExceeded) break;
+        written++;
       }
       for (const s of submissions) {
-        await setDoc(doc(db, 'submissions', s.id), s);
+        const res = await safeFirestoreWrite('sync_sub', () => setDoc(doc(db, 'submissions', s.id), s));
+        if (res.quotaExceeded) break;
+        written++;
       }
-      await setDoc(doc(db, 'metadata', 'schoolInfo'), cleanFirestorePayload(schoolInfo));
+      await safeFirestoreWrite('sync_school', () => setDoc(doc(db, 'metadata', 'schoolInfo'), cleanFirestorePayload(schoolInfo)));
 
       const totalItems = users.length + depts.length + periods.length + submissions.length + 1;
       return { 

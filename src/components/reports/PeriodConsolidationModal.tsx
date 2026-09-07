@@ -835,8 +835,6 @@ export const PeriodConsolidationModal: React.FC<PeriodConsolidationModalProps> =
                           <th className="p-3 w-28">Điểm trường</th>
                           <th className="p-3 w-40">GVCN</th>
                           <th className="p-3 w-20 text-center">Sĩ số</th>
-                          <th className="p-3 w-16 text-center">Nam</th>
-                          <th className="p-3 w-16 text-center">Nữ</th>
                           <th className="p-3 w-20 text-center">Hiện diện</th>
                           <th className="p-3 w-20 text-center">Vắng</th>
                           <th className="p-3 w-24 text-center">Tỷ lệ (%)</th>
@@ -854,8 +852,6 @@ export const PeriodConsolidationModal: React.FC<PeriodConsolidationModalProps> =
                             </td>
                             <td className="p-3 text-slate-800 font-medium">{c.teacherName}</td>
                             <td className="p-3 text-center font-bold text-slate-900">{c.totalStudents}</td>
-                            <td className="p-3 text-center text-slate-600">{c.maleStudents}</td>
-                            <td className="p-3 text-center text-slate-600">{c.femaleStudents}</td>
                             <td className="p-3 text-center font-bold text-emerald-700">{c.presentStudents}</td>
                             <td className={`p-3 text-center font-bold ${c.absentStudentsCount > 0 ? 'text-rose-600 bg-rose-50/50' : 'text-slate-400'}`}>
                               {c.absentStudentsCount}
@@ -893,8 +889,6 @@ export const PeriodConsolidationModal: React.FC<PeriodConsolidationModalProps> =
                             TỔNG CỘNG TOÀN TRƯỜNG (53 LỚP)
                           </td>
                           <td className="p-3 text-center text-white">{consolidatedData.totalEnrolledStudents}</td>
-                          <td className="p-3 text-center text-slate-300">{consolidatedData.totalMaleStudents}</td>
-                          <td className="p-3 text-center text-slate-300">{consolidatedData.totalFemaleStudents}</td>
                           <td className="p-3 text-center text-emerald-400">{consolidatedData.totalPresentStudents}</td>
                           <td className="p-3 text-center text-rose-400">{consolidatedData.totalAbsentStudents}</td>
                           <td className="p-3 text-center text-emerald-300">{consolidatedData.overallAttendanceRate}%</td>
