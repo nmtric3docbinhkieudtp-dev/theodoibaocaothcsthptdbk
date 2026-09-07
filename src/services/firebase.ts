@@ -1,4 +1,4 @@
-import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
+import { initializeApp, getApps, getApp, FirebaseApp, deleteApp } from 'firebase/app';
 import { 
   getFirestore, 
   collection, 
@@ -9,7 +9,10 @@ import {
   updateDoc, 
   deleteDoc, 
   Firestore,
-  onSnapshot
+  onSnapshot,
+  disableNetwork,
+  enableNetwork,
+  terminate
 } from 'firebase/firestore';
 import { FirebaseConfig } from '../types';
 import appletConfig from '../../firebase-applet-config.json';
@@ -26,24 +29,55 @@ export interface FirestoreQuotaStatus {
 // In-memory cache for fast checks
 let cachedQuotaStatus: FirestoreQuotaStatus | null = null;
 
+// Safe global console interceptor for Firestore internal retry logs
+if (typeof window !== 'undefined') {
+  const originalConsoleError = console.error;
+  console.error = (...args: any[]) => {
+    const messageStr = args
+      .map(arg => (typeof arg === 'string' ? arg : (arg?.message || (typeof arg === 'object' ? JSON.stringify(arg) : ''))))
+      .join(' ')
+      .toLowerCase();
+
+    if (
+      messageStr.includes('resource-exhausted') ||
+      messageStr.includes('quota limit exceeded') ||
+      messageStr.includes('free daily write units') ||
+      messageStr.includes('using maximum backoff delay') ||
+      messageStr.includes('overloading the backend')
+    ) {
+      markFirestoreWriteQuotaExceeded('Daily Firestore free write quota reached (20,000 writes/day). Local Storage handling active.');
+      if (firestoreDb) {
+        disableNetwork(firestoreDb).catch(() => {});
+      }
+      console.info('[Firestore Handled Quota] Quota limit detected. Gracefully preserved all data in Local Storage.');
+      return;
+    }
+    originalConsoleError.apply(console, args);
+  };
+}
+
 export function getFirestoreQuotaStatus(): FirestoreQuotaStatus {
   if (cachedQuotaStatus !== null) {
     return cachedQuotaStatus;
   }
+
+  // Today's UTC date string for tracking
+  const todayStr = new Date().toISOString().slice(0, 10);
 
   try {
     const raw = localStorage.getItem(STORAGE_KEY_QUOTA_STATUS);
     if (raw) {
       const parsed = JSON.parse(raw);
       if (parsed && parsed.isExceeded) {
-        // Quota resets daily. If exceededAt is older than 18 hours or from another calendar day (PST), auto-reset.
+        const exceededDateStr = (parsed.exceededAt || '').slice(0, 10);
+        // If from today or less than 18h ago, keep exceeded state active
         const exceededTime = new Date(parsed.exceededAt || 0).getTime();
         const now = Date.now();
-        if (now - exceededTime < 18 * 60 * 60 * 1000) {
+        if (exceededDateStr === todayStr || (now - exceededTime < 18 * 60 * 60 * 1000)) {
           cachedQuotaStatus = parsed;
           return parsed;
         } else {
-          // Auto clear after cooldown
+          // Auto clear on a fresh day
           localStorage.removeItem(STORAGE_KEY_QUOTA_STATUS);
         }
       }
@@ -69,6 +103,11 @@ export function markFirestoreWriteQuotaExceeded(reason?: string): void {
     localStorage.setItem(STORAGE_KEY_QUOTA_STATUS, JSON.stringify(status));
     window.dispatchEvent(new CustomEvent('firestore-quota-status-changed', { detail: status }));
   } catch {}
+
+  // Immediately disable network retries on firestore instance to stop backoff loops
+  if (firestoreDb) {
+    disableNetwork(firestoreDb).catch(() => {});
+  }
 }
 
 export function clearFirestoreWriteQuotaStatus(): void {
@@ -77,6 +116,11 @@ export function clearFirestoreWriteQuotaStatus(): void {
     localStorage.removeItem(STORAGE_KEY_QUOTA_STATUS);
     window.dispatchEvent(new CustomEvent('firestore-quota-status-changed', { detail: cachedQuotaStatus }));
   } catch {}
+
+  // Re-enable network
+  if (firestoreDb) {
+    enableNetwork(firestoreDb).catch(() => {});
+  }
 }
 
 /**
@@ -106,6 +150,9 @@ export async function safeFirestoreWrite<T>(
       errMsg.includes('free daily write units')
     ) {
       markFirestoreWriteQuotaExceeded(err?.message || 'Quota limit exceeded');
+      if (firestoreDb) {
+        disableNetwork(firestoreDb).catch(() => {});
+      }
       console.info(`[Firestore Safe-Write] Daily write quota reached during "${operationName}". Seamlessly using local storage.`);
       return { success: false, error: err, quotaExceeded: true };
     }
@@ -240,6 +287,12 @@ export async function testFirebaseConnection(customConfig?: Partial<FirebaseConf
           message: `Kết nối Firebase Cloud Firestore (${targetConfig.projectId}) thành công hoàn hảo (Đọc & Ghi hoạt động tốt)!` 
         };
       } catch (writeErr: any) {
+        // Clean up test instance immediately to prevent background retries
+        try {
+          await terminate(testDb);
+          await deleteApp(testApp);
+        } catch {}
+
         const errMsg = (writeErr?.message || '').toLowerCase();
         const errCode = (writeErr?.code || '').toLowerCase();
         if (
@@ -258,8 +311,13 @@ export async function testFirebaseConnection(customConfig?: Partial<FirebaseConf
         throw writeErr;
       }
     } else {
+      try {
+        await terminate(testDb);
+        await deleteApp(testApp);
+      } catch {}
+
       return {
-        success: true,
+        success: true, 
         quotaExceeded: true,
         message: `Kết nối Firebase Firestore (${targetConfig.projectId}) thành công (Đọc dữ liệu bình thường). Hạn ngạch ghi hôm nay đã đạt mức 20.000 lượt ghi. Local Storage bảo vệ toàn bộ dữ liệu an toàn.`
       };

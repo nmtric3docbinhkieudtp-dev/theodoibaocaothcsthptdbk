@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Modal } from '../common/Modal';
 import { useReports } from '../../context/ReportContext';
 import { useAuth } from '../../context/AuthContext';
@@ -49,7 +49,7 @@ export const SubmitReportModal: React.FC<SubmitReportModalProps> = ({
   onClose,
   defaultPeriodId
 }) => {
-  const { periods, submitReport } = useReports();
+  const { periods, submitReport, submissions } = useReports();
   const { currentUser } = useAuth();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -112,11 +112,26 @@ export const SubmitReportModal: React.FC<SubmitReportModalProps> = ({
     customTables.length > 0
   );
 
-  // Load period form template if available and reset stale inputs
+  // Load period form template or previous user draft/submission if available
   useEffect(() => {
     if (!isOpen) return;
 
-    if (currentPeriod) {
+    // Tìm xem người dùng hiện tại đã có bản nháp hoặc bài nộp nào cho đợt này chưa
+    const userSubs = selectedPeriodId && selectedPeriodId !== 'adhoc'
+      ? submissions.filter(s => s.authorId === currentUser.id && s.periodId === selectedPeriodId)
+      : [];
+    const existingSub = userSubs.find(s => s.status !== 'draft') || userSubs[0];
+
+    if (existingSub) {
+      setContent(existingSub.content || currentPeriod?.defaultTemplateContent || '');
+      setCustomFields(existingSub.structuredData?.customFields || currentPeriod?.formTemplate?.fields || []);
+      setCustomTables(existingSub.structuredData?.customTables || currentPeriod?.formTemplate?.tables || []);
+      setCustomFieldValues(existingSub.structuredData?.customFieldValues || {});
+      setCustomNotes(existingSub.structuredData?.customNotes || '');
+      setLateExplanation(existingSub.lateExplanation || '');
+      setHomeroomData(existingSub.structuredData?.homeroomMinutes || null);
+      setAttachments(existingSub.attachments || []);
+    } else if (currentPeriod) {
       setContent(currentPeriod.defaultTemplateContent || '');
       setCustomFields(currentPeriod.formTemplate?.fields || []);
       setCustomTables(currentPeriod.formTemplate?.tables || []);
@@ -141,6 +156,12 @@ export const SubmitReportModal: React.FC<SubmitReportModalProps> = ({
   const isPastDeadline = currentPeriod 
     ? new Date(currentPeriod.deadline).getTime() < Date.now() 
     : false;
+
+  const userExistingSub = useMemo(() => {
+    if (!selectedPeriodId || selectedPeriodId === 'adhoc') return null;
+    const subs = submissions.filter(s => s.authorId === currentUser.id && s.periodId === selectedPeriodId);
+    return subs.find(s => s.status !== 'draft') || subs[0] || null;
+  }, [submissions, currentUser.id, selectedPeriodId]);
 
   // Auto-generate title based on user, role, and period
   const getAutoTitle = () => {
@@ -382,6 +403,35 @@ export const SubmitReportModal: React.FC<SubmitReportModalProps> = ({
             ) : null}
           </div>
         </div>
+
+        {/* THÔNG BÁO TÌNH TRẠNG BẢN GHI ĐÃ LƯU / ĐÃ NỘP */}
+        {userExistingSub && (
+          <div className={`p-3 rounded-xl border text-xs flex items-center justify-between gap-2 shadow-2xs ${
+            userExistingSub.status === 'draft'
+              ? 'bg-amber-50/90 border-amber-300 text-amber-900'
+              : 'bg-emerald-50/90 border-emerald-300 text-emerald-900'
+          }`}>
+            <div className="flex items-center gap-2">
+              <span className="text-base">{userExistingSub.status === 'draft' ? '📝' : '✅'}</span>
+              <div>
+                <span className="font-bold">
+                  {userExistingSub.status === 'draft' ? 'Đang mở Bản Nháp đã lưu:' : 'Thầy/Cô đã nộp báo cáo này:'}
+                </span>{' '}
+                {userExistingSub.status === 'draft' 
+                  ? 'Nội dung và số liệu Thầy/Cô từng lưu nháp đã được tự động nạp vào biểu mẫu bên dưới. Nhấn "Gửi Báo Cáo" để nộp chính thức lên BGH.'
+                  : `Hệ thống đã nhận bài nộp lúc ${new Date(userExistingSub.submittedAt || userExistingSub.updatedAt).toLocaleString('vi-VN')}. Thầy/Cô có thể cập nhật lại số liệu nếu có thay đổi.`
+                }
+              </div>
+            </div>
+            <span className={`px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider shrink-0 ${
+              userExistingSub.status === 'draft'
+                ? 'bg-amber-200 text-amber-800'
+                : 'bg-emerald-200 text-emerald-800'
+            }`}>
+              {userExistingSub.status === 'draft' ? 'Bản nháp' : 'Đã nộp'}
+            </span>
+          </div>
+        )}
 
         {/* PRIMARY REPORT INPUT INTERFACE (AUTOMATICALLY SELECTED BASED ON PERIOD) */}
         {isSpecificLegacyHomeroomMinutes ? (

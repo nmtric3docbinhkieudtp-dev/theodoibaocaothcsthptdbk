@@ -244,6 +244,55 @@ function parseMarkdownTable(lines: string[], title: string): { title: string; he
 }
 
 /**
+ * Kiểm tra xem một dòng dữ liệu trong bảng báo cáo có thực sự được nhập nội dung hay không.
+ * Giúp loại bỏ:
+ * - Dòng chỉ có số thứ tự (TT / STT)
+ * - Dòng chỉ có tên mục/cuộc thi mặc định của biểu mẫu nhưng các cột kết quả (họ tên học sinh, giải thưởng, v.v.) bị bỏ trống
+ * - Dòng rỗng hoàn toàn hoặc chỉ chứa khoảng trắng, dấu gạch ngang '-', dấu chấm lửng '...'
+ */
+export function isMeaningfulTableRow(row: Record<string, any>, headers: string[]): boolean {
+  if (!row || typeof row !== 'object') return false;
+
+  const isNonEmptyText = (val: any): boolean => {
+    if (val === null || val === undefined) return false;
+    const str = String(val).trim();
+    if (str === '' || str === '-' || str === '--' || str === '.' || str === '...' || str === '---') return false;
+    return true;
+  };
+
+  // Cột chỉ là chỉ số thứ tự
+  const indexColumnRegex = /^(tt|stt|số\s*thứ\s*tự|thứ\s*tự)$/i;
+  const contentHeaders = headers.filter(h => !indexColumnRegex.test(h.trim()));
+
+  if (contentHeaders.length === 0) {
+    return Object.entries(row).some(([k, v]) => !indexColumnRegex.test(k.trim()) && isNonEmptyText(v));
+  }
+
+  // Nhận diện cột danh mục/hội thi có sẵn của biểu mẫu (ví dụ: "Cuộc thi", "Phong trào", "Danh mục")
+  const categoryHeader = contentHeaders.find(h => 
+    /^(cuộc\s*thi|hội\s*thi|phong\s*trào|hạng\s*mục|danh\s*mục|nội\s*dung\s*thi)$/i.test(h.trim())
+  );
+  const nonCategoryHeaders = categoryHeader 
+    ? contentHeaders.filter(h => h !== categoryHeader)
+    : contentHeaders;
+
+  // Nếu bảng có cột danh mục mẫu (như "Cuộc thi") và có các cột kết quả (như "Đạt giải", "Họ tên học sinh đạt giải")
+  // thì bắt buộc ít nhất 1 cột kết quả phải có dữ liệu thực tế được điền vào!
+  if (categoryHeader && nonCategoryHeaders.length > 0) {
+    return nonCategoryHeaders.some(h => isNonEmptyText(row[h]));
+  }
+
+  // Bảng học sinh chưa ra lớp: bắt buộc phải có tên học sinh
+  const nameHeader = contentHeaders.find(h => /(họ\s*v[àa]\s*tên|họ\s*tên|tên\s*học\s*sinh|tên)/i.test(h.trim()));
+  if (nameHeader) {
+    return isNonEmptyText(row[nameHeader]);
+  }
+
+  // Các bảng khác: chỉ cần ít nhất 1 cột nội dung có dữ liệu
+  return contentHeaders.some(h => isNonEmptyText(row[h]));
+}
+
+/**
  * Phân tích và tổng hợp toàn diện dữ liệu từ tất cả các báo cáo đã nộp
  */
 export function aggregatePeriodReportData(
@@ -252,9 +301,17 @@ export function aggregatePeriodReportData(
   allUsers: User[]
 ): PeriodConsolidationResult {
   // Lọc các bài nộp theo đợt (nếu có đợt cụ thể)
-  const periodSubs = period 
+  // Ưu tiên bài đã nộp chính thức (non-draft) lên trước và bài có thời gian mới nhất lên trước
+  const periodSubs = (period 
     ? submissions.filter(s => s.periodId === period.id) 
-    : submissions;
+    : [...submissions]
+  ).sort((a, b) => {
+    if (a.status !== 'draft' && b.status === 'draft') return -1;
+    if (a.status === 'draft' && b.status !== 'draft') return 1;
+    const timeA = new Date(a.submittedAt || a.updatedAt || 0).getTime();
+    const timeB = new Date(b.submittedAt || b.updatedAt || 0).getTime();
+    return timeB - timeA;
+  });
 
   const periodTitle = period?.title || 'Báo Cáo Tổng Hợp Toàn Trường';
   const targetAudienceLabel = period?.targetAudience === 'homeroom_teachers' 
@@ -263,19 +320,27 @@ export function aggregatePeriodReportData(
     ? 'Tổ trưởng chuyên môn'
     : 'Cán bộ, Giáo viên, Nhân viên';
 
-  // Map submissions theo lớp hoặc theo tác giả
+  // Map submissions theo lớp hoặc theo tác giả (bài chính thức được ưu tiên ghi trước, không bị ghi đè bởi bản nháp)
   const subByClassMap = new Map<string, ReportSubmission>();
   const subByUserMap = new Map<string, ReportSubmission>();
 
   periodSubs.forEach(sub => {
     if (sub.homeroomClass) {
-      subByClassMap.set(sub.homeroomClass.trim().toUpperCase(), sub);
+      const cKey = sub.homeroomClass.trim().toUpperCase();
+      if (!subByClassMap.has(cKey) || (subByClassMap.get(cKey)?.status === 'draft' && sub.status !== 'draft')) {
+        subByClassMap.set(cKey, sub);
+      }
     }
     const minutesClass = sub.structuredData?.homeroomMinutes?.className;
     if (minutesClass) {
-      subByClassMap.set(minutesClass.trim().toUpperCase(), sub);
+      const mKey = minutesClass.trim().toUpperCase();
+      if (!subByClassMap.has(mKey) || (subByClassMap.get(mKey)?.status === 'draft' && sub.status !== 'draft')) {
+        subByClassMap.set(mKey, sub);
+      }
     }
-    subByUserMap.set(sub.authorId, sub);
+    if (!subByUserMap.has(sub.authorId) || (subByUserMap.get(sub.authorId)?.status === 'draft' && sub.status !== 'draft')) {
+      subByUserMap.set(sub.authorId, sub);
+    }
   });
 
   const absentStudents: ConsolidatedStudent[] = [];
@@ -444,8 +509,8 @@ export function aggregatePeriodReportData(
       const hrRosterItem = HOMEROOM_ROSTER_53.find(h => h.className === sub.homeroomClass);
 
       (tbl.rows || []).forEach(row => {
-        const hasValue = Object.values(row).some(v => v !== undefined && String(v).trim() !== '');
-        if (hasValue) {
+        // Chỉ thêm dòng nếu có nội dung thực tế (bỏ qua dòng trắng, dòng chỉ có STT hoặc chỉ có tên mục mẫu)
+        if (isMeaningfulTableRow(row, tbl.headers || [])) {
           group.rows.push({
             stt: group.rows.length + 1,
             className: sub.homeroomClass || '-',
@@ -482,17 +547,19 @@ export function aggregatePeriodReportData(
         const hrRosterItem = HOMEROOM_ROSTER_53.find(h => h.className === sub.homeroomClass);
 
         mdTbl.rows.forEach(row => {
-          group.rows.push({
-            stt: group.rows.length + 1,
-            className: sub.homeroomClass || '-',
-            campus: hrRosterItem?.campus || 'Chưa phân cơ sở',
-            grade: hrRosterItem?.grade || 0,
-            authorName: sub.authorName,
-            departmentName: sub.departmentName,
-            submittedAt: sub.submittedAt || '',
-            submissionId: sub.id,
-            data: row
-          });
+          if (isMeaningfulTableRow(row, mdTbl.headers)) {
+            group.rows.push({
+              stt: group.rows.length + 1,
+              className: sub.homeroomClass || '-',
+              campus: hrRosterItem?.campus || 'Chưa phân cơ sở',
+              grade: hrRosterItem?.grade || 0,
+              authorName: sub.authorName,
+              departmentName: sub.departmentName,
+              submittedAt: sub.submittedAt || '',
+              submissionId: sub.id,
+              data: row
+            });
+          }
         });
       });
     }
@@ -620,10 +687,11 @@ export function aggregatePeriodReportData(
 
   // Thống kê 19 Tổ trưởng & Tổ phó thuộc 6 tổ chuyên môn
   const deptHeadStats: ConsolidatedDeptHeadStat[] = SPECIALIZED_DEPT_HEADS_19.map((dh, idx) => {
-    const sub = periodSubs.find(s => 
+    const userSubs = periodSubs.filter(s => 
       s.authorId === dh.id || 
       (s.authorName && s.authorName.trim().toLowerCase() === dh.name.trim().toLowerCase())
     );
+    const sub = userSubs.find(s => s.status !== 'draft') || userSubs[0];
     const hasSubmitted = !!sub && sub.status !== 'draft';
     return {
       stt: idx + 1,
@@ -646,10 +714,11 @@ export function aggregatePeriodReportData(
   // Thống kê các Thầy/Cô được chỉ định đích danh (nếu đợt chỉ định riêng từng cá nhân)
   const specificUserStats: ConsolidatedDeptHeadStat[] = targetUserIds.map((userId, idx) => {
     const u = allUsers.find(x => x.id === userId);
-    const sub = periodSubs.find(s => 
+    const userSubs = periodSubs.filter(s => 
       s.authorId === userId || 
       (u && s.authorName && s.authorName.trim().toLowerCase() === u.name.trim().toLowerCase())
     );
+    const sub = userSubs.find(s => s.status !== 'draft') || userSubs[0];
     const hasSubmitted = !!sub && sub.status !== 'draft';
     return {
       stt: idx + 1,

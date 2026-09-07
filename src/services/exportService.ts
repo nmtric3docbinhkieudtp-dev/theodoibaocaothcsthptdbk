@@ -1,6 +1,6 @@
 import * as XLSX from 'xlsx';
 import { ReportSubmission, ReportPeriod, Department, User, SchoolInfo } from '../types';
-import { PeriodConsolidationResult } from '../utils/consolidationHelper';
+import { PeriodConsolidationResult, isMeaningfulTableRow } from '../utils/consolidationHelper';
 
 export const ExportService = {
   // Export full submissions list to Excel (.xlsx)
@@ -134,11 +134,9 @@ export const ExportService = {
           }
         });
 
-        // Add rows with teacher context
+        // Add rows with teacher context (only rows with real meaningful user input)
         (tbl.rows || []).forEach(row => {
-          // Check if row is not completely empty
-          const hasData = Object.values(row).some(v => v !== undefined && v !== '');
-          if (hasData) {
+          if (isMeaningfulTableRow(row, tbl.headers)) {
             group.rows.push({ sub, row });
           }
         });
@@ -412,7 +410,13 @@ export const ExportService = {
 
     // 2. Dynamic Tables Sheets (DANH SÁCH TỔNG HỢP NỘI DUNG TỪ 53 LỚP / TOÀN TRƯỜNG)
     data.dynamicTables.forEach((tbl, tIdx) => {
-      const rows = tbl.rows.map((r, rIdx) => {
+      // Loại bỏ các cột TT/STT thừa từ template vì đã có STT tự động ở đầu
+      const contentHeaders = tbl.headers.filter(h => !/^(tt|stt|số\s*thứ\s*tự|thứ\s*tự)$/i.test(h.trim()));
+
+      // Chỉ giữ lại những hàng thực sự có dữ liệu người dùng nhập vào
+      const meaningfulRows = tbl.rows.filter(r => isMeaningfulTableRow(r.data, tbl.headers));
+
+      const rows = meaningfulRows.map((r, rIdx) => {
         const rowData: Record<string, any> = {
           'STT': rIdx + 1,
           'Lớp': r.className,
@@ -421,7 +425,7 @@ export const ExportService = {
           'Người Nộp / GVCN': r.authorName,
           'Thời Gian Nộp': r.submittedAt ? new Date(r.submittedAt).toLocaleString('vi-VN') : ''
         };
-        tbl.headers.forEach(h => {
+        contentHeaders.forEach(h => {
           rowData[h] = r.data[h] || '';
         });
         return rowData;
@@ -429,9 +433,24 @@ export const ExportService = {
 
       if (rows.length > 0) {
         const wsDyn = XLSX.utils.json_to_sheet(rows);
-        const cleanName = tbl.title.replace(/[\\/?*[\]:]/g, '').substring(0, 26);
-        const sheetTitle = `DS_${tIdx + 1}_${cleanName}`.substring(0, 31);
-        XLSX.utils.book_append_sheet(wb, wsDyn, sheetTitle);
+        let sheetTitle = '';
+        if (/chưa ra lớp/i.test(tbl.title)) {
+          sheetTitle = 'DS_HS_Chua_Ra_Lop';
+        } else if (/năng khiếu|thành tích|hội thi/i.test(tbl.title)) {
+          sheetTitle = 'DS_HS_Thanh_Tich_Hoi_Thi';
+        } else {
+          const cleanName = tbl.title.replace(/[\\/?*[\]:]/g, '').substring(0, 26);
+          sheetTitle = `DS_${tIdx + 1}_${cleanName}`.substring(0, 31);
+        }
+
+        // Đảm bảo tên sheet duy nhất
+        let finalSheetName = sheetTitle;
+        let counter = 1;
+        while (wb.SheetNames.includes(finalSheetName)) {
+          finalSheetName = `${sheetTitle.substring(0, 28)}_${counter++}`;
+        }
+
+        XLSX.utils.book_append_sheet(wb, wsDyn, finalSheetName);
       }
     });
 
@@ -1035,5 +1054,65 @@ export const ExportService = {
 
     printWindow.document.write(htmlContent);
     printWindow.document.close();
+  },
+
+  // Export list of unsubmitted teachers for a period to Excel (.xlsx)
+  exportUnsubmittedUsersToExcel(
+    period: ReportPeriod,
+    users: Array<User & { submissionStatus?: string; submittedAt?: string | null }>,
+    schoolInfo: SchoolInfo,
+    fileNamePrefix = 'Danh_Sach_Chua_Nop_Bao_Cao'
+  ) {
+    const wb = XLSX.utils.book_new();
+
+    const diffMs = new Date(period.deadline).getTime() - Date.now();
+    const isOverdue = diffMs < 0;
+    const remainingDays = Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
+    const remainingText = isOverdue ? 'Đã quá hạn' : `Còn ${remainingDays} ngày`;
+
+    const dataRows = users.map((u, index) => {
+      return {
+        'STT': index + 1,
+        'Họ và Tên': u.name,
+        'Chức Vụ': u.roleTitle,
+        'Tổ / Bộ Môn': u.departmentName,
+        'Lớp Chủ Nhiệm': u.isHomeroomTeacher ? `${u.homeroomClass || ''} (${u.homeroomCampus === 'THPT' ? 'Điểm THPT' : (u.homeroomCampus === 'TK' ? 'Tân Kiều' : 'Đốc Binh Kiều')})` : 'Không',
+        'Môn Giảng Dạy': u.subject || '-',
+        'Số Điện Thoại': u.phone || '-',
+        'Email': u.email,
+        'Tình Trạng Nộp': u.submissionStatus === 'submitted' ? 'Đã nộp' : 'Chưa nộp',
+        'Thời Gian Nộp': u.submittedAt ? new Date(u.submittedAt).toLocaleString('vi-VN') : 'Chưa nộp',
+        'Đợt Báo Cáo': period.title,
+        'Hạn Chót': new Date(period.deadline).toLocaleString('vi-VN'),
+        'Thời Gian Còn Lại': remainingText
+      };
+    });
+
+    const ws = XLSX.utils.json_to_sheet(dataRows);
+
+    // Set column widths
+    ws['!cols'] = [
+      { wch: 6 },  // STT
+      { wch: 25 }, // Họ và Tên
+      { wch: 18 }, // Chức Vụ
+      { wch: 22 }, // Tổ / Bộ Môn
+      { wch: 20 }, // Lớp Chủ Nhiệm
+      { wch: 16 }, // Môn Giảng Dạy
+      { wch: 14 }, // Số Điện Thoại
+      { wch: 28 }, // Email
+      { wch: 14 }, // Tình Trạng Nộp
+      { wch: 20 }, // Thời Gian Nộp
+      { wch: 30 }, // Đợt Báo Cáo
+      { wch: 20 }, // Hạn Chót
+      { wch: 18 }, // Thời Gian Còn Lại
+    ];
+
+    XLSX.utils.book_append_sheet(wb, ws, 'DS_Chua_Nop_Bao_Cao');
+
+    const cleanTitle = period.title.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 30);
+    const dateStr = new Date().toISOString().split('T')[0];
+    const fileName = `${fileNamePrefix}_${cleanTitle}_${dateStr}.xlsx`;
+
+    XLSX.writeFile(wb, fileName);
   }
 };

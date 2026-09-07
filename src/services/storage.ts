@@ -122,7 +122,7 @@ export function saveUserCredential(userId: string, data: Partial<UserCredentialD
 
   // Background sync to Firestore user_credentials
   const { db, isReady } = getFirebaseInstance();
-  if (isReady && db) {
+  if (isReady && db && !isFirestoreWriteQuotaExceeded()) {
     const payload = cleanFirestorePayload(all[userId]);
     safeFirestoreWrite('user_credentials', () => setDoc(doc(db, 'user_credentials', userId), payload));
   }
@@ -168,7 +168,7 @@ export function resetUserPasswordToDefault(userId: string): { success: boolean; 
 
   // 4. Background sync to Firestore if enabled
   const { db, isReady } = getFirebaseInstance();
-  if (isReady && db) {
+  if (isReady && db && !isFirestoreWriteQuotaExceeded()) {
     const payload = cleanFirestorePayload(creds[userId]);
     safeFirestoreWrite('reset_credential', () => setDoc(doc(db, 'user_credentials', userId), payload));
     if (userIdx >= 0) {
@@ -328,7 +328,7 @@ export const StorageService = {
     
     // 3. Background sync to Firestore if enabled
     const { db, isReady } = getFirebaseInstance();
-    if (isReady && db) {
+    if (isReady && db && !isFirestoreWriteQuotaExceeded()) {
       const sanitized = cleanFirestorePayload(user);
       safeFirestoreWrite('save_user', () => setDoc(doc(db, 'users', user.id), sanitized));
     }
@@ -360,7 +360,7 @@ export const StorageService = {
     setLocal(STORAGE_KEYS.DEPARTMENTS, updated);
 
     const { db, isReady } = getFirebaseInstance();
-    if (isReady && db) {
+    if (isReady && db && !isFirestoreWriteQuotaExceeded()) {
       const sanitized = cleanFirestorePayload(dept);
       safeFirestoreWrite('save_dept', () => setDoc(doc(db, 'departments', dept.id), sanitized));
     }
@@ -397,7 +397,7 @@ export const StorageService = {
     setLocal(STORAGE_KEYS.PERIODS, updated);
 
     const { db, isReady } = getFirebaseInstance();
-    if (isReady && db) {
+    if (isReady && db && !isFirestoreWriteQuotaExceeded()) {
       const sanitized = cleanFirestorePayload(period);
       safeFirestoreWrite('save_period', () => setDoc(doc(db, 'periods', period.id), sanitized));
     }
@@ -409,7 +409,7 @@ export const StorageService = {
     setLocal(STORAGE_KEYS.PERIODS, periods);
 
     const { db, isReady } = getFirebaseInstance();
-    if (isReady && db) {
+    if (isReady && db && !isFirestoreWriteQuotaExceeded()) {
       safeFirestoreWrite('delete_period', () => deleteDoc(doc(db, 'periods', periodId)));
     }
     return periods;
@@ -448,7 +448,7 @@ export const StorageService = {
     setLocal(STORAGE_KEYS.SUBMISSIONS, updated);
 
     const { db, isReady } = getFirebaseInstance();
-    if (isReady && db) {
+    if (isReady && db && !isFirestoreWriteQuotaExceeded()) {
       const sanitized = cleanFirestorePayload(submission);
       safeFirestoreWrite('save_submission', () => setDoc(doc(db, 'submissions', submission.id), sanitized));
     }
@@ -460,7 +460,7 @@ export const StorageService = {
     setLocal(STORAGE_KEYS.SUBMISSIONS, subs);
 
     const { db, isReady } = getFirebaseInstance();
-    if (isReady && db) {
+    if (isReady && db && !isFirestoreWriteQuotaExceeded()) {
       safeFirestoreWrite('delete_submission', () => deleteDoc(doc(db, 'submissions', submissionId)));
     }
     return subs;
@@ -548,7 +548,7 @@ export const StorageService = {
 
     // Sync to Firestore metadata/schoolInfo immediately
     const { db, isReady } = getFirebaseInstance();
-    if (isReady && db) {
+    if (isReady && db && !isFirestoreWriteQuotaExceeded()) {
       const payload = cleanFirestorePayload(info);
       safeFirestoreWrite('save_school_info', () => setDoc(doc(db, 'metadata', 'schoolInfo'), payload, { merge: true }));
     }

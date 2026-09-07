@@ -24,13 +24,14 @@ import {
   UserCheck
 } from 'lucide-react';
 import { ReportPeriod, ReportSubmission } from '../../types';
-import { isUserEligibleForPeriod, getAudienceLabel } from '../../utils/reportFilters';
+import { isUserEligibleForPeriod, getRequiredUsersForPeriod, getAudienceLabel } from '../../utils/reportFilters';
 
 interface DashboardProps {
   onOpenSubmit: (periodId?: string) => void;
   onOpenCreatePeriod?: () => void;
   onOpenReportDetail: (submission: ReportSubmission) => void;
   onOpenConsolidation?: (periodId?: string) => void;
+  onOpenUnsubmittedUsers?: (periodId?: string) => void;
   onNavigate?: (tab: any) => void;
   onNavigateTab?: (tab: any) => void;
 }
@@ -40,6 +41,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
   onOpenCreatePeriod,
   onOpenReportDetail,
   onOpenConsolidation,
+  onOpenUnsubmittedUsers,
   onNavigate,
   onNavigateTab
 }) => {
@@ -79,6 +81,17 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const onTimeRate = totalSubmissionsCount > 0 
     ? Math.round(((totalSubmissionsCount - totalLateCount) / totalSubmissionsCount) * 100) 
     : 100;
+
+  // Total pending unsubmitted across active periods
+  const totalActivePendingCount = React.useMemo(() => {
+    let count = 0;
+    for (const p of activePeriods) {
+      const required = getRequiredUsersForPeriod(p, allUsers);
+      const submitted = submissions.filter(s => s.periodId === p.id && s.status !== 'draft').length;
+      count += Math.max(0, required.length - submitted);
+    }
+    return count;
+  }, [activePeriods, allUsers, submissions]);
 
   // Helper to format remaining time
   const getRemainingTimeBadge = (deadline: string) => {
@@ -285,29 +298,34 @@ export const Dashboard: React.FC<DashboardProps> = ({
         <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs hover:shadow-xs transition">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-              Ghi nhận nộp trễ
+              Chưa nộp & Đôn đốc
             </span>
-            <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${totalLateCount > 0 ? 'bg-rose-50 text-rose-600' : 'bg-slate-50 text-slate-400'}`}>
-              <AlertCircle className="w-5 h-5" />
+            <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${totalActivePendingCount > 0 ? 'bg-amber-50 text-amber-600' : 'bg-slate-50 text-slate-400'}`}>
+              <Clock className="w-5 h-5" />
             </div>
           </div>
           <div className="mt-2 flex items-baseline gap-2">
             <span className="text-2xl font-black text-slate-900">
-              {totalLateCount}
+              {totalActivePendingCount}
             </span>
-            <span className="text-xs text-slate-500">trường hợp</span>
+            <span className="text-xs text-slate-500">lượt chưa nộp (đang mở)</span>
           </div>
-          <div className="mt-2 text-xs text-slate-500">
-            {totalLateCount > 0 ? (
+          <div className="mt-2 text-xs text-slate-500 flex flex-col gap-1">
+            {totalActivePendingCount > 0 && onOpenUnsubmittedUsers ? (
               <button
-                onClick={() => handleNav('departments')}
-                className="text-rose-600 font-bold hover:underline inline-flex items-center gap-1 cursor-pointer"
+                onClick={() => onOpenUnsubmittedUsers()}
+                className="text-amber-800 font-bold hover:underline inline-flex items-center gap-1 cursor-pointer text-left"
               >
-                <span>Xem danh sách trễ</span>
+                <span>Xem danh sách & Nhắc hạn</span>
                 <ArrowRight className="w-3 h-3" />
               </button>
             ) : (
-              <span className="text-emerald-600 font-medium">100% nộp đúng hạn</span>
+              <span className="text-emerald-600 font-medium">100% nộp đủ</span>
+            )}
+            {totalLateCount > 0 && (
+              <span className="text-[10px] text-rose-600 font-medium">
+                (Đã có {totalLateCount} ca nộp trễ trước đó)
+              </span>
             )}
           </div>
         </div>
@@ -405,6 +423,17 @@ export const Dashboard: React.FC<DashboardProps> = ({
                         >
                           <Send className="w-3.5 h-3.5" />
                           <span>Nộp ngay</span>
+                        </button>
+                      )}
+
+                      {(isDeptHead || isPrincipal || isAdmin) && onOpenUnsubmittedUsers && (
+                        <button
+                          onClick={() => onOpenUnsubmittedUsers(period.id)}
+                          className="w-full sm:w-auto px-3 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 font-bold text-xs flex items-center justify-center gap-1.5 shadow-2xs transition cursor-pointer"
+                          title="Xem danh sách những người chưa nộp báo cáo đợt này để đôn đốc trước hạn"
+                        >
+                          <Clock className="w-3.5 h-3.5 text-amber-700" />
+                          <span>DS Chưa Nộp</span>
                         </button>
                       )}
 

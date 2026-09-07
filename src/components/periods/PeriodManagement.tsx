@@ -32,11 +32,13 @@ import { CreatePeriodModal } from './CreatePeriodModal';
 interface PeriodManagementProps {
   onOpenSubmit: (periodId?: string) => void;
   onOpenConsolidation?: (periodId?: string) => void;
+  onOpenUnsubmittedUsers?: (periodId?: string) => void;
 }
 
 export const PeriodManagement: React.FC<PeriodManagementProps> = ({
   onOpenSubmit,
-  onOpenConsolidation
+  onOpenConsolidation,
+  onOpenUnsubmittedUsers
 }) => {
   const { isPrincipal, isAdmin, isDeptHead, canManagePeriods, allUsers = [] } = useAuth();
   const { 
@@ -177,6 +179,19 @@ export const PeriodManagement: React.FC<PeriodManagementProps> = ({
               <GraduationCap className="w-4 h-4" />
               <span>Tạo Đợt Báo Cáo GVCN (53 Lớp)</span>
             </button>
+
+            {onOpenUnsubmittedUsers && (isAdmin || isPrincipal || isDeptHead) && (
+              <button
+                id="btn-open-unsubmitted-users-top"
+                type="button"
+                onClick={() => onOpenUnsubmittedUsers()}
+                className="px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs flex items-center gap-1.5 shadow-xs transition active:scale-98 cursor-pointer"
+                title="Xem danh sách những người chưa nộp báo cáo để kịp thời đôn đốc trước khi hết hạn"
+              >
+                <Clock className="w-4 h-4 text-slate-950" />
+                <span>DS Chưa Nộp & Nhắc Hạn</span>
+              </button>
+            )}
 
             {onOpenConsolidation && (
               <button
@@ -354,6 +369,23 @@ export const PeriodManagement: React.FC<PeriodManagementProps> = ({
                     </div>
 
                     <div className="flex items-center justify-between">
+                      <span className="text-amber-800 font-medium">Chưa nộp (cần nhắc):</span>
+                      {onOpenUnsubmittedUsers ? (
+                        <button
+                          type="button"
+                          onClick={() => onOpenUnsubmittedUsers(period.id)}
+                          className="font-bold text-amber-800 hover:underline inline-flex items-center gap-1 cursor-pointer"
+                        >
+                          <span>{Math.max(0, requiredUsers.length - periodSubmissions.length)} người (Xem DS)</span>
+                        </button>
+                      ) : (
+                        <span className="font-bold text-amber-700">
+                          {Math.max(0, requiredUsers.length - periodSubmissions.length)} người
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="flex items-center justify-between">
                       <span>Định dạng yêu cầu:</span>
                       <span className="font-medium text-slate-700">
                         {period.reportType === 'text_only' ? 'Văn bản trực tiếp' : 'Hỗ trợ đính kèm tệp'}
@@ -382,6 +414,18 @@ export const PeriodManagement: React.FC<PeriodManagementProps> = ({
                       >
                         <FileSpreadsheet className="w-3.5 h-3.5 text-teal-700" />
                         <span>Tổng Hợp Số Liệu</span>
+                      </button>
+                    )}
+
+                    {onOpenUnsubmittedUsers && (isAdmin || isPrincipal || isDeptHead) && (
+                      <button
+                        type="button"
+                        onClick={() => onOpenUnsubmittedUsers(period.id)}
+                        className="px-2.5 py-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 text-xs font-bold flex items-center gap-1 cursor-pointer"
+                        title="Xem danh sách chi tiết những người chưa nộp báo cáo đợt này và gửi nhắc nhở"
+                      >
+                        <Clock className="w-3.5 h-3.5 text-amber-700" />
+                        <span>DS Chưa Nộp ({Math.max(0, requiredUsers.length - periodSubmissions.length)})</span>
                       </button>
                     )}
                   </div>

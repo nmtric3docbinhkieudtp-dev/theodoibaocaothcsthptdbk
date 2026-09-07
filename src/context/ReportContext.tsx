@@ -130,7 +130,7 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             if (data && (data.name || data.logoUrl)) {
               setSchoolInfo(prev => {
                 const merged = { ...prev, ...data };
-                StorageService.saveSchoolInfo(merged);
+                setLocal('dbk_school_info_data', merged);
                 return merged;
               });
             }
@@ -146,7 +146,7 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             if (remote) {
               setSchoolInfo(prev => {
                 const merged = { ...prev, ...remote };
-                StorageService.saveSchoolInfo(merged);
+                setLocal('dbk_school_info_data', merged);
                 return merged;
               });
             }
@@ -336,8 +336,19 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       }
     }
 
+    // Kiểm tra xem người dùng đã có bài nộp hoặc bản nháp nào cho đợt báo cáo này chưa
+    const existingSubs = submissions.filter(s => 
+      s.authorId === currentUser.id && 
+      s.periodId === data.periodId
+    );
+    const existingSub = existingSubs.find(s => s.status !== 'draft') || existingSubs[0];
+
+    const submissionId = existingSub 
+      ? existingSub.id 
+      : ('sub-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6));
+
     const newSub: ReportSubmission = {
-      id: 'sub-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6),
+      id: submissionId,
       periodId: data.periodId,
       periodTitle: period ? period.title : 'Báo cáo định kỳ',
       authorId: currentUser.id,
@@ -356,19 +367,29 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       structuredData: data.structuredData || undefined,
       attachments: data.attachments || [],
       status: isDraft ? 'draft' : 'submitted',
-      submittedAt: isDraft ? null : now.toISOString(),
+      submittedAt: isDraft ? (existingSub?.submittedAt || null) : (existingSub?.submittedAt || now.toISOString()),
       updatedAt: now.toISOString(),
       isLate,
       lateDurationMinutes: isLate ? lateMinutes : undefined,
       lateExplanation: data.lateExplanation || undefined,
-      reviewHistory: [],
-      version: 1
+      reviewHistory: existingSub?.reviewHistory || [],
+      version: existingSub ? (existingSub.version || 1) + 1 : 1
     };
 
     // Remove any undefined keys to strictly comply with Firestore and state rules
     const cleanSub: ReportSubmission = JSON.parse(JSON.stringify(newSub));
 
-    const updated = StorageService.saveSubmission(cleanSub);
+    let updated = StorageService.saveSubmission(cleanSub);
+
+    // Nếu người dùng nộp chính thức, dọn dẹp các bản nháp mồ côi cũ của người này trong cùng đợt (nếu có)
+    if (!isDraft && existingSubs.length > 0) {
+      existingSubs.forEach(s => {
+        if (s.id !== submissionId && s.status === 'draft') {
+          updated = StorageService.deleteSubmission(s.id);
+        }
+      });
+    }
+
     setSubmissions(updated);
 
     // Notify Department Head if submitted

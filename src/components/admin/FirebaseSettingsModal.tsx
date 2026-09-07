@@ -17,6 +17,7 @@ import {
   Image as ImageIcon
 } from 'lucide-react';
 import { FirebaseConfig, SchoolInfo } from '../../types';
+import appletConfig from '../../../firebase-applet-config.json';
 import { 
   isFirestoreWriteQuotaExceeded, 
   clearFirestoreWriteQuotaStatus, 
@@ -146,11 +147,11 @@ export const FirebaseSettingsModal: React.FC<FirebaseSettingsModalProps> = ({ on
           </div>
 
           {isQuotaExceeded && (
-            <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs space-y-1.5">
+            <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs space-y-2">
               <div className="flex items-center justify-between font-bold">
                 <span className="flex items-center gap-1.5 text-amber-800">
                   <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
-                  Hạn ngạch Cloud Firestore hôm nay đã đạt mức tối đa (20.000 lượt ghi)
+                  Hạn ngạch Cloud Firestore hôm nay đã đạt mức tối đa (20.000 lượt ghi miễn phí/ngày)
                 </span>
                 <button
                   type="button"
@@ -161,8 +162,26 @@ export const FirebaseSettingsModal: React.FC<FirebaseSettingsModalProps> = ({ on
                 </button>
               </div>
               <p className="text-[11px] leading-relaxed text-amber-700">
-                Toàn bộ dữ liệu của nhà trường đang được lưu trữ an toàn 100% trong bộ nhớ <strong>Local Storage</strong> của trình duyệt. Quý Thầy/Cô vẫn tạo, nộp và tổng hợp báo cáo bình thường mà không hề bị gián đoạn.
+                Toàn bộ dữ liệu của nhà trường đang được lưu trữ an toàn 100% trong bộ nhớ <strong>Local Storage</strong> của trình duyệt. Quý Thầy/Cô vẫn tạo, nộp và tổng hợp báo cáo bình thường mà không hề bị gián đoạn. Hạn ngạch sẽ tự động được làm mới vào ngày mai (theo chu kỳ của Google Cloud Firestore).
               </p>
+              <div className="flex flex-wrap items-center gap-3 pt-1 text-[11px]">
+                <a
+                  href={`https://console.firebase.google.com/project/${projectId || 'gen-lang-client-0804239574'}/firestore/databases/${appletConfig.firestoreDatabaseId || '(default)'}/data?openUpgradeDialog=true`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-indigo-700 hover:text-indigo-900 font-semibold underline"
+                >
+                  Mở Firebase Console Database Quota &rarr;
+                </a>
+                <a
+                  href="https://firebase.google.com/pricing#cloud-firestore"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-slate-600 hover:text-slate-800 underline"
+                >
+                  Xem chi tiết hạn ngạch Spark Plan &rarr;
+                </a>
+              </div>
             </div>
           )}
 

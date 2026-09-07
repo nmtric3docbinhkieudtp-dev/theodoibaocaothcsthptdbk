@@ -16,9 +16,11 @@ import { ReportDetailModal } from './components/reports/ReportDetailModal';
 import { ForceChangePasswordModal } from './components/auth/ForceChangePasswordModal';
 import { CreatePeriodModal } from './components/periods/CreatePeriodModal';
 import { PeriodConsolidationModal } from './components/reports/PeriodConsolidationModal';
+import { UnsubmittedUsersModal } from './components/periods/UnsubmittedUsersModal';
 import { FirebaseSettingsModal } from './components/admin/FirebaseSettingsModal';
 import { LogoManagementModal } from './components/admin/LogoManagementModal';
 import { StorageService } from './services/storage';
+import { isFirestoreWriteQuotaExceeded } from './services/firebase';
 import { ReportSubmission } from './types';
 
 const MainLayout: React.FC = () => {
@@ -29,8 +31,20 @@ const MainLayout: React.FC = () => {
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [isConsolidationModalOpen, setIsConsolidationModalOpen] = useState(false);
   const [consolidationPeriodId, setConsolidationPeriodId] = useState<string | undefined>(undefined);
+  const [isUnsubmittedModalOpen, setIsUnsubmittedModalOpen] = useState(false);
+  const [unsubmittedPeriodId, setUnsubmittedPeriodId] = useState<string | undefined>(undefined);
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
   const [isLogoModalOpen, setIsLogoModalOpen] = useState(false);
+  const [isQuotaExceeded, setIsQuotaExceeded] = useState(isFirestoreWriteQuotaExceeded());
+  const [dismissedQuotaBanner, setDismissedQuotaBanner] = useState(false);
+
+  useEffect(() => {
+    const handleQuotaChanged = (e: any) => {
+      setIsQuotaExceeded(Boolean(e.detail?.isExceeded));
+    };
+    window.addEventListener('firestore-quota-status-changed', handleQuotaChanged);
+    return () => window.removeEventListener('firestore-quota-status-changed', handleQuotaChanged);
+  }, []);
   const [dismissedFirstTimeUserIds, setDismissedFirstTimeUserIds] = useState<Record<string, boolean>>(() => {
     try {
       const saved = localStorage.getItem('dbk_dismissed_pwd_modal');
@@ -102,6 +116,11 @@ const MainLayout: React.FC = () => {
     setIsConsolidationModalOpen(true);
   };
 
+  const handleOpenUnsubmitted = (periodId?: string) => {
+    setUnsubmittedPeriodId(periodId);
+    setIsUnsubmittedModalOpen(true);
+  };
+
   const handleNavigate = (tab: NavTab) => {
     // Block unauthorized navigation to export tab
     if (tab === 'export' && !isAdmin && !isPrincipal) {
@@ -145,6 +164,35 @@ const MainLayout: React.FC = () => {
 
       {/* Main Container: Full width clean layout */}
       <div className="flex-1 w-full max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6">
+        {isQuotaExceeded && !dismissedQuotaBanner && (
+          <div className="mb-4 p-3 sm:p-4 rounded-2xl bg-amber-50/90 border border-amber-200/80 text-amber-900 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+            <div className="flex items-center gap-2.5">
+              <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0 animate-pulse" />
+              <p className="font-medium text-amber-900">
+                <strong>Chế độ lưu trữ an toàn:</strong> Hạn ngạch ghi Firestore miễn phí hôm nay đã đạt mức tối đa (20.000 lượt ghi/ngày). Dữ liệu nộp báo cáo, lưu nháp và xuất Excel vẫn diễn ra tức thì, an toàn 100% trong bộ nhớ Local Storage của trình duyệt.
+              </p>
+            </div>
+            <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
+              {isAdmin && (
+                <button
+                  type="button"
+                  onClick={() => setActiveView('settings')}
+                  className="px-2.5 py-1 rounded-lg bg-amber-200/70 hover:bg-amber-200 text-amber-950 font-semibold cursor-pointer text-[11px]"
+                >
+                  Cấu hình
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => setDismissedQuotaBanner(true)}
+                className="px-2 py-1 rounded-lg hover:bg-amber-100 text-amber-800 cursor-pointer text-[11px]"
+              >
+                Đã hiểu
+              </button>
+            </div>
+          </div>
+        )}
+
         <main className="w-full min-w-0">
           {activeView === 'dashboard' && (
             <Dashboard
@@ -152,6 +200,7 @@ const MainLayout: React.FC = () => {
               onOpenCreatePeriod={handleOpenCreatePeriod}
               onOpenReportDetail={handleOpenReportDetail}
               onOpenConsolidation={(isAdmin || isPrincipal) ? handleOpenConsolidation : undefined}
+              onOpenUnsubmittedUsers={handleOpenUnsubmitted}
               onNavigate={handleNavigate}
             />
           )}
@@ -174,12 +223,14 @@ const MainLayout: React.FC = () => {
             <PeriodManagement
               onOpenSubmit={(periodId) => handleOpenSubmit(periodId)}
               onOpenConsolidation={(isAdmin || isPrincipal) ? handleOpenConsolidation : undefined}
+              onOpenUnsubmittedUsers={handleOpenUnsubmitted}
             />
           )}
 
           {(activeView === 'departments' || activeView === 'progress') && (
             <DepartmentProgress
               onOpenDetail={handleOpenReportDetail}
+              onOpenUnsubmittedUsers={handleOpenUnsubmitted}
             />
           )}
 
@@ -235,6 +286,17 @@ const MainLayout: React.FC = () => {
           setConsolidationPeriodId(undefined);
         }}
         defaultPeriodId={consolidationPeriodId}
+      />
+
+      {/* Unsubmitted Users & Reminder Management Modal */}
+      <UnsubmittedUsersModal
+        isOpen={isUnsubmittedModalOpen}
+        onClose={() => {
+          setIsUnsubmittedModalOpen(false);
+          setUnsubmittedPeriodId(undefined);
+        }}
+        defaultPeriodId={unsubmittedPeriodId}
+        onOpenReportDetail={handleOpenReportDetail}
       />
 
       {/* Admin Logo Management Modal */}
