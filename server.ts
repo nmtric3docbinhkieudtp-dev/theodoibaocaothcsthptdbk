@@ -56,7 +56,11 @@ function readSubmissions(): any[] {
 
 function saveSubmissions(data: any[]) {
   try {
-    fs.writeFileSync(SUBMISSIONS_FILE, JSON.stringify(data, null, 2), 'utf-8');
+    const serialized = JSON.stringify(data, null, 2);
+    if (fs.existsSync(SUBMISSIONS_FILE) && fs.readFileSync(SUBMISSIONS_FILE, 'utf-8') === serialized) {
+      return;
+    }
+    fs.writeFileSync(SUBMISSIONS_FILE, serialized, 'utf-8');
   } catch (e) {
     console.error('Error saving submissions.json:', e);
   }
