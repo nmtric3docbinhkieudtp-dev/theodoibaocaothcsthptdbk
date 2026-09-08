@@ -56,7 +56,8 @@ export const ReportList: React.FC<ReportListProps> = ({
     clearAllReports,
     deduplicateSubmissions,
     waiveLateStatus,
-    waiveAllLateStatus
+    waiveAllLateStatus,
+    syncWithServer
   } = useReports();
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -65,6 +66,7 @@ export const ReportList: React.FC<ReportListProps> = ({
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [selectedCategory, setSelectedCategory] = useState<'all' | 'on_time' | 'late'>('all');
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
+  const [isRefreshing, setIsRefreshing] = useState(false);
   
   // Selection states for bulk actions
   const [selectedReportIds, setSelectedReportIds] = useState<string[]>([]);
@@ -244,6 +246,20 @@ export const ReportList: React.FC<ReportListProps> = ({
     }, 4500);
   };
 
+  const handleManualRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      if (syncWithServer) {
+        await syncWithServer();
+      }
+      showToast('Đã tải lại và đồng bộ danh sách báo cáo mới nhất từ hệ thống!');
+    } catch (e: any) {
+      showToast('Lỗi đồng bộ: ' + (e.message || 'Không thể đồng bộ'));
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
   const getStatusBadge = (status: SubmissionStatus) => {
     switch (status) {
       case 'draft':
@@ -287,6 +303,18 @@ export const ReportList: React.FC<ReportListProps> = ({
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
+          {/* Refresh / Sync button */}
+          <button
+            type="button"
+            onClick={handleManualRefresh}
+            disabled={isRefreshing}
+            className="px-3 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 font-bold text-xs flex items-center gap-1.5 transition cursor-pointer shadow-2xs"
+            title="Tải lại và đồng bộ dữ liệu báo cáo mới nhất từ hệ thống máy chủ và Firebase"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 text-emerald-600 ${isRefreshing ? 'animate-spin' : ''}`} />
+            <span>{isRefreshing ? 'Đang đồng bộ...' : 'Đồng Bộ / Làm Mới'}</span>
+          </button>
+
           {/* Admin Clean test reports button */}
           {(isAdmin || isPrincipal) && (
             <>

@@ -43,15 +43,18 @@ if (typeof window !== 'undefined') {
       messageStr.includes('quota limit exceeded') ||
       messageStr.includes('free daily write units') ||
       messageStr.includes('using maximum backoff delay') ||
-      messageStr.includes('overloading the backend') ||
-      messageStr.includes('internal assertion failed') ||
-      messageStr.includes('unexpected state')
+      messageStr.includes('overloading the backend')
     ) {
       markFirestoreWriteQuotaExceeded('Daily Firestore free write quota reached (20,000 writes/day). Local Storage handling active.');
       if (firestoreDb) {
         disableNetwork(firestoreDb).catch(() => {});
       }
       console.info('[Firestore Handled Quota/State] Notice detected. Gracefully preserved all data in Local Storage.');
+      return;
+    }
+    // Benign internal assertion warnings should be caught without disabling network
+    if (messageStr.includes('internal assertion failed') || messageStr.includes('unexpected state')) {
+      console.warn('[Firestore] Handled non-fatal assertion notice:', messageStr);
       return;
     }
     originalConsoleError.apply(console, args);
@@ -138,13 +141,15 @@ export async function safeFirestoreWrite<T>(
       errCode.includes('resource-exhausted') || 
       errMsg.includes('quota') || 
       errMsg.includes('resource_exhausted') ||
-      errMsg.includes('free daily write units') ||
-      errMsg.includes('internal assertion failed') ||
-      errMsg.includes('unexpected state')
+      errMsg.includes('free daily write units')
     ) {
       markFirestoreWriteQuotaExceeded(err?.message || 'Quota limit exceeded');
       console.info(`[Firestore Safe-Write] Quota reached during "${operationName}".`);
       return { success: false, error: err, quotaExceeded: true };
+    }
+    if (errMsg.includes('internal assertion failed') || errMsg.includes('unexpected state')) {
+      console.warn(`[Firestore Safe-Write] Non-fatal assertion during "${operationName}":`, err);
+      return { success: false, error: err };
     }
     console.warn(`[Firestore Safe-Write] Error during "${operationName}":`, err);
     return { success: false, error: err };

@@ -10,7 +10,7 @@ import {
   ReviewHistory,
   SubmissionStatus
 } from '../types';
-import { StorageService, setLocal, VALID_DEPT_IDS } from '../services/storage';
+import { StorageService, setLocal, VALID_DEPT_IDS, cleanFirestorePayload } from '../services/storage';
 import { 
   getStoredFirebaseConfig, 
   saveStoredFirebaseConfig, 
@@ -218,36 +218,64 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       // Realtime listener for Submissions
       try {
         unsubscribeSubs = onSnapshot(collection(db, 'submissions'), (snapshot) => {
-          if (!snapshot.empty) {
-            const rawList: ReportSubmission[] = snapshot.docs
-              .map(d => d.data() as ReportSubmission)
-              .filter(s => validStaffIds.has(s.authorId));
-            
-            // Enforce strictly 1 submission per teacher per period
-            const map = new Map<string, ReportSubmission>();
-            for (const s of rawList) {
-              const key = `${s.periodId || 'default'}_${s.authorId || s.authorEmail || s.authorName}`;
-              const existing = map.get(key);
-              if (!existing) {
+          const rawList: ReportSubmission[] = !snapshot.empty 
+            ? snapshot.docs
+                .map(d => d.data() as ReportSubmission)
+                .filter(s => validStaffIds.has(s.authorId))
+            : [];
+          
+          // Enforce strictly 1 submission per teacher per period
+          const map = new Map<string, ReportSubmission>();
+          for (const s of rawList) {
+            const key = `${s.periodId || 'default'}_${s.authorId || s.authorEmail || s.authorName}`;
+            const existing = map.get(key);
+            if (!existing) {
+              map.set(key, s);
+            } else {
+              if (existing.status === 'draft' && s.status !== 'draft') {
                 map.set(key, s);
-              } else {
-                if (existing.status === 'draft' && s.status !== 'draft') {
-                  map.set(key, s);
-                } else if (existing.status === s.status) {
-                  const t1 = new Date(existing.submittedAt || existing.updatedAt || 0).getTime();
-                  const t2 = new Date(s.submittedAt || s.updatedAt || 0).getTime();
-                  if (t2 > t1) map.set(key, s);
-                }
+              } else if (existing.status === s.status) {
+                const t1 = new Date(existing.submittedAt || existing.updatedAt || 0).getTime();
+                const t2 = new Date(s.submittedAt || s.updatedAt || 0).getTime();
+                if (t2 > t1) map.set(key, s);
               }
             }
-            const list = Array.from(map.values());
-            list.sort((a, b) => new Date(b.updatedAt || b.submittedAt || 0).getTime() - new Date(a.updatedAt || a.submittedAt || 0).getTime());
-            setSubmissions(list);
-            setLocal('dbk_submissions_data', list);
-          } else {
-            setSubmissions([]);
-            setLocal('dbk_submissions_data', []);
           }
+
+          // Merge local submissions that may have been created offline or during previous network hiccups
+          try {
+            const currentLocal = StorageService.getSubmissions();
+            currentLocal.forEach(localSub => {
+              if (!localSub || !localSub.id) return;
+              const key = `${localSub.periodId || 'default'}_${localSub.authorId || localSub.authorEmail || localSub.authorName}`;
+              const inFirestore = map.get(key);
+              if (!inFirestore) {
+                map.set(key, localSub);
+                // Push to Firestore and server API in background so it becomes universally visible
+                if (db && !isFirestoreWriteQuotaExceeded()) {
+                  safeFirestoreWrite('sync_missing_local_sub', () => setDoc(doc(db, 'submissions', localSub.id), cleanFirestorePayload(localSub)));
+                }
+                ApiService.saveSubmission(localSub).catch(() => {});
+              } else {
+                const tLocal = new Date(localSub.updatedAt || localSub.submittedAt || 0).getTime();
+                const tFs = new Date(inFirestore.updatedAt || inFirestore.submittedAt || 0).getTime();
+                if (tLocal > tFs) {
+                  map.set(key, localSub);
+                  if (db && !isFirestoreWriteQuotaExceeded()) {
+                    safeFirestoreWrite('sync_newer_local_sub', () => setDoc(doc(db, 'submissions', localSub.id), cleanFirestorePayload(localSub)));
+                  }
+                  ApiService.saveSubmission(localSub).catch(() => {});
+                }
+              }
+            });
+          } catch (mErr) {
+            console.warn('[ReportContext] Local merge note:', mErr);
+          }
+
+          const list = Array.from(map.values());
+          list.sort((a, b) => new Date(b.updatedAt || b.submittedAt || 0).getTime() - new Date(a.updatedAt || a.submittedAt || 0).getTime());
+          setSubmissions(list);
+          setLocal('dbk_submissions_data', list);
         }, (err) => console.warn('Submissions snapshot listener error:', err));
 
         // Realtime listener for Periods
