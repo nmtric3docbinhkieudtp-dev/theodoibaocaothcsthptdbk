@@ -81,6 +81,12 @@ export const ReportList: React.FC<ReportListProps> = ({
   const [isWaivingLate, setIsWaivingLate] = useState(false);
   const [showWaiveConfirm, setShowWaiveConfirm] = useState(false);
 
+  const normalizeSearchText = (value: unknown): string => String(value ?? '')
+    .trim()
+    .toLocaleLowerCase('vi-VN')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+
   // Detect duplicate submissions by author + period
   const duplicateStats = useMemo(() => {
     const authorPeriodMap = new Map<string, ReportSubmission[]>();
@@ -151,13 +157,18 @@ export const ReportList: React.FC<ReportListProps> = ({
   };
 
   const filteredSubmissions = useMemo(() => {
+    const normalizedSearch = normalizeSearchText(searchTerm);
     return submissions.filter((sub) => {
       // Search
-      const matchesSearch = 
-        sub.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        sub.authorName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        sub.departmentName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (sub.content && sub.content.toLowerCase().includes(searchTerm.toLowerCase()));
+      const searchableText = [
+        sub.title,
+        sub.authorName,
+        sub.authorEmail,
+        sub.authorId,
+        sub.departmentName,
+        sub.content
+      ].map(normalizeSearchText);
+      const matchesSearch = !normalizedSearch || searchableText.some(value => value.includes(normalizedSearch));
 
       if (!matchesSearch) return false;
 
