@@ -9,10 +9,31 @@ import appletConfig from './firebase-applet-config.json' with { type: 'json' };
 const DATA_DIR = path.join(process.cwd(), 'data');
 const SUBMISSIONS_FILE = path.join(DATA_DIR, 'submissions.json');
 const PERIODS_FILE = path.join(DATA_DIR, 'periods.json');
+const DELETED_FILE = path.join(DATA_DIR, 'deleted_submissions.json');
 
 // Ensure data directory exists
 if (!fs.existsSync(DATA_DIR)) {
   fs.mkdirSync(DATA_DIR, { recursive: true });
+}
+
+function readDeletedIds(): Set<string> {
+  try {
+    if (fs.existsSync(DELETED_FILE)) {
+      const arr = JSON.parse(fs.readFileSync(DELETED_FILE, 'utf-8'));
+      return new Set(arr);
+    }
+  } catch (e) {
+    console.warn('Error reading deleted_submissions.json:', e);
+  }
+  return new Set();
+}
+
+function saveDeletedIds(set: Set<string>) {
+  try {
+    fs.writeFileSync(DELETED_FILE, JSON.stringify(Array.from(set)), 'utf-8');
+  } catch (e) {
+    console.error('Error saving deleted_submissions.json:', e);
+  }
 }
 
 // In-memory data store with file backing
@@ -121,15 +142,20 @@ async function startServer() {
   app.post('/api/submissions/batch-sync', (req, res) => {
     const clientSubs: any[] = req.body?.submissions || [];
     const serverSubs = readSubmissions();
+    const deletedIds = readDeletedIds();
     const subMap = new Map<string, any>();
 
-    // Load server items first
-    serverSubs.forEach(s => subMap.set(s.id, s));
+    // Load server items first (skipping deleted ones)
+    serverSubs.forEach(s => {
+      if (!deletedIds.has(s.id)) {
+        subMap.set(s.id, s);
+      }
+    });
 
-    // Merge or add client items
+    // Merge or add client items (ignore deleted)
     let newItemsCount = 0;
     clientSubs.forEach(cs => {
-      if (!cs || !cs.id) return;
+      if (!cs || !cs.id || deletedIds.has(cs.id)) return;
       if (!subMap.has(cs.id)) {
         subMap.set(cs.id, cs);
         newItemsCount++;
@@ -160,6 +186,10 @@ async function startServer() {
   // Delete submission
   app.delete('/api/submissions/:id', (req, res) => {
     const { id } = req.params;
+    const deletedIds = readDeletedIds();
+    deletedIds.add(id);
+    saveDeletedIds(deletedIds);
+
     const list = readSubmissions().filter(s => s.id !== id);
     saveSubmissions(list);
 
@@ -178,7 +208,78 @@ async function startServer() {
       }
     } catch {}
 
-    res.json({ success: true, id });
+    res.json({ success: true, id, remainingCount: list.length });
+  });
+
+  // Batch delete submissions
+  app.post('/api/submissions/batch-delete', (req, res) => {
+    const ids: string[] = req.body?.ids || [];
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return res.json({ success: true, count: 0 });
+    }
+
+    const deletedIds = readDeletedIds();
+    ids.forEach(id => deletedIds.add(id));
+    saveDeletedIds(deletedIds);
+
+    const set = new Set(ids);
+    const list = readSubmissions().filter(s => !set.has(s.id));
+    saveSubmissions(list);
+
+    res.json({ success: true, deletedCount: ids.length, remainingCount: list.length });
+  });
+
+  // Deduplicate submissions (auto-clean duplicate submissions for same user in same period)
+  app.post('/api/submissions/deduplicate', (req, res) => {
+    const list = readSubmissions();
+    const deletedIds = readDeletedIds();
+    
+    // Group submissions by periodId + authorId
+    const groups = new Map<string, any[]>();
+    for (const sub of list) {
+      const key = `${sub.periodId || 'default'}_${sub.authorId || sub.authorEmail || sub.authorName}`;
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key)!.push(sub);
+    }
+
+    const cleaned: any[] = [];
+    let removedCount = 0;
+
+    for (const [, subs] of groups.entries()) {
+      if (subs.length === 1) {
+        cleaned.push(subs[0]);
+      } else {
+        // Sort: prefer status === 'submitted' > 'principal_approved' > latest submittedAt / updatedAt
+        subs.sort((a, b) => {
+          // If one is draft and one is submitted, pick submitted
+          if (a.status !== 'draft' && b.status === 'draft') return -1;
+          if (a.status === 'draft' && b.status !== 'draft') return 1;
+
+          const timeA = new Date(a.submittedAt || a.updatedAt || 0).getTime();
+          const timeB = new Date(b.submittedAt || b.updatedAt || 0).getTime();
+          return timeB - timeA;
+        });
+
+        // Keep the first (best/latest)
+        cleaned.push(subs[0]);
+
+        // Mark the remaining older duplicates as deleted
+        for (let i = 1; i < subs.length; i++) {
+          deletedIds.add(subs[i].id);
+          removedCount++;
+        }
+      }
+    }
+
+    saveDeletedIds(deletedIds);
+    saveSubmissions(cleaned);
+
+    res.json({
+      success: true,
+      removedCount,
+      totalRemaining: cleaned.length,
+      submissions: cleaned
+    });
   });
 
   // Get periods

@@ -53,7 +53,8 @@ export const ReportList: React.FC<ReportListProps> = ({
     deleteReport, 
     bulkDeleteReports, 
     clearTestReports,
-    clearAllReports
+    clearAllReports,
+    deduplicateSubmissions
   } = useReports();
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -72,6 +73,41 @@ export const ReportList: React.FC<ReportListProps> = ({
   const [reportToDelete, setReportToDelete] = useState<ReportSubmission | null>(null);
   const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
   const [showClearAllConfirm, setShowClearAllConfirm] = useState(false);
+  const [isDeduplicating, setIsDeduplicating] = useState(false);
+
+  // Detect duplicate submissions by author + period
+  const duplicateStats = useMemo(() => {
+    const authorPeriodMap = new Map<string, ReportSubmission[]>();
+    submissions.forEach(s => {
+      const key = `${s.periodId || 'default'}_${s.authorId || s.authorEmail || s.authorName}`;
+      if (!authorPeriodMap.has(key)) authorPeriodMap.set(key, []);
+      authorPeriodMap.get(key)!.push(s);
+    });
+
+    let dupCount = 0;
+    const duplicatedTeachers: string[] = [];
+    authorPeriodMap.forEach((list) => {
+      if (list.length > 1) {
+        dupCount += (list.length - 1);
+        duplicatedTeachers.push(list[0].authorName);
+      }
+    });
+
+    return { dupCount, duplicatedTeachers };
+  }, [submissions]);
+
+  const handleDeduplicate = async () => {
+    setIsDeduplicating(true);
+    try {
+      const res = await deduplicateSubmissions();
+      setActionMessage(`Đã dọn dẹp thành công ${res.removedCount} bản nộp trùng lặp, giữ lại bản nộp chính thức mới nhất cho mỗi giáo viên.`);
+      setTimeout(() => setActionMessage(null), 5000);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsDeduplicating(false);
+    }
+  };
 
   const filteredSubmissions = useMemo(() => {
     return submissions.filter((sub) => {
@@ -298,6 +334,42 @@ export const ReportList: React.FC<ReportListProps> = ({
               <span>Xóa {selectedReportIds.length} Báo Cáo Đã Chọn</span>
             </button>
           </div>
+        </div>
+      )}
+
+      {/* Action Message */}
+      {actionMessage && (
+        <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-xs font-semibold flex items-center gap-2">
+          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+          <span>{actionMessage}</span>
+        </div>
+      )}
+
+      {/* Duplicate Submissions Notice & Quick Clean */}
+      {(isAdmin || isPrincipal) && duplicateStats.dupCount > 0 && (
+        <div className="bg-amber-50 border border-amber-300 p-3.5 rounded-2xl flex flex-wrap items-center justify-between gap-3 shadow-2xs">
+          <div className="flex items-center gap-2.5">
+            <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0" />
+            <div>
+              <p className="text-xs font-bold text-amber-950">
+                Phát hiện {duplicateStats.dupCount} bản nộp trùng lặp từ {duplicateStats.duplicatedTeachers.length} Thầy/Cô (do cùng một người bấm nộp nhiều lần)
+              </p>
+              <p className="text-[11px] text-amber-800 mt-0.5">
+                Các Thầy/Cô: {duplicateStats.duplicatedTeachers.slice(0, 4).join(', ')}{duplicateStats.duplicatedTeachers.length > 4 ? ` và ${duplicateStats.duplicatedTeachers.length - 4} người khác` : ''}.
+              </p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleDeduplicate}
+            disabled={isDeduplicating}
+            className="px-3.5 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs flex items-center gap-1.5 transition cursor-pointer shadow-xs active:scale-98"
+            title="Tự động giữ lại 1 bản nộp mới nhất của mỗi Thầy/Cô và xóa bỏ các bản trùng lặp"
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>{isDeduplicating ? 'Đang dọn dẹp...' : `Dọn Dẹp Bản Trùng (Giữ Bản Mới Nhất)`}</span>
+          </button>
         </div>
       )}
 

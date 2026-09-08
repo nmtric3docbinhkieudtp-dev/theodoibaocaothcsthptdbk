@@ -54,6 +54,34 @@ export const ApiService = {
     }
   },
 
+  async batchDeleteSubmissions(ids: string[]): Promise<boolean> {
+    try {
+      const res = await fetch('/api/submissions/batch-delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids })
+      });
+      return res.ok;
+    } catch (e) {
+      console.warn('[ApiService] Failed to batch delete submissions:', e);
+      return false;
+    }
+  },
+
+  async deduplicateSubmissions(): Promise<{ removedCount: number; submissions: ReportSubmission[] } | null> {
+    try {
+      const res = await fetch('/api/submissions/deduplicate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      if (!res.ok) return null;
+      return await res.json();
+    } catch (e) {
+      console.warn('[ApiService] Failed to deduplicate submissions:', e);
+      return null;
+    }
+  },
+
   async fetchPeriods(): Promise<ReportPeriod[] | null> {
     try {
       const res = await fetch('/api/periods');

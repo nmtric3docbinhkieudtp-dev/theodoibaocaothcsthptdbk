@@ -69,6 +69,7 @@ interface ReportContextType {
 
   confirmSubmissionForTeacher: (teacher: User, period: ReportPeriod, note?: string) => Promise<ReportSubmission>;
   syncWithServer: () => Promise<void>;
+  deduplicateSubmissions: () => Promise<{ removedCount: number }>;
 
   // Actions for Periods (Campaigns)
   createPeriod: (periodData: Omit<ReportPeriod, 'id' | 'createdAt'>) => ReportPeriod;
@@ -548,6 +549,11 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     const updated = StorageService.deleteSubmission(id);
     setSubmissions(updated);
     setLocal('dbk_submissions_data', updated);
+    try {
+      await ApiService.deleteSubmission(id);
+    } catch (e) {
+      console.warn('ApiService delete error:', e);
+    }
   };
 
   const bulkDeleteReports = async (ids: string[]) => {
@@ -557,6 +563,25 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
     setSubmissions(current);
     setLocal('dbk_submissions_data', current);
+    try {
+      await ApiService.batchDeleteSubmissions(ids);
+    } catch (e) {
+      console.warn('ApiService batch delete error:', e);
+    }
+  };
+
+  const deduplicateSubmissions = async (): Promise<{ removedCount: number }> => {
+    try {
+      const res = await ApiService.deduplicateSubmissions();
+      if (res && res.submissions) {
+        setSubmissions(res.submissions);
+        setLocal('dbk_submissions_data', res.submissions);
+        return { removedCount: res.removedCount };
+      }
+    } catch (e) {
+      console.warn('Deduplication error:', e);
+    }
+    return { removedCount: 0 };
   };
 
   const clearAllReports = async (): Promise<{ count: number }> => {
@@ -801,6 +826,7 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         reviewReport,
         confirmSubmissionForTeacher,
         syncWithServer,
+        deduplicateSubmissions,
         createPeriod,
         updatePeriod,
         deletePeriod,

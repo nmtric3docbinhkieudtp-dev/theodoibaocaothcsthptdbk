@@ -1,5 +1,366 @@
 [
   {
+    "content": "BÁO CÁO THEO BIỂU MẪU ĐIỆN TỬ:\n- Số học sinh chưa ra lớp đến thời điểm ngày 07/9/2026: 0\n- Họ và tên lớp trưởng: Bùi Thị Ngọc Nhiên \n\nDANH SÁCH HỌC SINH CHƯA RA LỚP (THEO BẢNG THỐNG KÊ):\nHàng 1: TT: 1 | Họ và tên học sinh: - | Lớp năm học trước: - | Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng): - | Số điện thoại học sinh (nếu có): - | Số điện thoại phụ huynh (nếu có): - | Lý do chưa ra lớp (nếu biết): -\nHàng 2: TT: 2 | Họ và tên học sinh: - | Lớp năm học trước: - | Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng): - | Số điện thoại học sinh (nếu có): - | Số điện thoại phụ huynh (nếu có): - | Lý do chưa ra lớp (nếu biết): -\nHàng 3: TT: 3 | Họ và tên học sinh: - | Lớp năm học trước: - | Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng): - | Số điện thoại học sinh (nếu có): - | Số điện thoại phụ huynh (nếu có): - | Lý do chưa ra lớp (nếu biết): -\nHàng 4: TT: 4 | Họ và tên học sinh: - | Lớp năm học trước: - | Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng): - | Số điện thoại học sinh (nếu có): - | Số điện thoại phụ huynh (nếu có): - | Lý do chưa ra lớp (nếu biết): -\nHàng 5: TT: 5 | Họ và tên học sinh: - | Lớp năm học trước: - | Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng): - | Số điện thoại học sinh (nếu có): - | Số điện thoại phụ huynh (nếu có): - | Lý do chưa ra lớp (nếu biết): -\n\nTHÔNG TIN HỌC SINH CÓ THÀNH TÍCH VỀ HỘI THI, PHONG TRÀO:\nHàng 1: TT: 1 | Cuộc thi: Văn nghệ vòng tỉnh, vòng xã | Đạt giải: - | Họ tên học sinh đạt giải: -\nHàng 2: TT: 2 | Cuộc thi: Hội khỏe phù đổng | Đạt giải: - | Họ tên học sinh đạt giải: -\nHàng 3: TT: 3 | Cuộc thi: Giải thể thao học sinh tỉnh Đồng Tháp | Đạt giải: - | Họ tên học sinh đạt giải: -\nHàng 4: TT: 4 | Cuộc thi: Sáng tạo thanh thiếu niên nhi đồng | Đạt giải: - | Họ tên học sinh đạt giải: -\nHàng 5: TT: 5 | Cuộc thi: Khoa học kỹ thuật | Đạt giải: - | Họ tên học sinh đạt giải: -\nHàng 6: TT: 6 | Cuộc thi: Vẽ tranh | Đạt giải: - | Họ tên học sinh đạt giải: -\nHàng 7: TT: 7 | Cuộc thi: Phong trào khác: | Đạt giải: - | Họ tên học sinh đạt giải: -\nHàng 8: TT: 8 | Cuộc thi: Thành tích khác: | Đạt giải: - | Họ tên học sinh đạt giải: -\n\nĐÁNH GIÁ & KIẾN NGHỊ:\n(Không có)",
+    "version": 1,
+    "reviewHistory": [],
+    "isLate": true,
+    "homeroomStudentCount": 44,
+    "id": "sub-1788836677648-qvw8",
+    "lateDurationMinutes": 64,
+    "authorRole": "teacher",
+    "departmentId": "ngu_van_tv_tb",
+    "authorId": "staff-38",
+    "periodId": "period-1788535581418",
+    "structuredData": {
+      "customFields": [
+        {
+          "type": "number",
+          "label": "Số học sinh chưa ra lớp đến thời điểm ngày 07/9/2026",
+          "id": "fld-1788535567817-w89u",
+          "placeholder": "Nhập số học sinh chưa ra lớp đến thời điểm ngày 07/9/2026...",
+          "required": false
+        },
+        {
+          "type": "text",
+          "id": "fld-1788535567817-afs9",
+          "label": "Họ và tên lớp trưởng",
+          "required": false,
+          "placeholder": "Giá trị mặc định: 2"
+        }
+      ],
+      "customFieldValues": {
+        "fld-1788535567817-w89u": "0",
+        "fld-1788535567817-afs9": "Bùi Thị Ngọc Nhiên "
+      },
+      "customTables": [
+        {
+          "rows": [
+            {
+              "TT": "1",
+              "Số điện thoại học sinh (nếu có)": "",
+              "Họ và tên học sinh": "",
+              "Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng)": "",
+              "Lớp năm học trước": "",
+              "Số điện thoại phụ huynh (nếu có)": "",
+              "Lý do chưa ra lớp (nếu biết)": ""
+            },
+            {
+              "Số điện thoại học sinh (nếu có)": "",
+              "Lớp năm học trước": "",
+              "Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng)": "",
+              "TT": "2",
+              "Số điện thoại phụ huynh (nếu có)": "",
+              "Họ và tên học sinh": "",
+              "Lý do chưa ra lớp (nếu biết)": ""
+            },
+            {
+              "Lớp năm học trước": "",
+              "Số điện thoại phụ huynh (nếu có)": "",
+              "Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng)": "",
+              "Lý do chưa ra lớp (nếu biết)": "",
+              "TT": "3",
+              "Số điện thoại học sinh (nếu có)": "",
+              "Họ và tên học sinh": ""
+            },
+            {
+              "TT": "4",
+              "Số điện thoại phụ huynh (nếu có)": "",
+              "Họ và tên học sinh": "",
+              "Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng)": "",
+              "Số điện thoại học sinh (nếu có)": "",
+              "Lý do chưa ra lớp (nếu biết)": "",
+              "Lớp năm học trước": ""
+            },
+            {
+              "Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng)": "",
+              "TT": "5",
+              "Số điện thoại phụ huynh (nếu có)": "",
+              "Số điện thoại học sinh (nếu có)": "",
+              "Lý do chưa ra lớp (nếu biết)": "",
+              "Họ và tên học sinh": "",
+              "Lớp năm học trước": ""
+            }
+          ],
+          "id": "tbl-1788535567817-egt2",
+          "title": "Danh sách học sinh chưa ra lớp (theo bảng thống kê)",
+          "headers": [
+            "TT",
+            "Họ và tên học sinh",
+            "Lớp năm học trước",
+            "Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng)",
+            "Số điện thoại học sinh (nếu có)",
+            "Số điện thoại phụ huynh (nếu có)",
+            "Lý do chưa ra lớp (nếu biết)"
+          ]
+        },
+        {
+          "rows": [
+            {
+              "TT": "1",
+              "Đạt giải": "",
+              "Cuộc thi": "Văn nghệ vòng tỉnh, vòng xã",
+              "Họ tên học sinh đạt giải": ""
+            },
+            {
+              "TT": "2",
+              "Họ tên học sinh đạt giải": "",
+              "Đạt giải": "",
+              "Cuộc thi": "Hội khỏe phù đổng"
+            },
+            {
+              "Đạt giải": "",
+              "TT": "3",
+              "Cuộc thi": "Giải thể thao học sinh tỉnh Đồng Tháp",
+              "Họ tên học sinh đạt giải": ""
+            },
+            {
+              "Đạt giải": "",
+              "TT": "4",
+              "Cuộc thi": "Sáng tạo thanh thiếu niên nhi đồng",
+              "Họ tên học sinh đạt giải": ""
+            },
+            {
+              "Đạt giải": "",
+              "Họ tên học sinh đạt giải": "",
+              "TT": "5",
+              "Cuộc thi": "Khoa học kỹ thuật"
+            },
+            {
+              "Cuộc thi": "Vẽ tranh",
+              "Đạt giải": "",
+              "TT": "6",
+              "Họ tên học sinh đạt giải": ""
+            },
+            {
+              "Cuộc thi": "Phong trào khác:",
+              "Đạt giải": "",
+              "Họ tên học sinh đạt giải": "",
+              "TT": "7"
+            },
+            {
+              "Đạt giải": "",
+              "Cuộc thi": "Thành tích khác:",
+              "Họ tên học sinh đạt giải": "",
+              "TT": "8"
+            }
+          ],
+          "id": "tbl-1788535567817-fpw0",
+          "headers": [
+            "TT",
+            "Cuộc thi",
+            "Đạt giải",
+            "Họ tên học sinh đạt giải"
+          ],
+          "title": "Thông tin học sinh có thành tích về hội thi, phong trào"
+        }
+      ]
+    },
+    "status": "submitted",
+    "homeroomCampus": "THPT",
+    "isHomeroomReport": true,
+    "title": "Báo cáo kết quả tập trung học sinh đầu năm học 2026-2027 - Lớp 10CB3 - Lê Thị Mỹ Ny",
+    "homeroomClass": "10CB3",
+    "attachments": [],
+    "authorName": "Lê Thị Mỹ Ny",
+    "lateExplanation": "Do lỗi kỹ thuật ",
+    "authorRoleTitle": "Giáo viên Ngữ văn",
+    "updatedAt": "2026-09-08T03:04:37.648Z",
+    "departmentName": "Tổ Ngữ văn - Thư viện - Thiết bị",
+    "authorEmail": "ltmny.38.c3docbinhkieu.dtp@moet.edu.vn",
+    "periodTitle": "Báo cáo kết quả tập trung học sinh đầu năm học 2026-2027",
+    "submittedAt": "2026-09-08T03:04:37.648Z"
+  },
+  {
+    "isHomeroomReport": true,
+    "isLate": false,
+    "attachments": [],
+    "departmentId": "khtn_cn",
+    "homeroomCampus": "THPT",
+    "authorRole": "teacher",
+    "id": "sub-1788706816548-49d4",
+    "submittedAt": "2026-09-06T15:00:16.548Z",
+    "periodTitle": "Báo cáo kết quả tập trung học sinh đầu năm học 2026-2027",
+    "authorEmail": "ptntho.73.c3docbinhkieu.dtp@moet.edu.vn",
+    "structuredData": {
+      "customFieldValues": {
+        "fld-1788535567817-afs9": "Nguyễn Tiến Vinh",
+        "fld-1788535567817-w89u": "0"
+      },
+      "customFields": [
+        {
+          "required": false,
+          "id": "fld-1788535567817-w89u",
+          "label": "Số học sinh chưa ra lớp đến thời điểm ngày 07/9/2026",
+          "type": "number",
+          "placeholder": "Nhập số học sinh chưa ra lớp đến thời điểm ngày 07/9/2026..."
+        },
+        {
+          "placeholder": "Giá trị mặc định: 2",
+          "label": "Họ và tên lớp trưởng",
+          "id": "fld-1788535567817-afs9",
+          "type": "text",
+          "required": false
+        }
+      ],
+      "customTables": [
+        {
+          "headers": [
+            "TT",
+            "Họ và tên học sinh",
+            "Lớp năm học trước",
+            "Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng)",
+            "Số điện thoại học sinh (nếu có)",
+            "Số điện thoại phụ huynh (nếu có)",
+            "Lý do chưa ra lớp (nếu biết)"
+          ],
+          "title": "Danh sách học sinh chưa ra lớp (theo bảng thống kê)",
+          "id": "tbl-1788535567817-egt2",
+          "rows": [
+            {
+              "Họ và tên học sinh": "",
+              "Lớp năm học trước": "",
+              "Lý do chưa ra lớp (nếu biết)": "",
+              "Số điện thoại học sinh (nếu có)": "",
+              "Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng)": "",
+              "Số điện thoại phụ huynh (nếu có)": "",
+              "TT": "1"
+            },
+            {
+              "Số điện thoại học sinh (nếu có)": "",
+              "Họ và tên học sinh": "",
+              "Lớp năm học trước": "",
+              "TT": "2",
+              "Số điện thoại phụ huynh (nếu có)": "",
+              "Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng)": "",
+              "Lý do chưa ra lớp (nếu biết)": ""
+            },
+            {
+              "Số điện thoại học sinh (nếu có)": "",
+              "Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng)": "",
+              "Lý do chưa ra lớp (nếu biết)": "",
+              "TT": "3",
+              "Số điện thoại phụ huynh (nếu có)": "",
+              "Lớp năm học trước": "",
+              "Họ và tên học sinh": ""
+            },
+            {
+              "Lý do chưa ra lớp (nếu biết)": "",
+              "Số điện thoại phụ huynh (nếu có)": "",
+              "Số điện thoại học sinh (nếu có)": "",
+              "Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng)": "",
+              "Họ và tên học sinh": "",
+              "TT": "4",
+              "Lớp năm học trước": ""
+            },
+            {
+              "Lớp năm học trước": "",
+              "Lý do chưa ra lớp (nếu biết)": "",
+              "Số điện thoại học sinh (nếu có)": "",
+              "Họ và tên học sinh": "",
+              "Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng)": "",
+              "TT": "5",
+              "Số điện thoại phụ huynh (nếu có)": ""
+            }
+          ]
+        },
+        {
+          "rows": [
+            {
+              "TT": "1",
+              "Cuộc thi": "Văn nghệ vòng tỉnh, vòng xã",
+              "Đạt giải": "",
+              "Họ tên học sinh đạt giải": ""
+            },
+            {
+              "Đạt giải": "",
+              "TT": "2",
+              "Cuộc thi": "Hội khỏe phù đổng",
+              "Họ tên học sinh đạt giải": ""
+            },
+            {
+              "Đạt giải": "",
+              "Họ tên học sinh đạt giải": "",
+              "Cuộc thi": "Giải thể thao học sinh tỉnh Đồng Tháp",
+              "TT": "3"
+            },
+            {
+              "TT": "4",
+              "Đạt giải": "I",
+              "Cuộc thi": "Sáng tạo thanh thiếu niên nhi đồng",
+              "Họ tên học sinh đạt giải": "Đoàn Thanh Điền"
+            },
+            {
+              "TT": "5",
+              "Đạt giải": "KK",
+              "Cuộc thi": "Khoa học kỹ thuật",
+              "Họ tên học sinh đạt giải": "Đoàn Thanh Điền, Nguyễn Tiến Vinh"
+            },
+            {
+              "Cuộc thi": "Vẽ tranh",
+              "Đạt giải": "",
+              "Họ tên học sinh đạt giải": "",
+              "TT": "6"
+            },
+            {
+              "Đạt giải": "",
+              "Họ tên học sinh đạt giải": "",
+              "Cuộc thi": "Phong trào khác:",
+              "TT": "7"
+            },
+            {
+              "Đạt giải": "",
+              "Cuộc thi": "Thành tích khác:",
+              "Họ tên học sinh đạt giải": "",
+              "TT": "8"
+            }
+          ],
+          "title": "Thông tin học sinh có thành tích về hội thi, phong trào",
+          "headers": [
+            "TT",
+            "Cuộc thi",
+            "Đạt giải",
+            "Họ tên học sinh đạt giải"
+          ],
+          "id": "tbl-1788535567817-fpw0"
+        }
+      ]
+    },
+    "authorRoleTitle": "Giáo viên Hóa",
+    "version": 1,
+    "content": "BÁO CÁO THEO BIỂU MẪU ĐIỆN TỬ:\n- Số học sinh chưa ra lớp đến thời điểm ngày 07/9/2026: 0\n- Họ và tên lớp trưởng: Nguyễn Tiến Vinh\n\nDANH SÁCH HỌC SINH CHƯA RA LỚP (THEO BẢNG THỐNG KÊ):\nHàng 1: TT: 1 | Họ và tên học sinh: - | Lớp năm học trước: - | Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng): - | Số điện thoại học sinh (nếu có): - | Số điện thoại phụ huynh (nếu có): - | Lý do chưa ra lớp (nếu biết): -\nHàng 2: TT: 2 | Họ và tên học sinh: - | Lớp năm học trước: - | Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng): - | Số điện thoại học sinh (nếu có): - | Số điện thoại phụ huynh (nếu có): - | Lý do chưa ra lớp (nếu biết): -\nHàng 3: TT: 3 | Họ và tên học sinh: - | Lớp năm học trước: - | Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng): - | Số điện thoại học sinh (nếu có): - | Số điện thoại phụ huynh (nếu có): - | Lý do chưa ra lớp (nếu biết): -\nHàng 4: TT: 4 | Họ và tên học sinh: - | Lớp năm học trước: - | Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng): - | Số điện thoại học sinh (nếu có): - | Số điện thoại phụ huynh (nếu có): - | Lý do chưa ra lớp (nếu biết): -\nHàng 5: TT: 5 | Họ và tên học sinh: - | Lớp năm học trước: - | Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng): - | Số điện thoại học sinh (nếu có): - | Số điện thoại phụ huynh (nếu có): - | Lý do chưa ra lớp (nếu biết): -\n\nTHÔNG TIN HỌC SINH CÓ THÀNH TÍCH VỀ HỘI THI, PHONG TRÀO:\nHàng 1: TT: 1 | Cuộc thi: Văn nghệ vòng tỉnh, vòng xã | Đạt giải: - | Họ tên học sinh đạt giải: -\nHàng 2: TT: 2 | Cuộc thi: Hội khỏe phù đổng | Đạt giải: - | Họ tên học sinh đạt giải: -\nHàng 3: TT: 3 | Cuộc thi: Giải thể thao học sinh tỉnh Đồng Tháp | Đạt giải: - | Họ tên học sinh đạt giải: -\nHàng 4: TT: 4 | Cuộc thi: Sáng tạo thanh thiếu niên nhi đồng | Đạt giải: I | Họ tên học sinh đạt giải: Đoàn Thanh Điền\nHàng 5: TT: 5 | Cuộc thi: Khoa học kỹ thuật | Đạt giải: KK | Họ tên học sinh đạt giải: Đoàn Thanh Điền, Nguyễn Tiến Vinh\nHàng 6: TT: 6 | Cuộc thi: Vẽ tranh | Đạt giải: - | Họ tên học sinh đạt giải: -\nHàng 7: TT: 7 | Cuộc thi: Phong trào khác: | Đạt giải: - | Họ tên học sinh đạt giải: -\nHàng 8: TT: 8 | Cuộc thi: Thành tích khác: | Đạt giải: - | Họ tên học sinh đạt giải: -\n\nĐÁNH GIÁ & KIẾN NGHỊ:\n(Không có)",
+    "status": "dept_approved",
+    "reviewHistory": [
+      {
+        "timestamp": "2026-09-08T02:55:08.268Z",
+        "action": "approved",
+        "comment": "Tổ trưởng đã kiểm tra nội dung và thống nhất chuyển Ban Giám Hiệu.",
+        "id": "rev-1788836108268",
+        "reviewerRoleTitle": "Tổ trưởng (Sinh học)",
+        "reviewerRole": "dept_head",
+        "reviewedBy": "staff-67",
+        "reviewerName": "Bùi Kim Huỳnh"
+      }
+    ],
+    "authorName": "Phan Thị Ngọc Thơ",
+    "homeroomStudentCount": 28,
+    "title": "Báo cáo kết quả tập trung học sinh đầu năm học 2026-2027 - Lớp 12CB1 - Phan Thị Ngọc Thơ",
+    "authorId": "staff-73",
+    "periodId": "period-1788535581418",
+    "deptHeadReview": {
+      "action": "approved",
+      "id": "rev-1788836108268",
+      "reviewedBy": "staff-67",
+      "reviewerRoleTitle": "Tổ trưởng (Sinh học)",
+      "comment": "Tổ trưởng đã kiểm tra nội dung và thống nhất chuyển Ban Giám Hiệu.",
+      "timestamp": "2026-09-08T02:55:08.268Z",
+      "reviewerRole": "dept_head",
+      "reviewerName": "Bùi Kim Huỳnh"
+    },
+    "homeroomClass": "12CB1",
+    "departmentName": "Tổ Vật lý - Hóa học - Sinh học - CN",
+    "updatedAt": "2026-09-08T02:55:08.268Z"
+  },
+  {
     "homeroomStudentCount": 39,
     "isHomeroomReport": true,
     "id": "sub-1788792011472-i5d7",
@@ -359,175 +720,6 @@
     "title": "Báo cáo kết quả tập trung học sinh đầu năm học 2026-2027 - Lớp 6A2 - Nguyễn Thị Thắm"
   },
   {
-    "isHomeroomReport": true,
-    "authorEmail": "nttham.79.c3docbinhkieu.dtp@moet.edu.vn",
-    "updatedAt": "2026-09-08T01:14:25.500Z",
-    "homeroomCampus": "DBK",
-    "attachments": [],
-    "reviewHistory": [],
-    "homeroomClass": "6A2",
-    "submittedAt": "2026-09-08T01:14:25.500Z",
-    "title": "Báo cáo kết quả tập trung học sinh đầu năm học 2026-2027 - Lớp 6A2 - Nguyễn Thị Thắm",
-    "homeroomStudentCount": 41,
-    "periodTitle": "Báo cáo kết quả tập trung học sinh đầu năm học 2026-2027",
-    "version": 1,
-    "structuredData": {
-      "customTables": [
-        {
-          "id": "tbl-1788535567817-egt2",
-          "title": "Danh sách học sinh chưa ra lớp (theo bảng thống kê)",
-          "headers": [
-            "TT",
-            "Họ và tên học sinh",
-            "Lớp năm học trước",
-            "Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng)",
-            "Số điện thoại học sinh (nếu có)",
-            "Số điện thoại phụ huynh (nếu có)",
-            "Lý do chưa ra lớp (nếu biết)"
-          ],
-          "rows": [
-            {
-              "TT": "1",
-              "Số điện thoại phụ huynh (nếu có)": "",
-              "Số điện thoại học sinh (nếu có)": "",
-              "Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng)": "",
-              "Họ và tên học sinh": "",
-              "Lý do chưa ra lớp (nếu biết)": "",
-              "Lớp năm học trước": ""
-            },
-            {
-              "Họ và tên học sinh": "",
-              "TT": "2",
-              "Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng)": "",
-              "Số điện thoại phụ huynh (nếu có)": "",
-              "Lý do chưa ra lớp (nếu biết)": "",
-              "Lớp năm học trước": "",
-              "Số điện thoại học sinh (nếu có)": ""
-            },
-            {
-              "Lý do chưa ra lớp (nếu biết)": "",
-              "Lớp năm học trước": "",
-              "Họ và tên học sinh": "",
-              "Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng)": "",
-              "Số điện thoại học sinh (nếu có)": "",
-              "TT": "3",
-              "Số điện thoại phụ huynh (nếu có)": ""
-            },
-            {
-              "Họ và tên học sinh": "",
-              "Số điện thoại phụ huynh (nếu có)": "",
-              "TT": "4",
-              "Lớp năm học trước": "",
-              "Lý do chưa ra lớp (nếu biết)": "",
-              "Số điện thoại học sinh (nếu có)": "",
-              "Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng)": ""
-            },
-            {
-              "TT": "5",
-              "Lớp năm học trước": "",
-              "Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng)": "",
-              "Số điện thoại học sinh (nếu có)": "",
-              "Lý do chưa ra lớp (nếu biết)": "",
-              "Họ và tên học sinh": "",
-              "Số điện thoại phụ huynh (nếu có)": ""
-            }
-          ]
-        },
-        {
-          "title": "Thông tin học sinh có thành tích về hội thi, phong trào",
-          "id": "tbl-1788535567817-fpw0",
-          "rows": [
-            {
-              "TT": "1",
-              "Đạt giải": "",
-              "Cuộc thi": "Văn nghệ vòng tỉnh, vòng xã",
-              "Họ tên học sinh đạt giải": ""
-            },
-            {
-              "Họ tên học sinh đạt giải": "",
-              "Đạt giải": "",
-              "TT": "2",
-              "Cuộc thi": "Hội khỏe phù đổng"
-            },
-            {
-              "Cuộc thi": "Giải thể thao học sinh tỉnh Đồng Tháp",
-              "TT": "3",
-              "Họ tên học sinh đạt giải": "",
-              "Đạt giải": ""
-            },
-            {
-              "Cuộc thi": "Sáng tạo thanh thiếu niên nhi đồng",
-              "TT": "4",
-              "Họ tên học sinh đạt giải": "",
-              "Đạt giải": ""
-            },
-            {
-              "TT": "5",
-              "Đạt giải": "",
-              "Cuộc thi": "Khoa học kỹ thuật",
-              "Họ tên học sinh đạt giải": ""
-            },
-            {
-              "Đạt giải": "",
-              "Cuộc thi": "Vẽ tranh",
-              "Họ tên học sinh đạt giải": "",
-              "TT": "6"
-            },
-            {
-              "Cuộc thi": "Phong trào khác:",
-              "TT": "7",
-              "Họ tên học sinh đạt giải": "",
-              "Đạt giải": ""
-            },
-            {
-              "Đạt giải": "",
-              "Cuộc thi": "Thành tích khác:",
-              "TT": "8",
-              "Họ tên học sinh đạt giải": ""
-            }
-          ],
-          "headers": [
-            "TT",
-            "Cuộc thi",
-            "Đạt giải",
-            "Họ tên học sinh đạt giải"
-          ]
-        }
-      ],
-      "customFieldValues": {
-        "fld-1788535567817-afs9": "Huỳnh Nguyễn Khả Doanh",
-        "fld-1788535567817-w89u": "0"
-      },
-      "customFields": [
-        {
-          "required": false,
-          "id": "fld-1788535567817-w89u",
-          "label": "Số học sinh chưa ra lớp đến thời điểm ngày 07/9/2026",
-          "placeholder": "Nhập số học sinh chưa ra lớp đến thời điểm ngày 07/9/2026...",
-          "type": "number"
-        },
-        {
-          "required": false,
-          "placeholder": "Giá trị mặc định: 2",
-          "type": "text",
-          "id": "fld-1788535567817-afs9",
-          "label": "Họ và tên lớp trưởng"
-        }
-      ]
-    },
-    "status": "submitted",
-    "isLate": false,
-    "authorRoleTitle": "Giáo viên Lý",
-    "authorRole": "teacher",
-    "departmentId": "khtn_cn",
-    "departmentName": "Tổ Vật lý - Hóa học - Sinh học - CN",
-    "content": "BÁO CÁO THEO BIỂU MẪU ĐIỆN TỬ:\n- Số học sinh chưa ra lớp đến thời điểm ngày 07/9/2026: 0\n- Họ và tên lớp trưởng: Huỳnh Nguyễn Khả Doanh\n\nDANH SÁCH HỌC SINH CHƯA RA LỚP (THEO BẢNG THỐNG KÊ):\nHàng 1: TT: 1 | Họ và tên học sinh: - | Lớp năm học trước: - | Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng): - | Số điện thoại học sinh (nếu có): - | Số điện thoại phụ huynh (nếu có): - | Lý do chưa ra lớp (nếu biết): -\nHàng 2: TT: 2 | Họ và tên học sinh: - | Lớp năm học trước: - | Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng): - | Số điện thoại học sinh (nếu có): - | Số điện thoại phụ huynh (nếu có): - | Lý do chưa ra lớp (nếu biết): -\nHàng 3: TT: 3 | Họ và tên học sinh: - | Lớp năm học trước: - | Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng): - | Số điện thoại học sinh (nếu có): - | Số điện thoại phụ huynh (nếu có): - | Lý do chưa ra lớp (nếu biết): -\nHàng 4: TT: 4 | Họ và tên học sinh: - | Lớp năm học trước: - | Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng): - | Số điện thoại học sinh (nếu có): - | Số điện thoại phụ huynh (nếu có): - | Lý do chưa ra lớp (nếu biết): -\nHàng 5: TT: 5 | Họ và tên học sinh: - | Lớp năm học trước: - | Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng): - | Số điện thoại học sinh (nếu có): - | Số điện thoại phụ huynh (nếu có): - | Lý do chưa ra lớp (nếu biết): -\n\nTHÔNG TIN HỌC SINH CÓ THÀNH TÍCH VỀ HỘI THI, PHONG TRÀO:\nHàng 1: TT: 1 | Cuộc thi: Văn nghệ vòng tỉnh, vòng xã | Đạt giải: - | Họ tên học sinh đạt giải: -\nHàng 2: TT: 2 | Cuộc thi: Hội khỏe phù đổng | Đạt giải: - | Họ tên học sinh đạt giải: -\nHàng 3: TT: 3 | Cuộc thi: Giải thể thao học sinh tỉnh Đồng Tháp | Đạt giải: - | Họ tên học sinh đạt giải: -\nHàng 4: TT: 4 | Cuộc thi: Sáng tạo thanh thiếu niên nhi đồng | Đạt giải: - | Họ tên học sinh đạt giải: -\nHàng 5: TT: 5 | Cuộc thi: Khoa học kỹ thuật | Đạt giải: - | Họ tên học sinh đạt giải: -\nHàng 6: TT: 6 | Cuộc thi: Vẽ tranh | Đạt giải: - | Họ tên học sinh đạt giải: -\nHàng 7: TT: 7 | Cuộc thi: Phong trào khác: | Đạt giải: - | Họ tên học sinh đạt giải: -\nHàng 8: TT: 8 | Cuộc thi: Thành tích khác: | Đạt giải: - | Họ tên học sinh đạt giải: -\n\nĐÁNH GIÁ & KIẾN NGHỊ:\n(Không có)",
-    "authorId": "staff-79",
-    "periodId": "period-1788535581418",
-    "authorName": "Nguyễn Thị Thắm",
-    "id": "sub-1788830065500-75id"
-  },
-  {
     "id": "sub-1788829116108-thao103",
     "periodId": "period-1788535581418",
     "periodTitle": "Báo cáo kết quả tập trung học sinh đầu năm học 2026-2027",
@@ -548,30 +740,6 @@
     "status": "submitted",
     "submittedAt": "2026-09-07T15:15:00.000Z",
     "updatedAt": "2026-09-08T00:58:36.107Z",
-    "isLate": false,
-    "version": 1
-  },
-  {
-    "id": "sub-1788829116106-ny38",
-    "periodId": "period-1788535581418",
-    "periodTitle": "Báo cáo kết quả tập trung học sinh đầu năm học 2026-2027",
-    "authorId": "staff-38",
-    "authorName": "Lê Thị Mỹ Ny",
-    "authorEmail": "ltmny.38.c3docbinhkieu.dtp@moet.edu.vn",
-    "authorRole": "teacher",
-    "authorRoleTitle": "Giáo viên Ngữ văn",
-    "departmentId": "ngu_van_tv_tb",
-    "departmentName": "Tổ Ngữ văn - Thư viện - Thiết bị",
-    "isHomeroomReport": true,
-    "homeroomClass": "10CB3",
-    "homeroomStudentCount": 44,
-    "homeroomCampus": "THPT",
-    "title": "Báo cáo kết quả tập trung học sinh đầu năm học 2026-2027 - Lớp 10CB3 - Lê Thị Mỹ Ny",
-    "content": "Báo cáo kết quả tập trung học sinh đầu năm học 2026-2027 lớp 10CB3. Học sinh ra lớp đầy đủ, đúng thời gian quy định.",
-    "attachments": [],
-    "status": "submitted",
-    "submittedAt": "2026-09-07T14:30:00.000Z",
-    "updatedAt": "2026-09-08T00:58:36.106Z",
     "isLate": false,
     "version": 1
   },
@@ -1786,175 +1954,6 @@
     "periodId": "period-1788535581418"
   },
   {
-    "id": "sub-1788777288007-go7t",
-    "authorId": "staff-33",
-    "homeroomClass": "8A10",
-    "authorRole": "teacher",
-    "status": "submitted",
-    "title": "Báo cáo kết quả tập trung học sinh đầu năm học 2026-2027 - Lớp 8A10 - Trần Văn Nhuận",
-    "authorName": "Trần Văn Nhuận",
-    "periodTitle": "Báo cáo kết quả tập trung học sinh đầu năm học 2026-2027",
-    "reviewHistory": [],
-    "homeroomCampus": "TK",
-    "isLate": false,
-    "departmentId": "toan",
-    "departmentName": "Tổ Toán",
-    "structuredData": {
-      "customTables": [
-        {
-          "headers": [
-            "TT",
-            "Họ và tên học sinh",
-            "Lớp năm học trước",
-            "Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng)",
-            "Số điện thoại học sinh (nếu có)",
-            "Số điện thoại phụ huynh (nếu có)",
-            "Lý do chưa ra lớp (nếu biết)"
-          ],
-          "id": "tbl-1788535567817-egt2",
-          "title": "Danh sách học sinh chưa ra lớp (theo bảng thống kê)",
-          "rows": [
-            {
-              "Họ và tên học sinh": "",
-              "Lý do chưa ra lớp (nếu biết)": "",
-              "Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng)": "",
-              "Lớp năm học trước": "",
-              "Số điện thoại phụ huynh (nếu có)": "",
-              "Số điện thoại học sinh (nếu có)": "",
-              "TT": "1"
-            },
-            {
-              "TT": "2",
-              "Số điện thoại học sinh (nếu có)": "",
-              "Họ và tên học sinh": "",
-              "Lý do chưa ra lớp (nếu biết)": "",
-              "Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng)": "",
-              "Số điện thoại phụ huynh (nếu có)": "",
-              "Lớp năm học trước": ""
-            },
-            {
-              "Số điện thoại học sinh (nếu có)": "",
-              "Lý do chưa ra lớp (nếu biết)": "",
-              "Số điện thoại phụ huynh (nếu có)": "",
-              "TT": "3",
-              "Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng)": "",
-              "Lớp năm học trước": "",
-              "Họ và tên học sinh": ""
-            },
-            {
-              "Lớp năm học trước": "",
-              "Họ và tên học sinh": "",
-              "TT": "4",
-              "Lý do chưa ra lớp (nếu biết)": "",
-              "Số điện thoại học sinh (nếu có)": "",
-              "Số điện thoại phụ huynh (nếu có)": "",
-              "Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng)": ""
-            },
-            {
-              "Lớp năm học trước": "",
-              "Họ và tên học sinh": "",
-              "Số điện thoại phụ huynh (nếu có)": "",
-              "Lý do chưa ra lớp (nếu biết)": "",
-              "Số điện thoại học sinh (nếu có)": "",
-              "Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng)": "",
-              "TT": "5"
-            }
-          ]
-        },
-        {
-          "headers": [
-            "TT",
-            "Cuộc thi",
-            "Đạt giải",
-            "Họ tên học sinh đạt giải"
-          ],
-          "rows": [
-            {
-              "Đạt giải": "",
-              "Họ tên học sinh đạt giải": "",
-              "TT": "1",
-              "Cuộc thi": "Văn nghệ vòng tỉnh, vòng xã"
-            },
-            {
-              "Cuộc thi": "Hội khỏe phù đổng",
-              "TT": "2",
-              "Họ tên học sinh đạt giải": "",
-              "Đạt giải": ""
-            },
-            {
-              "Cuộc thi": "Giải thể thao học sinh tỉnh Đồng Tháp",
-              "Đạt giải": "",
-              "Họ tên học sinh đạt giải": "",
-              "TT": "3"
-            },
-            {
-              "TT": "4",
-              "Đạt giải": "",
-              "Họ tên học sinh đạt giải": "",
-              "Cuộc thi": "Sáng tạo thanh thiếu niên nhi đồng"
-            },
-            {
-              "Họ tên học sinh đạt giải": "",
-              "TT": "5",
-              "Cuộc thi": "Khoa học kỹ thuật",
-              "Đạt giải": ""
-            },
-            {
-              "Cuộc thi": "Vẽ tranh",
-              "TT": "6",
-              "Họ tên học sinh đạt giải": "",
-              "Đạt giải": ""
-            },
-            {
-              "Đạt giải": "",
-              "Cuộc thi": "Phong trào khác:",
-              "TT": "7",
-              "Họ tên học sinh đạt giải": ""
-            },
-            {
-              "Đạt giải": "",
-              "Cuộc thi": "Thành tích khác:",
-              "Họ tên học sinh đạt giải": "",
-              "TT": "8"
-            }
-          ],
-          "id": "tbl-1788535567817-fpw0",
-          "title": "Thông tin học sinh có thành tích về hội thi, phong trào"
-        }
-      ],
-      "customFields": [
-        {
-          "placeholder": "Nhập số học sinh chưa ra lớp đến thời điểm ngày 07/9/2026...",
-          "id": "fld-1788535567817-w89u",
-          "label": "Số học sinh chưa ra lớp đến thời điểm ngày 07/9/2026",
-          "type": "number",
-          "required": false
-        },
-        {
-          "required": false,
-          "label": "Họ và tên lớp trưởng",
-          "id": "fld-1788535567817-afs9",
-          "type": "text",
-          "placeholder": "Giá trị mặc định: 2"
-        }
-      ],
-      "customFieldValues": {
-        "fld-1788535567817-w89u": "0",
-        "fld-1788535567817-afs9": "Trần Tấn Phát"
-      }
-    },
-    "submittedAt": "2026-09-07T10:34:48.007Z",
-    "periodId": "period-1788535581418",
-    "isHomeroomReport": true,
-    "updatedAt": "2026-09-07T10:34:48.007Z",
-    "version": 1,
-    "content": "BÁO CÁO THEO BIỂU MẪU ĐIỆN TỬ:\n- Số học sinh chưa ra lớp đến thời điểm ngày 07/9/2026: 0\n- Họ và tên lớp trưởng: Trần Tấn Phát\n\nDANH SÁCH HỌC SINH CHƯA RA LỚP (THEO BẢNG THỐNG KÊ):\nHàng 1: TT: 1 | Họ và tên học sinh: - | Lớp năm học trước: - | Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng): - | Số điện thoại học sinh (nếu có): - | Số điện thoại phụ huynh (nếu có): - | Lý do chưa ra lớp (nếu biết): -\nHàng 2: TT: 2 | Họ và tên học sinh: - | Lớp năm học trước: - | Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng): - | Số điện thoại học sinh (nếu có): - | Số điện thoại phụ huynh (nếu có): - | Lý do chưa ra lớp (nếu biết): -\nHàng 3: TT: 3 | Họ và tên học sinh: - | Lớp năm học trước: - | Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng): - | Số điện thoại học sinh (nếu có): - | Số điện thoại phụ huynh (nếu có): - | Lý do chưa ra lớp (nếu biết): -\nHàng 4: TT: 4 | Họ và tên học sinh: - | Lớp năm học trước: - | Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng): - | Số điện thoại học sinh (nếu có): - | Số điện thoại phụ huynh (nếu có): - | Lý do chưa ra lớp (nếu biết): -\nHàng 5: TT: 5 | Họ và tên học sinh: - | Lớp năm học trước: - | Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng): - | Số điện thoại học sinh (nếu có): - | Số điện thoại phụ huynh (nếu có): - | Lý do chưa ra lớp (nếu biết): -\n\nTHÔNG TIN HỌC SINH CÓ THÀNH TÍCH VỀ HỘI THI, PHONG TRÀO:\nHàng 1: TT: 1 | Cuộc thi: Văn nghệ vòng tỉnh, vòng xã | Đạt giải: - | Họ tên học sinh đạt giải: -\nHàng 2: TT: 2 | Cuộc thi: Hội khỏe phù đổng | Đạt giải: - | Họ tên học sinh đạt giải: -\nHàng 3: TT: 3 | Cuộc thi: Giải thể thao học sinh tỉnh Đồng Tháp | Đạt giải: - | Họ tên học sinh đạt giải: -\nHàng 4: TT: 4 | Cuộc thi: Sáng tạo thanh thiếu niên nhi đồng | Đạt giải: - | Họ tên học sinh đạt giải: -\nHàng 5: TT: 5 | Cuộc thi: Khoa học kỹ thuật | Đạt giải: - | Họ tên học sinh đạt giải: -\nHàng 6: TT: 6 | Cuộc thi: Vẽ tranh | Đạt giải: - | Họ tên học sinh đạt giải: -\nHàng 7: TT: 7 | Cuộc thi: Phong trào khác: | Đạt giải: - | Họ tên học sinh đạt giải: -\nHàng 8: TT: 8 | Cuộc thi: Thành tích khác: | Đạt giải: - | Họ tên học sinh đạt giải: -\n\nĐÁNH GIÁ & KIẾN NGHỊ:\n(Không có)",
-    "authorEmail": "tvnhuan.33.c3docbinhkieu.dtp@moet.edu.vn",
-    "attachments": [],
-    "authorRoleTitle": "Giáo viên Toán",
-    "homeroomStudentCount": 38
-  },
-  {
     "id": "sub-1788774289620-r72w",
     "homeroomStudentCount": 42,
     "version": 1,
@@ -2122,175 +2121,6 @@
     "authorId": "staff-84",
     "departmentName": "Tổ Vật lý - Hóa học - Sinh học - CN",
     "isHomeroomReport": true
-  },
-  {
-    "id": "sub-1788774061942-oc47",
-    "homeroomClass": "6A1",
-    "status": "submitted",
-    "periodId": "period-1788535581418",
-    "attachments": [],
-    "submittedAt": "2026-09-07T09:41:01.942Z",
-    "updatedAt": "2026-09-07T09:41:01.942Z",
-    "structuredData": {
-      "customFields": [
-        {
-          "type": "number",
-          "placeholder": "Nhập số học sinh chưa ra lớp đến thời điểm ngày 07/9/2026...",
-          "label": "Số học sinh chưa ra lớp đến thời điểm ngày 07/9/2026",
-          "id": "fld-1788535567817-w89u",
-          "required": false
-        },
-        {
-          "required": false,
-          "type": "text",
-          "label": "Họ và tên lớp trưởng",
-          "id": "fld-1788535567817-afs9",
-          "placeholder": "Giá trị mặc định: 2"
-        }
-      ],
-      "customTables": [
-        {
-          "rows": [
-            {
-              "Lớp năm học trước": "",
-              "Số điện thoại học sinh (nếu có)": "",
-              "Lý do chưa ra lớp (nếu biết)": "",
-              "Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng)": "",
-              "Số điện thoại phụ huynh (nếu có)": "",
-              "Họ và tên học sinh": "",
-              "TT": "1"
-            },
-            {
-              "TT": "2",
-              "Số điện thoại phụ huynh (nếu có)": "",
-              "Số điện thoại học sinh (nếu có)": "",
-              "Họ và tên học sinh": "",
-              "Lớp năm học trước": "",
-              "Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng)": "",
-              "Lý do chưa ra lớp (nếu biết)": ""
-            },
-            {
-              "Lý do chưa ra lớp (nếu biết)": "",
-              "TT": "3",
-              "Lớp năm học trước": "",
-              "Số điện thoại học sinh (nếu có)": "",
-              "Họ và tên học sinh": "",
-              "Số điện thoại phụ huynh (nếu có)": "",
-              "Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng)": ""
-            },
-            {
-              "Lớp năm học trước": "",
-              "Số điện thoại học sinh (nếu có)": "",
-              "Họ và tên học sinh": "",
-              "Lý do chưa ra lớp (nếu biết)": "",
-              "Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng)": "",
-              "Số điện thoại phụ huynh (nếu có)": "",
-              "TT": "4"
-            },
-            {
-              "Họ và tên học sinh": "",
-              "Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng)": "",
-              "Lớp năm học trước": "",
-              "Số điện thoại học sinh (nếu có)": "",
-              "Lý do chưa ra lớp (nếu biết)": "",
-              "TT": "5",
-              "Số điện thoại phụ huynh (nếu có)": ""
-            }
-          ],
-          "title": "Danh sách học sinh chưa ra lớp (theo bảng thống kê)",
-          "id": "tbl-1788535567817-egt2",
-          "headers": [
-            "TT",
-            "Họ và tên học sinh",
-            "Lớp năm học trước",
-            "Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng)",
-            "Số điện thoại học sinh (nếu có)",
-            "Số điện thoại phụ huynh (nếu có)",
-            "Lý do chưa ra lớp (nếu biết)"
-          ]
-        },
-        {
-          "rows": [
-            {
-              "Đạt giải": "",
-              "Cuộc thi": "Văn nghệ vòng tỉnh, vòng xã",
-              "Họ tên học sinh đạt giải": "",
-              "TT": "1"
-            },
-            {
-              "Họ tên học sinh đạt giải": "",
-              "TT": "2",
-              "Đạt giải": "",
-              "Cuộc thi": "Hội khỏe phù đổng"
-            },
-            {
-              "Cuộc thi": "Giải thể thao học sinh tỉnh Đồng Tháp",
-              "Họ tên học sinh đạt giải": "",
-              "TT": "3",
-              "Đạt giải": ""
-            },
-            {
-              "Cuộc thi": "Sáng tạo thanh thiếu niên nhi đồng",
-              "Họ tên học sinh đạt giải": "",
-              "TT": "4",
-              "Đạt giải": ""
-            },
-            {
-              "TT": "5",
-              "Cuộc thi": "Khoa học kỹ thuật",
-              "Họ tên học sinh đạt giải": "",
-              "Đạt giải": ""
-            },
-            {
-              "Họ tên học sinh đạt giải": "",
-              "Cuộc thi": "Vẽ tranh",
-              "TT": "6",
-              "Đạt giải": ""
-            },
-            {
-              "Đạt giải": "",
-              "Cuộc thi": "Phong trào khác:",
-              "Họ tên học sinh đạt giải": "",
-              "TT": "7"
-            },
-            {
-              "Cuộc thi": "Thành tích khác:",
-              "Đạt giải": "",
-              "Họ tên học sinh đạt giải": "",
-              "TT": "8"
-            }
-          ],
-          "headers": [
-            "TT",
-            "Cuộc thi",
-            "Đạt giải",
-            "Họ tên học sinh đạt giải"
-          ],
-          "title": "Thông tin học sinh có thành tích về hội thi, phong trào",
-          "id": "tbl-1788535567817-fpw0"
-        }
-      ],
-      "customFieldValues": {
-        "fld-1788535567817-afs9": "Nguyễn Bảo Ngọc",
-        "fld-1788535567817-w89u": "2"
-      }
-    },
-    "authorEmail": "htntai.84.c3docbinhkieu.dtp@moet.edu.vn",
-    "title": "Báo cáo kết quả tập trung học sinh đầu năm học 2026-2027 - Lớp 6A1 - Hồ Thị Ngọc Tài",
-    "departmentName": "Tổ Vật lý - Hóa học - Sinh học - CN",
-    "isHomeroomReport": true,
-    "reviewHistory": [],
-    "departmentId": "khtn_cn",
-    "version": 1,
-    "content": "BÁO CÁO THEO BIỂU MẪU ĐIỆN TỬ:\n- Số học sinh chưa ra lớp đến thời điểm ngày 07/9/2026: 2\n- Họ và tên lớp trưởng: Nguyễn Bảo Ngọc\n\nDANH SÁCH HỌC SINH CHƯA RA LỚP (THEO BẢNG THỐNG KÊ):\nHàng 1: TT: 1 | Họ và tên học sinh: - | Lớp năm học trước: - | Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng): - | Số điện thoại học sinh (nếu có): - | Số điện thoại phụ huynh (nếu có): - | Lý do chưa ra lớp (nếu biết): -\nHàng 2: TT: 2 | Họ và tên học sinh: - | Lớp năm học trước: - | Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng): - | Số điện thoại học sinh (nếu có): - | Số điện thoại phụ huynh (nếu có): - | Lý do chưa ra lớp (nếu biết): -\nHàng 3: TT: 3 | Họ và tên học sinh: - | Lớp năm học trước: - | Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng): - | Số điện thoại học sinh (nếu có): - | Số điện thoại phụ huynh (nếu có): - | Lý do chưa ra lớp (nếu biết): -\nHàng 4: TT: 4 | Họ và tên học sinh: - | Lớp năm học trước: - | Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng): - | Số điện thoại học sinh (nếu có): - | Số điện thoại phụ huynh (nếu có): - | Lý do chưa ra lớp (nếu biết): -\nHàng 5: TT: 5 | Họ và tên học sinh: - | Lớp năm học trước: - | Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng): - | Số điện thoại học sinh (nếu có): - | Số điện thoại phụ huynh (nếu có): - | Lý do chưa ra lớp (nếu biết): -\n\nTHÔNG TIN HỌC SINH CÓ THÀNH TÍCH VỀ HỘI THI, PHONG TRÀO:\nHàng 1: TT: 1 | Cuộc thi: Văn nghệ vòng tỉnh, vòng xã | Đạt giải: - | Họ tên học sinh đạt giải: -\nHàng 2: TT: 2 | Cuộc thi: Hội khỏe phù đổng | Đạt giải: - | Họ tên học sinh đạt giải: -\nHàng 3: TT: 3 | Cuộc thi: Giải thể thao học sinh tỉnh Đồng Tháp | Đạt giải: - | Họ tên học sinh đạt giải: -\nHàng 4: TT: 4 | Cuộc thi: Sáng tạo thanh thiếu niên nhi đồng | Đạt giải: - | Họ tên học sinh đạt giải: -\nHàng 5: TT: 5 | Cuộc thi: Khoa học kỹ thuật | Đạt giải: - | Họ tên học sinh đạt giải: -\nHàng 6: TT: 6 | Cuộc thi: Vẽ tranh | Đạt giải: - | Họ tên học sinh đạt giải: -\nHàng 7: TT: 7 | Cuộc thi: Phong trào khác: | Đạt giải: - | Họ tên học sinh đạt giải: -\nHàng 8: TT: 8 | Cuộc thi: Thành tích khác: | Đạt giải: - | Họ tên học sinh đạt giải: -\n\nĐÁNH GIÁ & KIẾN NGHỊ:\n(Không có)",
-    "authorRole": "teacher",
-    "periodTitle": "Báo cáo kết quả tập trung học sinh đầu năm học 2026-2027",
-    "homeroomCampus": "DBK",
-    "homeroomStudentCount": 42,
-    "isLate": false,
-    "authorId": "staff-84",
-    "authorName": "Hồ Thị Ngọc Tài",
-    "authorRoleTitle": "Giáo viên Sinh"
   },
   {
     "id": "sub-1788771156117-0yw9",
@@ -2461,175 +2291,6 @@
     "homeroomClass": "9A4",
     "homeroomCampus": "DBK",
     "isLate": false
-  },
-  {
-    "id": "sub-1788768861679-avmz",
-    "periodId": "period-1788535581418",
-    "authorName": "Nguyễn Văn Tài",
-    "reviewHistory": [],
-    "homeroomCampus": "DBK",
-    "homeroomClass": "9A4",
-    "attachments": [],
-    "isLate": false,
-    "authorEmail": "nvtai.30.c3docbinhkieu.dtp@moet.edu.vn",
-    "submittedAt": "2026-09-07T08:14:21.679Z",
-    "title": "Báo cáo kết quả tập trung học sinh đầu năm học 2026-2027 - Lớp 9A4 - Nguyễn Văn Tài",
-    "authorRole": "teacher",
-    "updatedAt": "2026-09-07T08:14:21.679Z",
-    "structuredData": {
-      "customFields": [
-        {
-          "required": false,
-          "id": "fld-1788535567817-w89u",
-          "type": "number",
-          "label": "Số học sinh chưa ra lớp đến thời điểm ngày 07/9/2026",
-          "placeholder": "Nhập số học sinh chưa ra lớp đến thời điểm ngày 07/9/2026..."
-        },
-        {
-          "placeholder": "Giá trị mặc định: 2",
-          "required": false,
-          "type": "text",
-          "label": "Họ và tên lớp trưởng",
-          "id": "fld-1788535567817-afs9"
-        }
-      ],
-      "customFieldValues": {
-        "fld-1788535567817-afs9": "Võ Hoàng Khả Hân lớp 9a4 Điểm trường Đốc Binh Kiều",
-        "fld-1788535567817-w89u": "1"
-      },
-      "customTables": [
-        {
-          "headers": [
-            "TT",
-            "Họ và tên học sinh",
-            "Lớp năm học trước",
-            "Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng)",
-            "Số điện thoại học sinh (nếu có)",
-            "Số điện thoại phụ huynh (nếu có)",
-            "Lý do chưa ra lớp (nếu biết)"
-          ],
-          "title": "Danh sách học sinh chưa ra lớp (theo bảng thống kê)",
-          "rows": [
-            {
-              "Số điện thoại học sinh (nếu có)": "",
-              "Lớp năm học trước": "",
-              "TT": "1",
-              "Số điện thoại phụ huynh (nếu có)": "",
-              "Họ và tên học sinh": "",
-              "Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng)": "",
-              "Lý do chưa ra lớp (nếu biết)": ""
-            },
-            {
-              "Số điện thoại phụ huynh (nếu có)": "",
-              "TT": "2",
-              "Lý do chưa ra lớp (nếu biết)": "",
-              "Số điện thoại học sinh (nếu có)": "",
-              "Lớp năm học trước": "",
-              "Họ và tên học sinh": "",
-              "Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng)": ""
-            },
-            {
-              "Số điện thoại học sinh (nếu có)": "",
-              "Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng)": "",
-              "Lý do chưa ra lớp (nếu biết)": "",
-              "Lớp năm học trước": "",
-              "TT": "3",
-              "Số điện thoại phụ huynh (nếu có)": "",
-              "Họ và tên học sinh": ""
-            },
-            {
-              "Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng)": "",
-              "Số điện thoại phụ huynh (nếu có)": "",
-              "Lớp năm học trước": "",
-              "Lý do chưa ra lớp (nếu biết)": "",
-              "Họ và tên học sinh": "",
-              "TT": "4",
-              "Số điện thoại học sinh (nếu có)": ""
-            },
-            {
-              "Số điện thoại phụ huynh (nếu có)": "",
-              "Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng)": "",
-              "Lý do chưa ra lớp (nếu biết)": "",
-              "TT": "5",
-              "Họ và tên học sinh": "",
-              "Lớp năm học trước": "",
-              "Số điện thoại học sinh (nếu có)": ""
-            }
-          ],
-          "id": "tbl-1788535567817-egt2"
-        },
-        {
-          "rows": [
-            {
-              "Họ tên học sinh đạt giải": "",
-              "Cuộc thi": "Văn nghệ vòng tỉnh, vòng xã",
-              "TT": "1",
-              "Đạt giải": ""
-            },
-            {
-              "Cuộc thi": "Hội khỏe phù đổng",
-              "Đạt giải": "",
-              "TT": "2",
-              "Họ tên học sinh đạt giải": ""
-            },
-            {
-              "Đạt giải": "",
-              "TT": "3",
-              "Cuộc thi": "Giải thể thao học sinh tỉnh Đồng Tháp",
-              "Họ tên học sinh đạt giải": ""
-            },
-            {
-              "TT": "4",
-              "Đạt giải": "",
-              "Họ tên học sinh đạt giải": "",
-              "Cuộc thi": "Sáng tạo thanh thiếu niên nhi đồng"
-            },
-            {
-              "Cuộc thi": "Khoa học kỹ thuật",
-              "Họ tên học sinh đạt giải": "",
-              "TT": "5",
-              "Đạt giải": ""
-            },
-            {
-              "TT": "6",
-              "Đạt giải": "",
-              "Cuộc thi": "Vẽ tranh",
-              "Họ tên học sinh đạt giải": ""
-            },
-            {
-              "Cuộc thi": "Phong trào khác:",
-              "TT": "7",
-              "Đạt giải": "",
-              "Họ tên học sinh đạt giải": ""
-            },
-            {
-              "Họ tên học sinh đạt giải": "",
-              "TT": "8",
-              "Đạt giải": "",
-              "Cuộc thi": "Thành tích khác:"
-            }
-          ],
-          "id": "tbl-1788535567817-fpw0",
-          "title": "Thông tin học sinh có thành tích về hội thi, phong trào",
-          "headers": [
-            "TT",
-            "Cuộc thi",
-            "Đạt giải",
-            "Họ tên học sinh đạt giải"
-          ]
-        }
-      ]
-    },
-    "status": "submitted",
-    "isHomeroomReport": true,
-    "authorRoleTitle": "Giáo viên Toán",
-    "departmentId": "toan",
-    "homeroomStudentCount": 43,
-    "authorId": "staff-30",
-    "periodTitle": "Báo cáo kết quả tập trung học sinh đầu năm học 2026-2027",
-    "departmentName": "Tổ Toán",
-    "content": "BÁO CÁO THEO BIỂU MẪU ĐIỆN TỬ:\n- Số học sinh chưa ra lớp đến thời điểm ngày 07/9/2026: 1\n- Họ và tên lớp trưởng: Võ Hoàng Khả Hân lớp 9a4 Điểm trường Đốc Binh Kiều\n\nDANH SÁCH HỌC SINH CHƯA RA LỚP (THEO BẢNG THỐNG KÊ):\nHàng 1: TT: 1 | Họ và tên học sinh: - | Lớp năm học trước: - | Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng): - | Số điện thoại học sinh (nếu có): - | Số điện thoại phụ huynh (nếu có): - | Lý do chưa ra lớp (nếu biết): -\nHàng 2: TT: 2 | Họ và tên học sinh: - | Lớp năm học trước: - | Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng): - | Số điện thoại học sinh (nếu có): - | Số điện thoại phụ huynh (nếu có): - | Lý do chưa ra lớp (nếu biết): -\nHàng 3: TT: 3 | Họ và tên học sinh: - | Lớp năm học trước: - | Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng): - | Số điện thoại học sinh (nếu có): - | Số điện thoại phụ huynh (nếu có): - | Lý do chưa ra lớp (nếu biết): -\nHàng 4: TT: 4 | Họ và tên học sinh: - | Lớp năm học trước: - | Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng): - | Số điện thoại học sinh (nếu có): - | Số điện thoại phụ huynh (nếu có): - | Lý do chưa ra lớp (nếu biết): -\nHàng 5: TT: 5 | Họ và tên học sinh: - | Lớp năm học trước: - | Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng): - | Số điện thoại học sinh (nếu có): - | Số điện thoại phụ huynh (nếu có): - | Lý do chưa ra lớp (nếu biết): -\n\nTHÔNG TIN HỌC SINH CÓ THÀNH TÍCH VỀ HỘI THI, PHONG TRÀO:\nHàng 1: TT: 1 | Cuộc thi: Văn nghệ vòng tỉnh, vòng xã | Đạt giải: - | Họ tên học sinh đạt giải: -\nHàng 2: TT: 2 | Cuộc thi: Hội khỏe phù đổng | Đạt giải: - | Họ tên học sinh đạt giải: -\nHàng 3: TT: 3 | Cuộc thi: Giải thể thao học sinh tỉnh Đồng Tháp | Đạt giải: - | Họ tên học sinh đạt giải: -\nHàng 4: TT: 4 | Cuộc thi: Sáng tạo thanh thiếu niên nhi đồng | Đạt giải: - | Họ tên học sinh đạt giải: -\nHàng 5: TT: 5 | Cuộc thi: Khoa học kỹ thuật | Đạt giải: - | Họ tên học sinh đạt giải: -\nHàng 6: TT: 6 | Cuộc thi: Vẽ tranh | Đạt giải: - | Họ tên học sinh đạt giải: -\nHàng 7: TT: 7 | Cuộc thi: Phong trào khác: | Đạt giải: - | Họ tên học sinh đạt giải: -\nHàng 8: TT: 8 | Cuộc thi: Thành tích khác: | Đạt giải: - | Họ tên học sinh đạt giải: -\n\nĐÁNH GIÁ & KIẾN NGHỊ:\n(Không có)",
-    "version": 1
   },
   {
     "id": "sub-1788768800405-bs77",
@@ -3303,175 +2964,6 @@
     "isLate": false,
     "authorEmail": "nmtri.c3docbinhkieu.dtp@moet.edu.vn",
     "submittedAt": "2026-09-07T08:09:48.594Z"
-  },
-  {
-    "id": "sub-1788768524384-wbx1",
-    "isLate": false,
-    "homeroomClass": "9A3",
-    "isHomeroomReport": true,
-    "authorId": "staff-21",
-    "authorRole": "dept_head",
-    "title": "Báo cáo kết quả tập trung học sinh đầu năm học 2026-2027 - Lớp 9A3 - Nguyễn Thị Bích Lang",
-    "departmentId": "toan",
-    "homeroomCampus": "DBK",
-    "attachments": [],
-    "authorName": "Nguyễn Thị Bích Lang",
-    "submittedAt": null,
-    "reviewHistory": [],
-    "authorEmail": "ntblang.21.c3docbinhkieu.dtp@moet.edu.vn",
-    "authorRoleTitle": "Tổ phó (Toán)",
-    "version": 1,
-    "departmentName": "Tổ Toán",
-    "content": "BÁO CÁO THEO BIỂU MẪU ĐIỆN TỬ:\n- Số học sinh chưa ra lớp đến thời điểm ngày 07/9/2026: 0\n- Họ và tên lớp trưởng: Võ Nguyễn Bảo Ngọc\n\nDANH SÁCH HỌC SINH CHƯA RA LỚP (THEO BẢNG THỐNG KÊ):\nHàng 1: TT: 1 | Họ và tên học sinh: - | Lớp năm học trước: - | Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng): - | Số điện thoại học sinh (nếu có): - | Số điện thoại phụ huynh (nếu có): - | Lý do chưa ra lớp (nếu biết): -\nHàng 2: TT: 2 | Họ và tên học sinh: - | Lớp năm học trước: - | Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng): - | Số điện thoại học sinh (nếu có): - | Số điện thoại phụ huynh (nếu có): - | Lý do chưa ra lớp (nếu biết): -\nHàng 3: TT: 3 | Họ và tên học sinh: - | Lớp năm học trước: - | Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng): - | Số điện thoại học sinh (nếu có): - | Số điện thoại phụ huynh (nếu có): - | Lý do chưa ra lớp (nếu biết): -\nHàng 4: TT: 4 | Họ và tên học sinh: - | Lớp năm học trước: - | Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng): - | Số điện thoại học sinh (nếu có): - | Số điện thoại phụ huynh (nếu có): - | Lý do chưa ra lớp (nếu biết): -\nHàng 5: TT: 5 | Họ và tên học sinh: - | Lớp năm học trước: - | Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng): - | Số điện thoại học sinh (nếu có): - | Số điện thoại phụ huynh (nếu có): - | Lý do chưa ra lớp (nếu biết): -\n\nTHÔNG TIN HỌC SINH CÓ THÀNH TÍCH VỀ HỘI THI, PHONG TRÀO:\nHàng 1: TT: 1 | Cuộc thi: Văn nghệ vòng tỉnh, vòng xã | Đạt giải: - | Họ tên học sinh đạt giải: -\nHàng 2: TT: 2 | Cuộc thi: Hội khỏe phù đổng | Đạt giải: - | Họ tên học sinh đạt giải: -\nHàng 3: TT: 3 | Cuộc thi: Giải thể thao học sinh tỉnh Đồng Tháp | Đạt giải: - | Họ tên học sinh đạt giải: -\nHàng 4: TT: 4 | Cuộc thi: Sáng tạo thanh thiếu niên nhi đồng | Đạt giải: - | Họ tên học sinh đạt giải: -\nHàng 5: TT: 5 | Cuộc thi: Khoa học kỹ thuật | Đạt giải: - | Họ tên học sinh đạt giải: -\nHàng 6: TT: 6 | Cuộc thi: Vẽ tranh | Đạt giải: - | Họ tên học sinh đạt giải: -\nHàng 7: TT: 7 | Cuộc thi: Phong trào khác: | Đạt giải: - | Họ tên học sinh đạt giải: -\nHàng 8: TT: 8 | Cuộc thi: Thành tích khác: | Đạt giải: - | Họ tên học sinh đạt giải: -\n\nĐÁNH GIÁ & KIẾN NGHỊ:\n(Không có)",
-    "status": "draft",
-    "periodTitle": "Báo cáo kết quả tập trung học sinh đầu năm học 2026-2027",
-    "updatedAt": "2026-09-07T08:08:44.384Z",
-    "homeroomStudentCount": 44,
-    "periodId": "period-1788535581418",
-    "structuredData": {
-      "customTables": [
-        {
-          "title": "Danh sách học sinh chưa ra lớp (theo bảng thống kê)",
-          "headers": [
-            "TT",
-            "Họ và tên học sinh",
-            "Lớp năm học trước",
-            "Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng)",
-            "Số điện thoại học sinh (nếu có)",
-            "Số điện thoại phụ huynh (nếu có)",
-            "Lý do chưa ra lớp (nếu biết)"
-          ],
-          "rows": [
-            {
-              "Họ và tên học sinh": "",
-              "Số điện thoại học sinh (nếu có)": "",
-              "Lớp năm học trước": "",
-              "Lý do chưa ra lớp (nếu biết)": "",
-              "Số điện thoại phụ huynh (nếu có)": "",
-              "TT": "1",
-              "Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng)": ""
-            },
-            {
-              "TT": "2",
-              "Họ và tên học sinh": "",
-              "Số điện thoại phụ huynh (nếu có)": "",
-              "Lý do chưa ra lớp (nếu biết)": "",
-              "Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng)": "",
-              "Lớp năm học trước": "",
-              "Số điện thoại học sinh (nếu có)": ""
-            },
-            {
-              "TT": "3",
-              "Số điện thoại học sinh (nếu có)": "",
-              "Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng)": "",
-              "Họ và tên học sinh": "",
-              "Số điện thoại phụ huynh (nếu có)": "",
-              "Lý do chưa ra lớp (nếu biết)": "",
-              "Lớp năm học trước": ""
-            },
-            {
-              "Số điện thoại học sinh (nếu có)": "",
-              "TT": "4",
-              "Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng)": "",
-              "Lớp năm học trước": "",
-              "Lý do chưa ra lớp (nếu biết)": "",
-              "Số điện thoại phụ huynh (nếu có)": "",
-              "Họ và tên học sinh": ""
-            },
-            {
-              "Số điện thoại phụ huynh (nếu có)": "",
-              "Lý do chưa ra lớp (nếu biết)": "",
-              "Họ và tên học sinh": "",
-              "Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng)": "",
-              "Số điện thoại học sinh (nếu có)": "",
-              "Lớp năm học trước": "",
-              "TT": "5"
-            }
-          ],
-          "id": "tbl-1788535567817-egt2"
-        },
-        {
-          "headers": [
-            "TT",
-            "Cuộc thi",
-            "Đạt giải",
-            "Họ tên học sinh đạt giải"
-          ],
-          "id": "tbl-1788535567817-fpw0",
-          "rows": [
-            {
-              "Đạt giải": "",
-              "Cuộc thi": "Văn nghệ vòng tỉnh, vòng xã",
-              "Họ tên học sinh đạt giải": "",
-              "TT": "1"
-            },
-            {
-              "TT": "2",
-              "Cuộc thi": "Hội khỏe phù đổng",
-              "Họ tên học sinh đạt giải": "",
-              "Đạt giải": ""
-            },
-            {
-              "TT": "3",
-              "Họ tên học sinh đạt giải": "",
-              "Cuộc thi": "Giải thể thao học sinh tỉnh Đồng Tháp",
-              "Đạt giải": ""
-            },
-            {
-              "Cuộc thi": "Sáng tạo thanh thiếu niên nhi đồng",
-              "Đạt giải": "",
-              "TT": "4",
-              "Họ tên học sinh đạt giải": ""
-            },
-            {
-              "Cuộc thi": "Khoa học kỹ thuật",
-              "Đạt giải": "",
-              "Họ tên học sinh đạt giải": "",
-              "TT": "5"
-            },
-            {
-              "Cuộc thi": "Vẽ tranh",
-              "Đạt giải": "",
-              "Họ tên học sinh đạt giải": "",
-              "TT": "6"
-            },
-            {
-              "Họ tên học sinh đạt giải": "",
-              "Đạt giải": "",
-              "Cuộc thi": "Phong trào khác:",
-              "TT": "7"
-            },
-            {
-              "TT": "8",
-              "Đạt giải": "",
-              "Họ tên học sinh đạt giải": "",
-              "Cuộc thi": "Thành tích khác:"
-            }
-          ],
-          "title": "Thông tin học sinh có thành tích về hội thi, phong trào"
-        }
-      ],
-      "customFieldValues": {
-        "fld-1788535567817-w89u": "0",
-        "fld-1788535567817-afs9": "Võ Nguyễn Bảo Ngọc"
-      },
-      "customFields": [
-        {
-          "id": "fld-1788535567817-w89u",
-          "required": false,
-          "label": "Số học sinh chưa ra lớp đến thời điểm ngày 07/9/2026",
-          "placeholder": "Nhập số học sinh chưa ra lớp đến thời điểm ngày 07/9/2026...",
-          "type": "number"
-        },
-        {
-          "placeholder": "Giá trị mặc định: 2",
-          "label": "Họ và tên lớp trưởng",
-          "required": false,
-          "id": "fld-1788535567817-afs9",
-          "type": "text"
-        }
-      ]
-    }
   },
   {
     "id": "sub-1788768414177-7hxb",
@@ -4488,175 +3980,6 @@
     "status": "submitted"
   },
   {
-    "id": "sub-1788766343759-l228",
-    "departmentId": "gdtc_qp_nt",
-    "homeroomCampus": "DBK",
-    "periodId": "period-1788535581418",
-    "authorRoleTitle": "Giáo viên GDTC",
-    "homeroomStudentCount": 40,
-    "isHomeroomReport": true,
-    "periodTitle": "Báo cáo kết quả tập trung học sinh đầu năm học 2026-2027",
-    "status": "submitted",
-    "content": "BÁO CÁO THEO BIỂU MẪU ĐIỆN TỬ:\n- Số học sinh chưa ra lớp đến thời điểm ngày 07/9/2026: 3\n- Họ và tên lớp trưởng: Nguyễn Phúc Thiên Ân\n\nDANH SÁCH HỌC SINH CHƯA RA LỚP (THEO BẢNG THỐNG KÊ):\nHàng 1: TT: 1 | Họ và tên học sinh: Nguyễn Phúc Hậu | Lớp năm học trước: 7a4 | Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng): Ấp  6, xã ĐỐC BINH KIỀU | Số điện thoại học sinh (nếu có): - | Số điện thoại phụ huynh (nếu có): - | Lý do chưa ra lớp (nếu biết): -\nHàng 2: TT: 2 | Họ và tên học sinh: Đặng Nguyễn Trọng Nhân | Lớp năm học trước: 7a4 | Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng): Ấp  2, xã ĐỐC BINH KIỀU | Số điện thoại học sinh (nếu có): - | Số điện thoại phụ huynh (nếu có): - | Lý do chưa ra lớp (nếu biết): -\nHàng 3: TT: 3 | Họ và tên học sinh: Lê Hữu Thiện | Lớp năm học trước: 7a4 | Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng): Ấp  3, xã ĐỐC BINH KIỀU | Số điện thoại học sinh (nếu có): - | Số điện thoại phụ huynh (nếu có): - | Lý do chưa ra lớp (nếu biết): -\nHàng 4: TT: 4 | Họ và tên học sinh: - | Lớp năm học trước: - | Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng): - | Số điện thoại học sinh (nếu có): - | Số điện thoại phụ huynh (nếu có): - | Lý do chưa ra lớp (nếu biết): -\nHàng 5: TT: 5 | Họ và tên học sinh: - | Lớp năm học trước: - | Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng): - | Số điện thoại học sinh (nếu có): - | Số điện thoại phụ huynh (nếu có): - | Lý do chưa ra lớp (nếu biết): -\n\nTHÔNG TIN HỌC SINH CÓ THÀNH TÍCH VỀ HỘI THI, PHONG TRÀO:\nHàng 1: TT: 1 | Cuộc thi: Văn nghệ vòng tỉnh, vòng xã | Đạt giải: - | Họ tên học sinh đạt giải: -\nHàng 2: TT: 2 | Cuộc thi: Hội khỏe phù đổng | Đạt giải: - | Họ tên học sinh đạt giải: -\nHàng 3: TT: 3 | Cuộc thi: Giải thể thao học sinh tỉnh Đồng Tháp | Đạt giải: - | Họ tên học sinh đạt giải: -\nHàng 4: TT: 4 | Cuộc thi: Sáng tạo thanh thiếu niên nhi đồng | Đạt giải: - | Họ tên học sinh đạt giải: -\nHàng 5: TT: 5 | Cuộc thi: Khoa học kỹ thuật | Đạt giải: - | Họ tên học sinh đạt giải: -\nHàng 6: TT: 6 | Cuộc thi: Vẽ tranh | Đạt giải: - | Họ tên học sinh đạt giải: -\nHàng 7: TT: 7 | Cuộc thi: Phong trào khác: | Đạt giải: - | Họ tên học sinh đạt giải: -\nHàng 8: TT: 8 | Cuộc thi: Thành tích khác: | Đạt giải: - | Họ tên học sinh đạt giải: -\n\nĐÁNH GIÁ & KIẾN NGHỊ:\n(Không có)",
-    "version": 1,
-    "authorName": "Lê Ngọc Ẩn",
-    "structuredData": {
-      "customFieldValues": {
-        "fld-1788535567817-afs9": "Nguyễn Phúc Thiên Ân",
-        "fld-1788535567817-w89u": "3"
-      },
-      "customTables": [
-        {
-          "headers": [
-            "TT",
-            "Họ và tên học sinh",
-            "Lớp năm học trước",
-            "Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng)",
-            "Số điện thoại học sinh (nếu có)",
-            "Số điện thoại phụ huynh (nếu có)",
-            "Lý do chưa ra lớp (nếu biết)"
-          ],
-          "rows": [
-            {
-              "Số điện thoại học sinh (nếu có)": "",
-              "Họ và tên học sinh": "Nguyễn Phúc Hậu",
-              "Lý do chưa ra lớp (nếu biết)": "",
-              "Lớp năm học trước": "7a4",
-              "Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng)": "Ấp  6, xã ĐỐC BINH KIỀU",
-              "TT": "1",
-              "Số điện thoại phụ huynh (nếu có)": ""
-            },
-            {
-              "Số điện thoại phụ huynh (nếu có)": "",
-              "Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng)": "Ấp  2, xã ĐỐC BINH KIỀU",
-              "Lý do chưa ra lớp (nếu biết)": "",
-              "Số điện thoại học sinh (nếu có)": "",
-              "Họ và tên học sinh": "Đặng Nguyễn Trọng Nhân",
-              "Lớp năm học trước": "7a4",
-              "TT": "2"
-            },
-            {
-              "Số điện thoại học sinh (nếu có)": "",
-              "Số điện thoại phụ huynh (nếu có)": "",
-              "TT": "3",
-              "Lý do chưa ra lớp (nếu biết)": "",
-              "Họ và tên học sinh": "Lê Hữu Thiện",
-              "Lớp năm học trước": "7a4",
-              "Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng)": "Ấp  3, xã ĐỐC BINH KIỀU"
-            },
-            {
-              "Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng)": "",
-              "Số điện thoại phụ huynh (nếu có)": "",
-              "Số điện thoại học sinh (nếu có)": "",
-              "Lý do chưa ra lớp (nếu biết)": "",
-              "Lớp năm học trước": "",
-              "TT": "4",
-              "Họ và tên học sinh": ""
-            },
-            {
-              "Lý do chưa ra lớp (nếu biết)": "",
-              "Số điện thoại phụ huynh (nếu có)": "",
-              "Số điện thoại học sinh (nếu có)": "",
-              "Lớp năm học trước": "",
-              "Họ và tên học sinh": "",
-              "Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng)": "",
-              "TT": "5"
-            }
-          ],
-          "id": "tbl-1788535567817-egt2",
-          "title": "Danh sách học sinh chưa ra lớp (theo bảng thống kê)"
-        },
-        {
-          "title": "Thông tin học sinh có thành tích về hội thi, phong trào",
-          "rows": [
-            {
-              "Họ tên học sinh đạt giải": "",
-              "TT": "1",
-              "Đạt giải": "",
-              "Cuộc thi": "Văn nghệ vòng tỉnh, vòng xã"
-            },
-            {
-              "Đạt giải": "",
-              "TT": "2",
-              "Họ tên học sinh đạt giải": "",
-              "Cuộc thi": "Hội khỏe phù đổng"
-            },
-            {
-              "Họ tên học sinh đạt giải": "",
-              "Đạt giải": "",
-              "TT": "3",
-              "Cuộc thi": "Giải thể thao học sinh tỉnh Đồng Tháp"
-            },
-            {
-              "Họ tên học sinh đạt giải": "",
-              "Đạt giải": "",
-              "Cuộc thi": "Sáng tạo thanh thiếu niên nhi đồng",
-              "TT": "4"
-            },
-            {
-              "Đạt giải": "",
-              "Họ tên học sinh đạt giải": "",
-              "TT": "5",
-              "Cuộc thi": "Khoa học kỹ thuật"
-            },
-            {
-              "TT": "6",
-              "Cuộc thi": "Vẽ tranh",
-              "Họ tên học sinh đạt giải": "",
-              "Đạt giải": ""
-            },
-            {
-              "Họ tên học sinh đạt giải": "",
-              "Đạt giải": "",
-              "TT": "7",
-              "Cuộc thi": "Phong trào khác:"
-            },
-            {
-              "Đạt giải": "",
-              "Cuộc thi": "Thành tích khác:",
-              "Họ tên học sinh đạt giải": "",
-              "TT": "8"
-            }
-          ],
-          "id": "tbl-1788535567817-fpw0",
-          "headers": [
-            "TT",
-            "Cuộc thi",
-            "Đạt giải",
-            "Họ tên học sinh đạt giải"
-          ]
-        }
-      ],
-      "customFields": [
-        {
-          "required": false,
-          "placeholder": "Nhập số học sinh chưa ra lớp đến thời điểm ngày 07/9/2026...",
-          "type": "number",
-          "id": "fld-1788535567817-w89u",
-          "label": "Số học sinh chưa ra lớp đến thời điểm ngày 07/9/2026"
-        },
-        {
-          "id": "fld-1788535567817-afs9",
-          "type": "text",
-          "placeholder": "Giá trị mặc định: 2",
-          "required": false,
-          "label": "Họ và tên lớp trưởng"
-        }
-      ]
-    },
-    "homeroomClass": "7A4",
-    "isLate": false,
-    "title": "Báo cáo kết quả tập trung học sinh đầu năm học 2026-2027 - Lớp 7A4 - Lê Ngọc Ẩn",
-    "authorEmail": "lnan.114.c3docbinhkieu.dtp@moet.edu.vn",
-    "reviewHistory": [],
-    "submittedAt": "2026-09-07T07:32:23.759Z",
-    "updatedAt": "2026-09-07T07:32:23.759Z",
-    "departmentName": "Tổ GDTC - QPAN - Nghệ thuật",
-    "authorId": "staff-114",
-    "attachments": [],
-    "authorRole": "teacher"
-  },
-  {
     "id": "sub-1788765934926-6lr3",
     "updatedAt": "2026-09-07T07:25:34.926Z",
     "authorName": "Võ Hoàng Toàn",
@@ -5182,175 +4505,6 @@
     "departmentName": "Tổ Vật lý - Hóa học - Sinh học - CN"
   },
   {
-    "id": "sub-1788765325744-endp",
-    "authorEmail": "ttcam.89.c3docbinhkieu.dtp@moet.edu.vn",
-    "departmentName": "Tổ Vật lý - Hóa học - Sinh học - CN",
-    "submittedAt": "2026-09-07T07:15:25.744Z",
-    "attachments": [],
-    "authorId": "staff-89",
-    "status": "submitted",
-    "structuredData": {
-      "customTables": [
-        {
-          "title": "Danh sách học sinh chưa ra lớp (theo bảng thống kê)",
-          "rows": [
-            {
-              "Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng)": "",
-              "TT": "1",
-              "Lý do chưa ra lớp (nếu biết)": "",
-              "Số điện thoại phụ huynh (nếu có)": "",
-              "Số điện thoại học sinh (nếu có)": "",
-              "Lớp năm học trước": "",
-              "Họ và tên học sinh": ""
-            },
-            {
-              "Số điện thoại học sinh (nếu có)": "",
-              "Lý do chưa ra lớp (nếu biết)": "",
-              "TT": "2",
-              "Số điện thoại phụ huynh (nếu có)": "",
-              "Họ và tên học sinh": "",
-              "Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng)": "",
-              "Lớp năm học trước": ""
-            },
-            {
-              "Số điện thoại học sinh (nếu có)": "",
-              "Họ và tên học sinh": "",
-              "Số điện thoại phụ huynh (nếu có)": "",
-              "Lớp năm học trước": "",
-              "Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng)": "",
-              "TT": "3",
-              "Lý do chưa ra lớp (nếu biết)": ""
-            },
-            {
-              "Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng)": "",
-              "Số điện thoại phụ huynh (nếu có)": "",
-              "Lớp năm học trước": "",
-              "Họ và tên học sinh": "",
-              "Số điện thoại học sinh (nếu có)": "",
-              "Lý do chưa ra lớp (nếu biết)": "",
-              "TT": "4"
-            },
-            {
-              "TT": "5",
-              "Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng)": "",
-              "Số điện thoại học sinh (nếu có)": "",
-              "Lý do chưa ra lớp (nếu biết)": "",
-              "Số điện thoại phụ huynh (nếu có)": "",
-              "Lớp năm học trước": "",
-              "Họ và tên học sinh": ""
-            }
-          ],
-          "headers": [
-            "TT",
-            "Họ và tên học sinh",
-            "Lớp năm học trước",
-            "Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng)",
-            "Số điện thoại học sinh (nếu có)",
-            "Số điện thoại phụ huynh (nếu có)",
-            "Lý do chưa ra lớp (nếu biết)"
-          ],
-          "id": "tbl-1788535567817-egt2"
-        },
-        {
-          "id": "tbl-1788535567817-fpw0",
-          "headers": [
-            "TT",
-            "Cuộc thi",
-            "Đạt giải",
-            "Họ tên học sinh đạt giải"
-          ],
-          "title": "Thông tin học sinh có thành tích về hội thi, phong trào",
-          "rows": [
-            {
-              "Cuộc thi": "Văn nghệ vòng tỉnh, vòng xã",
-              "Họ tên học sinh đạt giải": "",
-              "TT": "1",
-              "Đạt giải": ""
-            },
-            {
-              "Họ tên học sinh đạt giải": "",
-              "Đạt giải": "",
-              "Cuộc thi": "Hội khỏe phù đổng",
-              "TT": "2"
-            },
-            {
-              "Cuộc thi": "Giải thể thao học sinh tỉnh Đồng Tháp",
-              "Họ tên học sinh đạt giải": "",
-              "Đạt giải": "",
-              "TT": "3"
-            },
-            {
-              "TT": "4",
-              "Cuộc thi": "Sáng tạo thanh thiếu niên nhi đồng",
-              "Họ tên học sinh đạt giải": "",
-              "Đạt giải": ""
-            },
-            {
-              "Cuộc thi": "Khoa học kỹ thuật",
-              "Đạt giải": "",
-              "TT": "5",
-              "Họ tên học sinh đạt giải": ""
-            },
-            {
-              "Đạt giải": "",
-              "Cuộc thi": "Vẽ tranh",
-              "TT": "6",
-              "Họ tên học sinh đạt giải": ""
-            },
-            {
-              "Cuộc thi": "Phong trào khác:",
-              "Đạt giải": "",
-              "TT": "7",
-              "Họ tên học sinh đạt giải": ""
-            },
-            {
-              "Đạt giải": "",
-              "TT": "8",
-              "Cuộc thi": "Thành tích khác:",
-              "Họ tên học sinh đạt giải": ""
-            }
-          ]
-        }
-      ],
-      "customFieldValues": {
-        "fld-1788535567817-w89u": "1",
-        "fld-1788535567817-afs9": "CAO THI THAO SUONG"
-      },
-      "customFields": [
-        {
-          "id": "fld-1788535567817-w89u",
-          "placeholder": "Nhập số học sinh chưa ra lớp đến thời điểm ngày 07/9/2026...",
-          "required": false,
-          "type": "number",
-          "label": "Số học sinh chưa ra lớp đến thời điểm ngày 07/9/2026"
-        },
-        {
-          "required": false,
-          "placeholder": "Giá trị mặc định: 2",
-          "type": "text",
-          "label": "Họ và tên lớp trưởng",
-          "id": "fld-1788535567817-afs9"
-        }
-      ]
-    },
-    "periodId": "period-1788535581418",
-    "authorRoleTitle": "Giáo viên Công nghệ",
-    "authorName": "Trần Thị Cẩm",
-    "reviewHistory": [],
-    "isLate": false,
-    "periodTitle": "Báo cáo kết quả tập trung học sinh đầu năm học 2026-2027",
-    "updatedAt": "2026-09-07T07:15:25.744Z",
-    "homeroomCampus": "DBK",
-    "content": "BÁO CÁO THEO BIỂU MẪU ĐIỆN TỬ:\n- Số học sinh chưa ra lớp đến thời điểm ngày 07/9/2026: 1\n- Họ và tên lớp trưởng: CAO THI THAO SUONG\n\nDANH SÁCH HỌC SINH CHƯA RA LỚP (THEO BẢNG THỐNG KÊ):\nHàng 1: TT: 1 | Họ và tên học sinh: - | Lớp năm học trước: - | Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng): - | Số điện thoại học sinh (nếu có): - | Số điện thoại phụ huynh (nếu có): - | Lý do chưa ra lớp (nếu biết): -\nHàng 2: TT: 2 | Họ và tên học sinh: - | Lớp năm học trước: - | Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng): - | Số điện thoại học sinh (nếu có): - | Số điện thoại phụ huynh (nếu có): - | Lý do chưa ra lớp (nếu biết): -\nHàng 3: TT: 3 | Họ và tên học sinh: - | Lớp năm học trước: - | Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng): - | Số điện thoại học sinh (nếu có): - | Số điện thoại phụ huynh (nếu có): - | Lý do chưa ra lớp (nếu biết): -\nHàng 4: TT: 4 | Họ và tên học sinh: - | Lớp năm học trước: - | Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng): - | Số điện thoại học sinh (nếu có): - | Số điện thoại phụ huynh (nếu có): - | Lý do chưa ra lớp (nếu biết): -\nHàng 5: TT: 5 | Họ và tên học sinh: - | Lớp năm học trước: - | Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng): - | Số điện thoại học sinh (nếu có): - | Số điện thoại phụ huynh (nếu có): - | Lý do chưa ra lớp (nếu biết): -\n\nTHÔNG TIN HỌC SINH CÓ THÀNH TÍCH VỀ HỘI THI, PHONG TRÀO:\nHàng 1: TT: 1 | Cuộc thi: Văn nghệ vòng tỉnh, vòng xã | Đạt giải: - | Họ tên học sinh đạt giải: -\nHàng 2: TT: 2 | Cuộc thi: Hội khỏe phù đổng | Đạt giải: - | Họ tên học sinh đạt giải: -\nHàng 3: TT: 3 | Cuộc thi: Giải thể thao học sinh tỉnh Đồng Tháp | Đạt giải: - | Họ tên học sinh đạt giải: -\nHàng 4: TT: 4 | Cuộc thi: Sáng tạo thanh thiếu niên nhi đồng | Đạt giải: - | Họ tên học sinh đạt giải: -\nHàng 5: TT: 5 | Cuộc thi: Khoa học kỹ thuật | Đạt giải: - | Họ tên học sinh đạt giải: -\nHàng 6: TT: 6 | Cuộc thi: Vẽ tranh | Đạt giải: - | Họ tên học sinh đạt giải: -\nHàng 7: TT: 7 | Cuộc thi: Phong trào khác: | Đạt giải: - | Họ tên học sinh đạt giải: -\nHàng 8: TT: 8 | Cuộc thi: Thành tích khác: | Đạt giải: - | Họ tên học sinh đạt giải: -\n\nĐÁNH GIÁ & KIẾN NGHỊ:\n(Không có)",
-    "version": 1,
-    "departmentId": "khtn_cn",
-    "homeroomStudentCount": 40,
-    "title": "Báo cáo kết quả tập trung học sinh đầu năm học 2026-2027 - Lớp 7A6 - Trần Thị Cẩm",
-    "isHomeroomReport": true,
-    "authorRole": "teacher",
-    "homeroomClass": "7A6"
-  },
-  {
     "id": "sub-1788764002684-gdrs",
     "homeroomStudentCount": 40,
     "departmentName": "Tổ Ngoại ngữ - Tin học",
@@ -5518,341 +4672,6 @@
     "attachments": [],
     "submittedAt": "2026-09-07T06:53:22.684Z",
     "authorEmail": "mploc.105.c3docbinhkieu.dtp@moet.edu.vn"
-  },
-  {
-    "id": "sub-1788763836740-wqrp",
-    "isLate": false,
-    "attachments": [],
-    "periodId": "period-1788535581418",
-    "departmentName": "Tổ Ngoại ngữ - Tin học",
-    "isHomeroomReport": true,
-    "authorEmail": "mploc.105.c3docbinhkieu.dtp@moet.edu.vn",
-    "authorRole": "teacher",
-    "submittedAt": null,
-    "updatedAt": "2026-09-07T06:50:36.740Z",
-    "authorName": "Mai Phước Lộc",
-    "homeroomStudentCount": 40,
-    "version": 1,
-    "title": "Báo cáo kết quả tập trung học sinh đầu năm học 2026-2027 - Lớp 7A2 - Mai Phước Lộc",
-    "content": "BÁO CÁO THEO BIỂU MẪU ĐIỆN TỬ:\n- Số học sinh chưa ra lớp đến thời điểm ngày 07/9/2026: 1\n- Họ và tên lớp trưởng: Nguyễn Thảo Vy\n\nDANH SÁCH HỌC SINH CHƯA RA LỚP (THEO BẢNG THỐNG KÊ):\nHàng 1: TT: 1 | Họ và tên học sinh: Cao Huỳnh Đàng | Lớp năm học trước: 6/2 | Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng): Ấp 4, xã Đốc Binh Kiều, tỉnh Đồng Tháp (học sinh khuyết tật, nhà gần nhà máy Chơn Chính) | Số điện thoại học sinh (nếu có): - | Số điện thoại phụ huynh (nếu có): - | Lý do chưa ra lớp (nếu biết): -\nHàng 2: TT: 2 | Họ và tên học sinh: - | Lớp năm học trước: - | Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng): - | Số điện thoại học sinh (nếu có): - | Số điện thoại phụ huynh (nếu có): - | Lý do chưa ra lớp (nếu biết): -\nHàng 3: TT: 3 | Họ và tên học sinh: - | Lớp năm học trước: - | Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng): - | Số điện thoại học sinh (nếu có): - | Số điện thoại phụ huynh (nếu có): - | Lý do chưa ra lớp (nếu biết): -\nHàng 4: TT: 4 | Họ và tên học sinh: - | Lớp năm học trước: - | Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng): - | Số điện thoại học sinh (nếu có): - | Số điện thoại phụ huynh (nếu có): - | Lý do chưa ra lớp (nếu biết): -\nHàng 5: TT: 5 | Họ và tên học sinh: - | Lớp năm học trước: - | Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng): - | Số điện thoại học sinh (nếu có): - | Số điện thoại phụ huynh (nếu có): - | Lý do chưa ra lớp (nếu biết): -\n\nTHÔNG TIN HỌC SINH CÓ THÀNH TÍCH VỀ HỘI THI, PHONG TRÀO:\nHàng 1: TT: 1 | Cuộc thi: Văn nghệ vòng tỉnh, vòng xã | Đạt giải: - | Họ tên học sinh đạt giải: -\nHàng 2: TT: 2 | Cuộc thi: Hội khỏe phù đổng | Đạt giải: - | Họ tên học sinh đạt giải: -\nHàng 3: TT: 3 | Cuộc thi: Giải thể thao học sinh tỉnh Đồng Tháp | Đạt giải: - | Họ tên học sinh đạt giải: -\nHàng 4: TT: 4 | Cuộc thi: Sáng tạo thanh thiếu niên nhi đồng | Đạt giải: - | Họ tên học sinh đạt giải: -\nHàng 5: TT: 5 | Cuộc thi: Khoa học kỹ thuật | Đạt giải: - | Họ tên học sinh đạt giải: -\nHàng 6: TT: 6 | Cuộc thi: Vẽ tranh | Đạt giải: - | Họ tên học sinh đạt giải: -\nHàng 7: TT: 7 | Cuộc thi: Phong trào khác: | Đạt giải: - | Họ tên học sinh đạt giải: -\nHàng 8: TT: 8 | Cuộc thi: Thành tích khác: | Đạt giải: - | Họ tên học sinh đạt giải: -\n\nĐÁNH GIÁ & KIẾN NGHỊ:\n(Không có)",
-    "structuredData": {
-      "customFieldValues": {
-        "fld-1788535567817-afs9": "Nguyễn Thảo Vy",
-        "fld-1788535567817-w89u": "1"
-      },
-      "customFields": [
-        {
-          "id": "fld-1788535567817-w89u",
-          "label": "Số học sinh chưa ra lớp đến thời điểm ngày 07/9/2026",
-          "type": "number",
-          "placeholder": "Nhập số học sinh chưa ra lớp đến thời điểm ngày 07/9/2026...",
-          "required": false
-        },
-        {
-          "required": false,
-          "placeholder": "Giá trị mặc định: 2",
-          "type": "text",
-          "label": "Họ và tên lớp trưởng",
-          "id": "fld-1788535567817-afs9"
-        }
-      ],
-      "customTables": [
-        {
-          "headers": [
-            "TT",
-            "Họ và tên học sinh",
-            "Lớp năm học trước",
-            "Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng)",
-            "Số điện thoại học sinh (nếu có)",
-            "Số điện thoại phụ huynh (nếu có)",
-            "Lý do chưa ra lớp (nếu biết)"
-          ],
-          "title": "Danh sách học sinh chưa ra lớp (theo bảng thống kê)",
-          "rows": [
-            {
-              "Lý do chưa ra lớp (nếu biết)": "",
-              "Số điện thoại học sinh (nếu có)": "",
-              "Số điện thoại phụ huynh (nếu có)": "",
-              "Họ và tên học sinh": "Cao Huỳnh Đàng",
-              "Lớp năm học trước": "6/2",
-              "TT": "1",
-              "Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng)": "Ấp 4, xã Đốc Binh Kiều, tỉnh Đồng Tháp (học sinh khuyết tật, nhà gần nhà máy Chơn Chính)"
-            },
-            {
-              "Lớp năm học trước": "",
-              "Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng)": "",
-              "Số điện thoại phụ huynh (nếu có)": "",
-              "TT": "2",
-              "Số điện thoại học sinh (nếu có)": "",
-              "Lý do chưa ra lớp (nếu biết)": "",
-              "Họ và tên học sinh": ""
-            },
-            {
-              "Số điện thoại học sinh (nếu có)": "",
-              "TT": "3",
-              "Số điện thoại phụ huynh (nếu có)": "",
-              "Lớp năm học trước": "",
-              "Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng)": "",
-              "Lý do chưa ra lớp (nếu biết)": "",
-              "Họ và tên học sinh": ""
-            },
-            {
-              "Số điện thoại học sinh (nếu có)": "",
-              "Lớp năm học trước": "",
-              "Họ và tên học sinh": "",
-              "TT": "4",
-              "Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng)": "",
-              "Lý do chưa ra lớp (nếu biết)": "",
-              "Số điện thoại phụ huynh (nếu có)": ""
-            },
-            {
-              "TT": "5",
-              "Lý do chưa ra lớp (nếu biết)": "",
-              "Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng)": "",
-              "Số điện thoại học sinh (nếu có)": "",
-              "Lớp năm học trước": "",
-              "Họ và tên học sinh": "",
-              "Số điện thoại phụ huynh (nếu có)": ""
-            }
-          ],
-          "id": "tbl-1788535567817-egt2"
-        },
-        {
-          "headers": [
-            "TT",
-            "Cuộc thi",
-            "Đạt giải",
-            "Họ tên học sinh đạt giải"
-          ],
-          "rows": [
-            {
-              "TT": "1",
-              "Họ tên học sinh đạt giải": "",
-              "Cuộc thi": "Văn nghệ vòng tỉnh, vòng xã",
-              "Đạt giải": ""
-            },
-            {
-              "TT": "2",
-              "Cuộc thi": "Hội khỏe phù đổng",
-              "Họ tên học sinh đạt giải": "",
-              "Đạt giải": ""
-            },
-            {
-              "Đạt giải": "",
-              "Họ tên học sinh đạt giải": "",
-              "TT": "3",
-              "Cuộc thi": "Giải thể thao học sinh tỉnh Đồng Tháp"
-            },
-            {
-              "Đạt giải": "",
-              "Họ tên học sinh đạt giải": "",
-              "TT": "4",
-              "Cuộc thi": "Sáng tạo thanh thiếu niên nhi đồng"
-            },
-            {
-              "Họ tên học sinh đạt giải": "",
-              "Đạt giải": "",
-              "TT": "5",
-              "Cuộc thi": "Khoa học kỹ thuật"
-            },
-            {
-              "TT": "6",
-              "Họ tên học sinh đạt giải": "",
-              "Cuộc thi": "Vẽ tranh",
-              "Đạt giải": ""
-            },
-            {
-              "TT": "7",
-              "Đạt giải": "",
-              "Cuộc thi": "Phong trào khác:",
-              "Họ tên học sinh đạt giải": ""
-            },
-            {
-              "Họ tên học sinh đạt giải": "",
-              "Cuộc thi": "Thành tích khác:",
-              "TT": "8",
-              "Đạt giải": ""
-            }
-          ],
-          "id": "tbl-1788535567817-fpw0",
-          "title": "Thông tin học sinh có thành tích về hội thi, phong trào"
-        }
-      ]
-    },
-    "periodTitle": "Báo cáo kết quả tập trung học sinh đầu năm học 2026-2027",
-    "authorRoleTitle": "Giáo viên Tin học",
-    "homeroomClass": "7A2",
-    "authorId": "staff-105",
-    "reviewHistory": [],
-    "status": "draft",
-    "homeroomCampus": "DBK",
-    "departmentId": "nn_tin"
-  },
-  {
-    "id": "sub-1788745520980-3ews",
-    "submittedAt": "2026-09-07T01:45:20.980Z",
-    "status": "submitted",
-    "authorEmail": "nmtri.c3docbinhkieu.dtp@moet.edu.vn",
-    "attachments": [],
-    "reviewHistory": [],
-    "title": "Báo cáo kết quả tập trung học sinh đầu năm học 2026-2027 - Nguyễn Minh Trí",
-    "periodId": "period-1788535581418",
-    "authorRoleTitle": "Phó Hiệu trưởng (Quản trị hệ thống)",
-    "departmentId": "bgh",
-    "authorRole": "admin",
-    "departmentName": "Ban Giám Hiệu",
-    "authorId": "staff-2",
-    "updatedAt": "2026-09-07T01:45:20.980Z",
-    "periodTitle": "Báo cáo kết quả tập trung học sinh đầu năm học 2026-2027",
-    "isHomeroomReport": true,
-    "isLate": false,
-    "authorName": "Nguyễn Minh Trí",
-    "structuredData": {
-      "customFieldValues": {
-        "fld-1788535567817-afs9": "Nguyễn Phúc Thiên Ân ",
-        "fld-1788535567817-w89u": "3"
-      },
-      "customTables": [
-        {
-          "rows": [
-            {
-              "Số điện thoại học sinh (nếu có)": "",
-              "Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng)": "",
-              "Lý do chưa ra lớp (nếu biết)": "",
-              "Số điện thoại phụ huynh (nếu có)": "",
-              "Họ và tên học sinh": "Nguyễn Phúc Hậu ",
-              "TT": "1",
-              "Lớp năm học trước": ""
-            },
-            {
-              "Lớp năm học trước": "",
-              "Lý do chưa ra lớp (nếu biết)": "",
-              "Số điện thoại phụ huynh (nếu có)": "",
-              "Họ và tên học sinh": "Đặng Nguyễn Trọng Nhân ",
-              "TT": "2",
-              "Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng)": "",
-              "Số điện thoại học sinh (nếu có)": ""
-            },
-            {
-              "Số điện thoại phụ huynh (nếu có)": "",
-              "Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng)": "",
-              "Số điện thoại học sinh (nếu có)": "",
-              "Lý do chưa ra lớp (nếu biết)": "",
-              "Họ và tên học sinh": "Lê Hữu Thiện ",
-              "Lớp năm học trước": "",
-              "TT": "3"
-            },
-            {
-              "Họ và tên học sinh": "",
-              "TT": "4",
-              "Số điện thoại học sinh (nếu có)": "",
-              "Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng)": "",
-              "Lý do chưa ra lớp (nếu biết)": "",
-              "Lớp năm học trước": "",
-              "Số điện thoại phụ huynh (nếu có)": ""
-            },
-            {
-              "Lớp năm học trước": "",
-              "Họ và tên học sinh": "",
-              "Số điện thoại học sinh (nếu có)": "",
-              "TT": "5",
-              "Lý do chưa ra lớp (nếu biết)": "",
-              "Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng)": "",
-              "Số điện thoại phụ huynh (nếu có)": ""
-            }
-          ],
-          "title": "Danh sách học sinh chưa ra lớp (theo bảng thống kê)",
-          "headers": [
-            "TT",
-            "Họ và tên học sinh",
-            "Lớp năm học trước",
-            "Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng)",
-            "Số điện thoại học sinh (nếu có)",
-            "Số điện thoại phụ huynh (nếu có)",
-            "Lý do chưa ra lớp (nếu biết)"
-          ],
-          "id": "tbl-1788535567817-egt2"
-        },
-        {
-          "rows": [
-            {
-              "Cuộc thi": "Văn nghệ vòng tỉnh, vòng xã",
-              "TT": "1",
-              "Đạt giải": "",
-              "Họ tên học sinh đạt giải": ""
-            },
-            {
-              "Đạt giải": "",
-              "Cuộc thi": "Hội khỏe phù đổng",
-              "TT": "2",
-              "Họ tên học sinh đạt giải": ""
-            },
-            {
-              "Đạt giải": "",
-              "Cuộc thi": "Giải thể thao học sinh tỉnh Đồng Tháp",
-              "TT": "3",
-              "Họ tên học sinh đạt giải": ""
-            },
-            {
-              "Họ tên học sinh đạt giải": "",
-              "Cuộc thi": "Sáng tạo thanh thiếu niên nhi đồng",
-              "Đạt giải": "",
-              "TT": "4"
-            },
-            {
-              "TT": "5",
-              "Họ tên học sinh đạt giải": "",
-              "Đạt giải": "",
-              "Cuộc thi": "Khoa học kỹ thuật"
-            },
-            {
-              "Cuộc thi": "Vẽ tranh",
-              "Họ tên học sinh đạt giải": "",
-              "Đạt giải": "",
-              "TT": "6"
-            },
-            {
-              "Họ tên học sinh đạt giải": "",
-              "Cuộc thi": "Phong trào khác:",
-              "TT": "7",
-              "Đạt giải": ""
-            },
-            {
-              "Đạt giải": "",
-              "Cuộc thi": "Thành tích khác:",
-              "Họ tên học sinh đạt giải": "",
-              "TT": "8"
-            }
-          ],
-          "headers": [
-            "TT",
-            "Cuộc thi",
-            "Đạt giải",
-            "Họ tên học sinh đạt giải"
-          ],
-          "id": "tbl-1788535567817-fpw0",
-          "title": "Thông tin học sinh có thành tích về hội thi, phong trào"
-        }
-      ],
-      "customFields": [
-        {
-          "id": "fld-1788535567817-w89u",
-          "type": "number",
-          "label": "Số học sinh chưa ra lớp đến thời điểm ngày 07/9/2026",
-          "placeholder": "Nhập số học sinh chưa ra lớp đến thời điểm ngày 07/9/2026...",
-          "required": false
-        },
-        {
-          "id": "fld-1788535567817-afs9",
-          "required": false,
-          "label": "Họ và tên lớp trưởng",
-          "type": "text",
-          "placeholder": "Giá trị mặc định: 2"
-        }
-      ]
-    },
-    "version": 1,
-    "content": "BÁO CÁO THEO BIỂU MẪU ĐIỆN TỬ:\n- Số học sinh chưa ra lớp đến thời điểm ngày 07/9/2026: 3\n- Họ và tên lớp trưởng: Nguyễn Phúc Thiên Ân \n\nDANH SÁCH HỌC SINH CHƯA RA LỚP (THEO BẢNG THỐNG KÊ):\nHàng 1: TT: 1 | Họ và tên học sinh: Nguyễn Phúc Hậu  | Lớp năm học trước: - | Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng): - | Số điện thoại học sinh (nếu có): - | Số điện thoại phụ huynh (nếu có): - | Lý do chưa ra lớp (nếu biết): -\nHàng 2: TT: 2 | Họ và tên học sinh: Đặng Nguyễn Trọng Nhân  | Lớp năm học trước: - | Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng): - | Số điện thoại học sinh (nếu có): - | Số điện thoại phụ huynh (nếu có): - | Lý do chưa ra lớp (nếu biết): -\nHàng 3: TT: 3 | Họ và tên học sinh: Lê Hữu Thiện  | Lớp năm học trước: - | Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng): - | Số điện thoại học sinh (nếu có): - | Số điện thoại phụ huynh (nếu có): - | Lý do chưa ra lớp (nếu biết): -\nHàng 4: TT: 4 | Họ và tên học sinh: - | Lớp năm học trước: - | Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng): - | Số điện thoại học sinh (nếu có): - | Số điện thoại phụ huynh (nếu có): - | Lý do chưa ra lớp (nếu biết): -\nHàng 5: TT: 5 | Họ và tên học sinh: - | Lớp năm học trước: - | Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng): - | Số điện thoại học sinh (nếu có): - | Số điện thoại phụ huynh (nếu có): - | Lý do chưa ra lớp (nếu biết): -\n\nTHÔNG TIN HỌC SINH CÓ THÀNH TÍCH VỀ HỘI THI, PHONG TRÀO:\nHàng 1: TT: 1 | Cuộc thi: Văn nghệ vòng tỉnh, vòng xã | Đạt giải: - | Họ tên học sinh đạt giải: -\nHàng 2: TT: 2 | Cuộc thi: Hội khỏe phù đổng | Đạt giải: - | Họ tên học sinh đạt giải: -\nHàng 3: TT: 3 | Cuộc thi: Giải thể thao học sinh tỉnh Đồng Tháp | Đạt giải: - | Họ tên học sinh đạt giải: -\nHàng 4: TT: 4 | Cuộc thi: Sáng tạo thanh thiếu niên nhi đồng | Đạt giải: - | Họ tên học sinh đạt giải: -\nHàng 5: TT: 5 | Cuộc thi: Khoa học kỹ thuật | Đạt giải: - | Họ tên học sinh đạt giải: -\nHàng 6: TT: 6 | Cuộc thi: Vẽ tranh | Đạt giải: - | Họ tên học sinh đạt giải: -\nHàng 7: TT: 7 | Cuộc thi: Phong trào khác: | Đạt giải: - | Họ tên học sinh đạt giải: -\nHàng 8: TT: 8 | Cuộc thi: Thành tích khác: | Đạt giải: - | Họ tên học sinh đạt giải: -\n\nĐÁNH GIÁ & KIẾN NGHỊ:\n(Không có)"
   },
   {
     "id": "sub-1788739756778-812c",
@@ -6538,175 +5357,6 @@
     "content": "BÁO CÁO THEO BIỂU MẪU ĐIỆN TỬ:\n- Số học sinh chưa ra lớp đến thời điểm ngày 07/9/2026: 0\n- Họ và tên lớp trưởng: Lý Thị Cẩm Ly\n\nDANH SÁCH HỌC SINH CHƯA RA LỚP (THEO BẢNG THỐNG KÊ):\nHàng 1: TT: 1 | Họ và tên học sinh: - | Lớp năm học trước: - | Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng): - | Số điện thoại học sinh (nếu có): - | Số điện thoại phụ huynh (nếu có): - | Lý do chưa ra lớp (nếu biết): -\nHàng 2: TT: 2 | Họ và tên học sinh: - | Lớp năm học trước: - | Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng): - | Số điện thoại học sinh (nếu có): - | Số điện thoại phụ huynh (nếu có): - | Lý do chưa ra lớp (nếu biết): -\nHàng 3: TT: 3 | Họ và tên học sinh: - | Lớp năm học trước: - | Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng): - | Số điện thoại học sinh (nếu có): - | Số điện thoại phụ huynh (nếu có): - | Lý do chưa ra lớp (nếu biết): -\nHàng 4: TT: 4 | Họ và tên học sinh: - | Lớp năm học trước: - | Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng): - | Số điện thoại học sinh (nếu có): - | Số điện thoại phụ huynh (nếu có): - | Lý do chưa ra lớp (nếu biết): -\nHàng 5: TT: 5 | Họ và tên học sinh: - | Lớp năm học trước: - | Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng): - | Số điện thoại học sinh (nếu có): - | Số điện thoại phụ huynh (nếu có): - | Lý do chưa ra lớp (nếu biết): -\n\nTHÔNG TIN HỌC SINH CÓ THÀNH TÍCH VỀ HỘI THI, PHONG TRÀO:\nHàng 1: TT: 1 | Cuộc thi: Văn nghệ vòng tỉnh, vòng xã | Đạt giải: - | Họ tên học sinh đạt giải: -\nHàng 2: TT: 2 | Cuộc thi: Hội khỏe phù đổng | Đạt giải: - | Họ tên học sinh đạt giải: -\nHàng 3: TT: 3 | Cuộc thi: Giải thể thao học sinh tỉnh Đồng Tháp | Đạt giải: HCV | Họ tên học sinh đạt giải: Võ Thanh Nhã\nHàng 4: TT: 4 | Cuộc thi: Sáng tạo thanh thiếu niên nhi đồng | Đạt giải: - | Họ tên học sinh đạt giải: -\nHàng 5: TT: 5 | Cuộc thi: Khoa học kỹ thuật | Đạt giải: - | Họ tên học sinh đạt giải: -\nHàng 6: TT: 6 | Cuộc thi: Vẽ tranh | Đạt giải: - | Họ tên học sinh đạt giải: -\nHàng 7: TT: 7 | Cuộc thi: Phong trào khác: | Đạt giải: - | Họ tên học sinh đạt giải: -\nHàng 8: TT: 8 | Cuộc thi: Thành tích khác: | Đạt giải: - | Họ tên học sinh đạt giải: -\n\nĐÁNH GIÁ & KIẾN NGHỊ:\n(Không có)",
     "authorEmail": "vtnhuong.25.c3docbinhkieu.dtp@moet.edu.vn",
     "authorName": "Võ Thị Ngọc Hương"
-  },
-  {
-    "id": "sub-1788706816548-49d4",
-    "authorEmail": "ptntho.73.c3docbinhkieu.dtp@moet.edu.vn",
-    "periodId": "period-1788535581418",
-    "homeroomCampus": "THPT",
-    "submittedAt": "2026-09-06T15:00:16.548Z",
-    "isHomeroomReport": true,
-    "attachments": [],
-    "reviewHistory": [],
-    "version": 1,
-    "updatedAt": "2026-09-06T15:00:16.548Z",
-    "content": "BÁO CÁO THEO BIỂU MẪU ĐIỆN TỬ:\n- Số học sinh chưa ra lớp đến thời điểm ngày 07/9/2026: 0\n- Họ và tên lớp trưởng: Nguyễn Tiến Vinh\n\nDANH SÁCH HỌC SINH CHƯA RA LỚP (THEO BẢNG THỐNG KÊ):\nHàng 1: TT: 1 | Họ và tên học sinh: - | Lớp năm học trước: - | Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng): - | Số điện thoại học sinh (nếu có): - | Số điện thoại phụ huynh (nếu có): - | Lý do chưa ra lớp (nếu biết): -\nHàng 2: TT: 2 | Họ và tên học sinh: - | Lớp năm học trước: - | Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng): - | Số điện thoại học sinh (nếu có): - | Số điện thoại phụ huynh (nếu có): - | Lý do chưa ra lớp (nếu biết): -\nHàng 3: TT: 3 | Họ và tên học sinh: - | Lớp năm học trước: - | Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng): - | Số điện thoại học sinh (nếu có): - | Số điện thoại phụ huynh (nếu có): - | Lý do chưa ra lớp (nếu biết): -\nHàng 4: TT: 4 | Họ và tên học sinh: - | Lớp năm học trước: - | Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng): - | Số điện thoại học sinh (nếu có): - | Số điện thoại phụ huynh (nếu có): - | Lý do chưa ra lớp (nếu biết): -\nHàng 5: TT: 5 | Họ và tên học sinh: - | Lớp năm học trước: - | Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng): - | Số điện thoại học sinh (nếu có): - | Số điện thoại phụ huynh (nếu có): - | Lý do chưa ra lớp (nếu biết): -\n\nTHÔNG TIN HỌC SINH CÓ THÀNH TÍCH VỀ HỘI THI, PHONG TRÀO:\nHàng 1: TT: 1 | Cuộc thi: Văn nghệ vòng tỉnh, vòng xã | Đạt giải: - | Họ tên học sinh đạt giải: -\nHàng 2: TT: 2 | Cuộc thi: Hội khỏe phù đổng | Đạt giải: - | Họ tên học sinh đạt giải: -\nHàng 3: TT: 3 | Cuộc thi: Giải thể thao học sinh tỉnh Đồng Tháp | Đạt giải: - | Họ tên học sinh đạt giải: -\nHàng 4: TT: 4 | Cuộc thi: Sáng tạo thanh thiếu niên nhi đồng | Đạt giải: I | Họ tên học sinh đạt giải: Đoàn Thanh Điền\nHàng 5: TT: 5 | Cuộc thi: Khoa học kỹ thuật | Đạt giải: KK | Họ tên học sinh đạt giải: Đoàn Thanh Điền, Nguyễn Tiến Vinh\nHàng 6: TT: 6 | Cuộc thi: Vẽ tranh | Đạt giải: - | Họ tên học sinh đạt giải: -\nHàng 7: TT: 7 | Cuộc thi: Phong trào khác: | Đạt giải: - | Họ tên học sinh đạt giải: -\nHàng 8: TT: 8 | Cuộc thi: Thành tích khác: | Đạt giải: - | Họ tên học sinh đạt giải: -\n\nĐÁNH GIÁ & KIẾN NGHỊ:\n(Không có)",
-    "homeroomClass": "12CB1",
-    "status": "submitted",
-    "homeroomStudentCount": 28,
-    "title": "Báo cáo kết quả tập trung học sinh đầu năm học 2026-2027 - Lớp 12CB1 - Phan Thị Ngọc Thơ",
-    "departmentId": "khtn_cn",
-    "structuredData": {
-      "customFields": [
-        {
-          "label": "Số học sinh chưa ra lớp đến thời điểm ngày 07/9/2026",
-          "required": false,
-          "type": "number",
-          "id": "fld-1788535567817-w89u",
-          "placeholder": "Nhập số học sinh chưa ra lớp đến thời điểm ngày 07/9/2026..."
-        },
-        {
-          "label": "Họ và tên lớp trưởng",
-          "required": false,
-          "placeholder": "Giá trị mặc định: 2",
-          "type": "text",
-          "id": "fld-1788535567817-afs9"
-        }
-      ],
-      "customFieldValues": {
-        "fld-1788535567817-afs9": "Nguyễn Tiến Vinh",
-        "fld-1788535567817-w89u": "0"
-      },
-      "customTables": [
-        {
-          "headers": [
-            "TT",
-            "Họ và tên học sinh",
-            "Lớp năm học trước",
-            "Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng)",
-            "Số điện thoại học sinh (nếu có)",
-            "Số điện thoại phụ huynh (nếu có)",
-            "Lý do chưa ra lớp (nếu biết)"
-          ],
-          "id": "tbl-1788535567817-egt2",
-          "rows": [
-            {
-              "Số điện thoại phụ huynh (nếu có)": "",
-              "Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng)": "",
-              "Họ và tên học sinh": "",
-              "TT": "1",
-              "Lớp năm học trước": "",
-              "Số điện thoại học sinh (nếu có)": "",
-              "Lý do chưa ra lớp (nếu biết)": ""
-            },
-            {
-              "TT": "2",
-              "Số điện thoại phụ huynh (nếu có)": "",
-              "Lớp năm học trước": "",
-              "Họ và tên học sinh": "",
-              "Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng)": "",
-              "Lý do chưa ra lớp (nếu biết)": "",
-              "Số điện thoại học sinh (nếu có)": ""
-            },
-            {
-              "TT": "3",
-              "Số điện thoại phụ huynh (nếu có)": "",
-              "Số điện thoại học sinh (nếu có)": "",
-              "Lý do chưa ra lớp (nếu biết)": "",
-              "Lớp năm học trước": "",
-              "Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng)": "",
-              "Họ và tên học sinh": ""
-            },
-            {
-              "TT": "4",
-              "Họ và tên học sinh": "",
-              "Số điện thoại phụ huynh (nếu có)": "",
-              "Lý do chưa ra lớp (nếu biết)": "",
-              "Lớp năm học trước": "",
-              "Số điện thoại học sinh (nếu có)": "",
-              "Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng)": ""
-            },
-            {
-              "Số điện thoại học sinh (nếu có)": "",
-              "Lý do chưa ra lớp (nếu biết)": "",
-              "Lớp năm học trước": "",
-              "TT": "5",
-              "Họ và tên học sinh": "",
-              "Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng)": "",
-              "Số điện thoại phụ huynh (nếu có)": ""
-            }
-          ],
-          "title": "Danh sách học sinh chưa ra lớp (theo bảng thống kê)"
-        },
-        {
-          "id": "tbl-1788535567817-fpw0",
-          "headers": [
-            "TT",
-            "Cuộc thi",
-            "Đạt giải",
-            "Họ tên học sinh đạt giải"
-          ],
-          "rows": [
-            {
-              "Đạt giải": "",
-              "Họ tên học sinh đạt giải": "",
-              "Cuộc thi": "Văn nghệ vòng tỉnh, vòng xã",
-              "TT": "1"
-            },
-            {
-              "Cuộc thi": "Hội khỏe phù đổng",
-              "Đạt giải": "",
-              "TT": "2",
-              "Họ tên học sinh đạt giải": ""
-            },
-            {
-              "Đạt giải": "",
-              "Họ tên học sinh đạt giải": "",
-              "Cuộc thi": "Giải thể thao học sinh tỉnh Đồng Tháp",
-              "TT": "3"
-            },
-            {
-              "Đạt giải": "I",
-              "Họ tên học sinh đạt giải": "Đoàn Thanh Điền",
-              "TT": "4",
-              "Cuộc thi": "Sáng tạo thanh thiếu niên nhi đồng"
-            },
-            {
-              "TT": "5",
-              "Cuộc thi": "Khoa học kỹ thuật",
-              "Họ tên học sinh đạt giải": "Đoàn Thanh Điền, Nguyễn Tiến Vinh",
-              "Đạt giải": "KK"
-            },
-            {
-              "TT": "6",
-              "Cuộc thi": "Vẽ tranh",
-              "Đạt giải": "",
-              "Họ tên học sinh đạt giải": ""
-            },
-            {
-              "TT": "7",
-              "Cuộc thi": "Phong trào khác:",
-              "Họ tên học sinh đạt giải": "",
-              "Đạt giải": ""
-            },
-            {
-              "TT": "8",
-              "Đạt giải": "",
-              "Cuộc thi": "Thành tích khác:",
-              "Họ tên học sinh đạt giải": ""
-            }
-          ],
-          "title": "Thông tin học sinh có thành tích về hội thi, phong trào"
-        }
-      ]
-    },
-    "isLate": false,
-    "authorRole": "teacher",
-    "periodTitle": "Báo cáo kết quả tập trung học sinh đầu năm học 2026-2027",
-    "authorId": "staff-73",
-    "authorName": "Phan Thị Ngọc Thơ",
-    "departmentName": "Tổ Vật lý - Hóa học - Sinh học - CN",
-    "authorRoleTitle": "Giáo viên Hóa"
   },
   {
     "id": "sub-1788705416376-40vn",
