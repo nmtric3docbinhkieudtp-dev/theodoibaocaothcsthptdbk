@@ -72,6 +72,65 @@ export function setLocal<T>(key: string, value: T): void {
   }
 }
 
+async function writeFirestoreDocIfChanged(
+  operationName: string,
+  reference: any,
+  payload: Record<string, any>,
+  options?: { merge?: boolean }
+): Promise<void> {
+  const writeKey = `write:${reference.path}`;
+  const inFlight = firestoreWriteInFlight.get(writeKey);
+  if (inFlight) return inFlight;
+
+  const operation = (async () => {
+  try {
+    const existing = await getDoc(reference);
+    const cleanPayload = cleanFirestorePayload(payload);
+    if (existing.exists()) {
+      const current = cleanFirestorePayload(existing.data());
+      const matches = options?.merge
+        ? Object.entries(cleanPayload).every(([key, value]) => JSON.stringify(current[key]) === JSON.stringify(value))
+        : JSON.stringify(current) === JSON.stringify(cleanPayload);
+      if (matches) return;
+    }
+    await safeFirestoreWrite(operationName, () => setDoc(reference, cleanPayload, options));
+  } catch (error) {
+    console.warn(`[Firestore Safe-Write] Could not compare before "${operationName}":`, error);
+  }
+  })();
+  firestoreWriteInFlight.set(writeKey, operation);
+  try {
+    await operation;
+  } finally {
+    firestoreWriteInFlight.delete(writeKey);
+  }
+}
+
+async function deleteFirestoreDocIfExists(operationName: string, reference: any): Promise<void> {
+  const writeKey = `delete:${reference.path}`;
+  const inFlight = firestoreWriteInFlight.get(writeKey);
+  if (inFlight) return inFlight;
+
+  const operation = (async () => {
+  try {
+    const existing = await getDoc(reference);
+    if (existing.exists()) {
+      await safeFirestoreWrite(operationName, () => deleteDoc(reference));
+    }
+  } catch (error) {
+    console.warn(`[Firestore Safe-Delete] Could not verify before "${operationName}":`, error);
+  }
+  })();
+  firestoreWriteInFlight.set(writeKey, operation);
+  try {
+    await operation;
+  } finally {
+    firestoreWriteInFlight.delete(writeKey);
+  }
+}
+
+const firestoreWriteInFlight = new Map<string, Promise<void>>();
+
 export interface UserCredentialData {
   userId: string;
   password?: string;
@@ -100,12 +159,14 @@ export function getUserCredentials(): UserCredentialsMap {
 
 export function saveUserCredential(userId: string, data: Partial<UserCredentialData>): void {
   const all = getUserCredentials();
-  all[userId] = {
+  const previous = all[userId];
+  const next = {
     ...all[userId],
     userId,
-    ...data,
-    updatedAt: new Date().toISOString()
+    ...data
   };
+  const unchanged = previous && Object.entries(next).every(([key, value]) => JSON.stringify(previous[key as keyof UserCredentialData]) === JSON.stringify(value));
+  all[userId] = unchanged ? previous : { ...next, updatedAt: new Date().toISOString() };
   setLocal(STORAGE_KEYS.USER_CREDENTIALS, all);
 
   if (data.hasChangedPassword) {
@@ -124,7 +185,7 @@ export function saveUserCredential(userId: string, data: Partial<UserCredentialD
   const { db, isReady } = getFirebaseInstance();
   if (isReady && db && !isFirestoreWriteQuotaExceeded()) {
     const payload = cleanFirestorePayload(all[userId]);
-    safeFirestoreWrite('user_credentials', () => setDoc(doc(db, 'user_credentials', userId), payload));
+    writeFirestoreDocIfChanged('user_credentials', doc(db, 'user_credentials', userId), payload);
   }
 }
 
@@ -170,9 +231,9 @@ export function resetUserPasswordToDefault(userId: string): { success: boolean; 
   const { db, isReady } = getFirebaseInstance();
   if (isReady && db && !isFirestoreWriteQuotaExceeded()) {
     const payload = cleanFirestorePayload(creds[userId]);
-    safeFirestoreWrite('reset_credential', () => setDoc(doc(db, 'user_credentials', userId), payload));
+    writeFirestoreDocIfChanged('reset_credential', doc(db, 'user_credentials', userId), payload);
     if (userIdx >= 0) {
-      safeFirestoreWrite('reset_user', () => setDoc(doc(db, 'users', userId), cleanFirestorePayload(allUsers[userIdx])));
+      writeFirestoreDocIfChanged('reset_user', doc(db, 'users', userId), cleanFirestorePayload(allUsers[userIdx]));
     }
   }
 
@@ -386,7 +447,7 @@ export const StorageService = {
     const { db, isReady } = getFirebaseInstance();
     if (isReady && db && !isFirestoreWriteQuotaExceeded()) {
       const sanitized = cleanFirestorePayload(period);
-      safeFirestoreWrite('save_period', () => setDoc(doc(db, 'periods', period.id), sanitized));
+      writeFirestoreDocIfChanged('save_period', doc(db, 'periods', period.id), sanitized);
     }
     return updated;
   },
@@ -397,7 +458,7 @@ export const StorageService = {
 
     const { db, isReady } = getFirebaseInstance();
     if (isReady && db && !isFirestoreWriteQuotaExceeded()) {
-      safeFirestoreWrite('delete_period', () => deleteDoc(doc(db, 'periods', periodId)));
+      deleteFirestoreDocIfExists('delete_period', doc(db, 'periods', periodId));
     }
     return periods;
   },
@@ -409,7 +470,7 @@ export const StorageService = {
     if (isReady && db && !isFirestoreWriteQuotaExceeded()) {
       getDocs(collection(db, 'periods')).then(snap => {
         snap.forEach(d => {
-          safeFirestoreWrite('clear_period_doc', () => deleteDoc(doc(db, 'periods', d.id)));
+          deleteFirestoreDocIfExists('clear_period_doc', doc(db, 'periods', d.id));
         });
       }).catch(err => console.warn('Firestore clear periods err:', err));
     }
@@ -463,7 +524,7 @@ export const StorageService = {
     if (isReady && db && !isFirestoreWriteQuotaExceeded()) {
       const targetSub = index >= 0 ? updated[index] : submission;
       const sanitized = cleanFirestorePayload(targetSub);
-      safeFirestoreWrite('save_submission', () => setDoc(doc(db, 'submissions', targetSub.id), sanitized));
+      writeFirestoreDocIfChanged('save_submission', doc(db, 'submissions', targetSub.id), sanitized);
     }
     return updated;
   },
@@ -474,7 +535,7 @@ export const StorageService = {
 
     const { db, isReady } = getFirebaseInstance();
     if (isReady && db && !isFirestoreWriteQuotaExceeded()) {
-      safeFirestoreWrite('delete_submission', () => deleteDoc(doc(db, 'submissions', submissionId)));
+      deleteFirestoreDocIfExists('delete_submission', doc(db, 'submissions', submissionId));
     }
     return subs;
   },
@@ -486,7 +547,7 @@ export const StorageService = {
     if (isReady && db && !isFirestoreWriteQuotaExceeded()) {
       getDocs(collection(db, 'submissions')).then(snap => {
         snap.forEach(d => {
-          safeFirestoreWrite('clear_submission_doc', () => deleteDoc(doc(db, 'submissions', d.id)));
+          deleteFirestoreDocIfExists('clear_submission_doc', doc(db, 'submissions', d.id));
         });
       }).catch(err => console.warn('Firestore clear submissions err:', err));
     }
@@ -563,7 +624,7 @@ export const StorageService = {
     const { db, isReady } = getFirebaseInstance();
     if (isReady && db && !isFirestoreWriteQuotaExceeded()) {
       const payload = cleanFirestorePayload(info);
-      safeFirestoreWrite('save_school_info', () => setDoc(doc(db, 'metadata', 'schoolInfo'), payload, { merge: true }));
+      writeFirestoreDocIfChanged('save_school_info', doc(db, 'metadata', 'schoolInfo'), payload, { merge: true });
     }
 
     return info;

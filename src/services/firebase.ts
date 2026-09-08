@@ -3,7 +3,6 @@ import {
   getFirestore, 
   collection, 
   doc, 
-  setDoc, 
   getDoc, 
   getDocs, 
   updateDoc, 
@@ -300,19 +299,14 @@ export async function testFirebaseConnection(customConfig?: Partial<FirebaseConf
       };
     }
 
-    // 2. Test write if write quota is not already flagged as exceeded
+    // 2. Keep connection testing read-only so opening settings cannot consume write quota
     if (!isFirestoreWriteQuotaExceeded()) {
       try {
         const pingRef = doc(collection(testDb, '_system_health'), 'ping');
-        await setDoc(pingRef, { 
-          timestamp: new Date().toISOString(), 
-          school: 'THCS & THPT Đốc Binh Kiều',
-          status: 'active' 
-        });
-        clearFirestoreWriteQuotaStatus();
+        await getDoc(pingRef);
         return { 
           success: true, 
-          message: `Kết nối Firebase Cloud Firestore (${targetConfig.projectId}) thành công hoàn hảo (Đọc & Ghi hoạt động tốt)!` 
+          message: `Kết nối Firebase Cloud Firestore (${targetConfig.projectId}) đọc dữ liệu thành công.`
         };
       } catch (writeErr: any) {
         // Clean up test instance immediately to prevent background retries
