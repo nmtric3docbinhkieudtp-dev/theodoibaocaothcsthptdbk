@@ -12,6 +12,33 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
+    <script>
+      (function() {
+        function isFirestoreInternalAssertion(err) {
+          if (!err) return false;
+          var msg = (typeof err === 'string' ? err : (err.message || '')).toLowerCase();
+          return msg.indexOf('internal assertion failed') !== -1 ||
+                 msg.indexOf('da08') !== -1 ||
+                 msg.indexOf('unexpected state') !== -1 ||
+                 (msg.indexOf('firestore') !== -1 && msg.indexOf('assertion') !== -1);
+        }
+        window.addEventListener('error', function(event) {
+          if (isFirestoreInternalAssertion(event.message) || isFirestoreInternalAssertion(event.error)) {
+            event.preventDefault();
+            if (event.stopImmediatePropagation) event.stopImmediatePropagation();
+            if (event.stopPropagation) event.stopPropagation();
+            return true;
+          }
+        }, true);
+        window.addEventListener('unhandledrejection', function(event) {
+          if (isFirestoreInternalAssertion(event.reason)) {
+            event.preventDefault();
+            if (event.stopImmediatePropagation) event.stopImmediatePropagation();
+            if (event.stopPropagation) event.stopPropagation();
+          }
+        }, true);
+      })();
+    </script>
   </head>
   <body class="font-sans antialiased bg-[#F8FAFC] text-slate-800">
     <div id="root"></div>

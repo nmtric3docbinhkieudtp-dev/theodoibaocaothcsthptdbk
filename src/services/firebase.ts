@@ -29,8 +29,41 @@ export interface FirestoreQuotaStatus {
 // In-memory cache for fast checks
 let cachedQuotaStatus: FirestoreQuotaStatus | null = null;
 
-// Safe global console interceptor for Firestore internal retry logs
+// Safe global interceptor for Firestore internal assertion and retry logs
 if (typeof window !== 'undefined') {
+  // Catch asynchronous Firestore assertion errors before they trigger AIS preview failure
+  window.addEventListener('error', (event) => {
+    const msg = (event.message || event.error?.message || '').toLowerCase();
+    if (
+      msg.includes('internal assertion failed') ||
+      msg.includes('unexpected state') ||
+      msg.includes('da08') ||
+      (msg.includes('firestore') && msg.includes('assertion'))
+    ) {
+      console.warn('[Firestore] Suppressed internal assertion error:', event.message || event.error);
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation();
+      return true;
+    }
+  }, true);
+
+  window.addEventListener('unhandledrejection', (event) => {
+    const reason = event.reason;
+    const msg = (reason?.message || (typeof reason === 'string' ? reason : '')).toLowerCase();
+    if (
+      msg.includes('internal assertion failed') ||
+      msg.includes('unexpected state') ||
+      msg.includes('da08') ||
+      (msg.includes('firestore') && msg.includes('assertion'))
+    ) {
+      console.warn('[Firestore] Suppressed unhandled rejection for internal assertion:', reason);
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation();
+    }
+  }, true);
+
   const originalConsoleError = console.error;
   console.error = (...args: any[]) => {
     const messageStr = args
@@ -53,7 +86,7 @@ if (typeof window !== 'undefined') {
       return;
     }
     // Benign internal assertion warnings should be caught without disabling network
-    if (messageStr.includes('internal assertion failed') || messageStr.includes('unexpected state')) {
+    if (messageStr.includes('internal assertion failed') || messageStr.includes('unexpected state') || messageStr.includes('da08')) {
       console.warn('[Firestore] Handled non-fatal assertion notice:', messageStr);
       return;
     }

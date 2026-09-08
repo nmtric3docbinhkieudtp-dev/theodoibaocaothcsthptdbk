@@ -251,20 +251,11 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
               const inFirestore = map.get(key);
               if (!inFirestore) {
                 map.set(key, localSub);
-                // Push to Firestore and server API in background so it becomes universally visible
-                if (db && !isFirestoreWriteQuotaExceeded()) {
-                  safeFirestoreWrite('sync_missing_local_sub', () => setDoc(doc(db, 'submissions', localSub.id), cleanFirestorePayload(localSub)));
-                }
-                ApiService.saveSubmission(localSub).catch(() => {});
               } else {
                 const tLocal = new Date(localSub.updatedAt || localSub.submittedAt || 0).getTime();
                 const tFs = new Date(inFirestore.updatedAt || inFirestore.submittedAt || 0).getTime();
                 if (tLocal > tFs) {
                   map.set(key, localSub);
-                  if (db && !isFirestoreWriteQuotaExceeded()) {
-                    safeFirestoreWrite('sync_newer_local_sub', () => setDoc(doc(db, 'submissions', localSub.id), cleanFirestorePayload(localSub)));
-                  }
-                  ApiService.saveSubmission(localSub).catch(() => {});
                 }
               }
             });
