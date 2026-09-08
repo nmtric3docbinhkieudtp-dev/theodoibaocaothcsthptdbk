@@ -103,11 +103,6 @@ export function markFirestoreWriteQuotaExceeded(reason?: string): void {
     localStorage.setItem(STORAGE_KEY_QUOTA_STATUS, JSON.stringify(status));
     window.dispatchEvent(new CustomEvent('firestore-quota-status-changed', { detail: status }));
   } catch {}
-
-  // Immediately disable network retries on firestore instance to stop backoff loops
-  if (firestoreDb) {
-    disableNetwork(firestoreDb).catch(() => {});
-  }
 }
 
 export function clearFirestoreWriteQuotaStatus(): void {
@@ -117,7 +112,6 @@ export function clearFirestoreWriteQuotaStatus(): void {
     window.dispatchEvent(new CustomEvent('firestore-quota-status-changed', { detail: cachedQuotaStatus }));
   } catch {}
 
-  // Re-enable network
   if (firestoreDb) {
     enableNetwork(firestoreDb).catch(() => {});
   }
@@ -125,20 +119,15 @@ export function clearFirestoreWriteQuotaStatus(): void {
 
 /**
  * Safe Firestore write wrapper.
- * Prevents throwing unhandled resource-exhausted exceptions and prevents the Firebase SDK
- * from entering an infinite background retry loop when daily write quota is reached.
+ * Prevents throwing unhandled resource-exhausted exceptions.
  */
 export async function safeFirestoreWrite<T>(
   operationName: string,
   writeFn: () => Promise<T>
 ): Promise<{ success: boolean; data?: T; error?: any; quotaExceeded?: boolean }> {
-  if (isFirestoreWriteQuotaExceeded()) {
-    // Gracefully skip network write. Data remains safely persisted in LocalStorage.
-    return { success: false, quotaExceeded: true };
-  }
-
   try {
     const res = await writeFn();
+    clearFirestoreWriteQuotaStatus();
     return { success: true, data: res };
   } catch (err: any) {
     const errMsg = (err?.message || '').toLowerCase();
@@ -150,10 +139,7 @@ export async function safeFirestoreWrite<T>(
       errMsg.includes('free daily write units')
     ) {
       markFirestoreWriteQuotaExceeded(err?.message || 'Quota limit exceeded');
-      if (firestoreDb) {
-        disableNetwork(firestoreDb).catch(() => {});
-      }
-      console.info(`[Firestore Safe-Write] Daily write quota reached during "${operationName}". Seamlessly using local storage.`);
+      console.info(`[Firestore Safe-Write] Quota reached during "${operationName}".`);
       return { success: false, error: err, quotaExceeded: true };
     }
     console.warn(`[Firestore Safe-Write] Error during "${operationName}":`, err);

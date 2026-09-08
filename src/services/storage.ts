@@ -325,13 +325,6 @@ export const StorageService = {
       updated = [user, ...users];
     }
     setLocal(STORAGE_KEYS.USERS, updated);
-    
-    // 3. Background sync to Firestore if enabled
-    const { db, isReady } = getFirebaseInstance();
-    if (isReady && db && !isFirestoreWriteQuotaExceeded()) {
-      const sanitized = cleanFirestorePayload(user);
-      safeFirestoreWrite('save_user', () => setDoc(doc(db, 'users', user.id), sanitized));
-    }
     return updated;
   },
 
@@ -358,12 +351,6 @@ export const StorageService = {
       updated = [...depts, dept];
     }
     setLocal(STORAGE_KEYS.DEPARTMENTS, updated);
-
-    const { db, isReady } = getFirebaseInstance();
-    if (isReady && db && !isFirestoreWriteQuotaExceeded()) {
-      const sanitized = cleanFirestorePayload(dept);
-      safeFirestoreWrite('save_dept', () => setDoc(doc(db, 'departments', dept.id), sanitized));
-    }
     return updated;
   },
 
@@ -432,16 +419,41 @@ export const StorageService = {
   // --- SUBMISSIONS ---
   getSubmissions(): ReportSubmission[] {
     initializeDatabaseIfNeeded();
-    return getLocal<ReportSubmission[]>(STORAGE_KEYS.SUBMISSIONS, []);
+    const raw = getLocal<ReportSubmission[]>(STORAGE_KEYS.SUBMISSIONS, []);
+    const map = new Map<string, ReportSubmission>();
+    for (const s of raw) {
+      const key = `${s.periodId || 'default'}_${s.authorId || s.authorEmail || s.authorName}`;
+      const existing = map.get(key);
+      if (!existing) {
+        map.set(key, s);
+      } else {
+        if (existing.status === 'draft' && s.status !== 'draft') {
+          map.set(key, s);
+        } else if (existing.status === s.status) {
+          const t1 = new Date(existing.submittedAt || existing.updatedAt || 0).getTime();
+          const t2 = new Date(s.submittedAt || s.updatedAt || 0).getTime();
+          if (t2 > t1) map.set(key, s);
+        }
+      }
+    }
+    const deduplicated = Array.from(map.values());
+    if (deduplicated.length !== raw.length) {
+      setLocal(STORAGE_KEYS.SUBMISSIONS, deduplicated);
+    }
+    return deduplicated;
   },
 
   saveSubmission(submission: ReportSubmission): ReportSubmission[] {
     const subs = this.getSubmissions();
-    const index = subs.findIndex(s => s.id === submission.id);
+    // Match by ID or by same author in same period (guarantees strictly 1 report per teacher per period)
+    const index = subs.findIndex(s => 
+      s.id === submission.id || 
+      (s.periodId === submission.periodId && s.authorId === submission.authorId)
+    );
     let updated: ReportSubmission[];
     if (index >= 0) {
       updated = [...subs];
-      updated[index] = submission;
+      updated[index] = { ...updated[index], ...submission, id: subs[index].id };
     } else {
       updated = [submission, ...subs];
     }
@@ -449,8 +461,9 @@ export const StorageService = {
 
     const { db, isReady } = getFirebaseInstance();
     if (isReady && db && !isFirestoreWriteQuotaExceeded()) {
-      const sanitized = cleanFirestorePayload(submission);
-      safeFirestoreWrite('save_submission', () => setDoc(doc(db, 'submissions', submission.id), sanitized));
+      const targetSub = index >= 0 ? updated[index] : submission;
+      const sanitized = cleanFirestorePayload(targetSub);
+      safeFirestoreWrite('save_submission', () => setDoc(doc(db, 'submissions', targetSub.id), sanitized));
     }
     return updated;
   },
@@ -585,30 +598,12 @@ export const StorageService = {
     }
 
     try {
-      const users = this.getUsers();
-      const depts = this.getDepartments();
       const periods = this.getPeriods();
       const submissions = this.getSubmissions();
       const schoolInfo = this.getSchoolInfo();
 
       let written = 0;
 
-      for (const u of users) {
-        const res = await safeFirestoreWrite('sync_user', () => setDoc(doc(db, 'users', u.id), u));
-        if (res.quotaExceeded) {
-          return {
-            success: false,
-            count: written,
-            message: 'Hạn ngạch ghi miễn phí Firestore hôm nay đã đạt giới hạn. Toàn bộ dữ liệu của bạn vẫn an toàn 100% trên Local Storage.'
-          };
-        }
-        written++;
-      }
-      for (const d of depts) {
-        const res = await safeFirestoreWrite('sync_dept', () => setDoc(doc(db, 'departments', d.id), d));
-        if (res.quotaExceeded) break;
-        written++;
-      }
       for (const p of periods) {
         const res = await safeFirestoreWrite('sync_period', () => setDoc(doc(db, 'periods', p.id), p));
         if (res.quotaExceeded) break;
@@ -621,11 +616,11 @@ export const StorageService = {
       }
       await safeFirestoreWrite('sync_school', () => setDoc(doc(db, 'metadata', 'schoolInfo'), cleanFirestorePayload(schoolInfo)));
 
-      const totalItems = users.length + depts.length + periods.length + submissions.length + 1;
+      const totalItems = periods.length + submissions.length + 1;
       return { 
         success: true, 
         count: totalItems, 
-        message: `Đã đồng bộ thành công ${totalItems} bản ghi lên Firebase Firestore!` 
+        message: `Đã đồng bộ thành công ${totalItems} đợt báo cáo & bài nộp lên Firebase Firestore!` 
       };
     } catch (e: any) {
       console.error('Sync to Firebase error:', e);

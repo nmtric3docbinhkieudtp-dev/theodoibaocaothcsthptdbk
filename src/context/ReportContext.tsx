@@ -193,20 +193,9 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           console.warn('Firestore user_credentials sync error:', credErr);
         }
 
-        // Check departments in Firestore
-        const deptsSnap = await getDocs(collection(db, 'departments'));
-        if (!deptsSnap.empty && deptsSnap.size === 7) {
-          const loadedDepts: Department[] = deptsSnap.docs.map(d => d.data() as Department);
-          setDepartments(loadedDepts);
-          setLocal('dbk_departments_data', loadedDepts);
-        } else if (deptsSnap.empty && !isFirestoreWriteQuotaExceeded()) {
-          // Seed the 7 official departments only once if totally empty and quota is available
-          for (const offDept of OFFICIAL_DEPARTMENTS) {
-            await safeFirestoreWrite('seed_dept', () => setDoc(doc(db, 'departments', offDept.id), offDept));
-          }
-          setDepartments(OFFICIAL_DEPARTMENTS);
-          setLocal('dbk_departments_data', OFFICIAL_DEPARTMENTS);
-        }
+        // Use official departments
+        setDepartments(OFFICIAL_DEPARTMENTS);
+        setLocal('dbk_departments_data', OFFICIAL_DEPARTMENTS);
 
         // Check and sanitize periods in Firestore - never auto re-seed if cleared
         const isPeriodsCleared = localStorage.getItem('dbk_periods_cleared_by_user') === 'true';
@@ -228,9 +217,28 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       try {
         unsubscribeSubs = onSnapshot(collection(db, 'submissions'), (snapshot) => {
           if (!snapshot.empty) {
-            const list: ReportSubmission[] = snapshot.docs
+            const rawList: ReportSubmission[] = snapshot.docs
               .map(d => d.data() as ReportSubmission)
               .filter(s => validStaffIds.has(s.authorId));
+            
+            // Enforce strictly 1 submission per teacher per period
+            const map = new Map<string, ReportSubmission>();
+            for (const s of rawList) {
+              const key = `${s.periodId || 'default'}_${s.authorId || s.authorEmail || s.authorName}`;
+              const existing = map.get(key);
+              if (!existing) {
+                map.set(key, s);
+              } else {
+                if (existing.status === 'draft' && s.status !== 'draft') {
+                  map.set(key, s);
+                } else if (existing.status === s.status) {
+                  const t1 = new Date(existing.submittedAt || existing.updatedAt || 0).getTime();
+                  const t2 = new Date(s.submittedAt || s.updatedAt || 0).getTime();
+                  if (t2 > t1) map.set(key, s);
+                }
+              }
+            }
+            const list = Array.from(map.values());
             list.sort((a, b) => new Date(b.updatedAt || b.submittedAt || 0).getTime() - new Date(a.updatedAt || a.submittedAt || 0).getTime());
             setSubmissions(list);
             setLocal('dbk_submissions_data', list);
@@ -423,11 +431,12 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
     let updated = StorageService.saveSubmission(cleanSub);
 
-    // Nếu người dùng nộp chính thức, dọn dẹp các bản nháp mồ côi cũ của người này trong cùng đợt (nếu có)
+    // Nếu người dùng nộp chính thức, dọn dẹp triệt để bất kỳ bản ghi thừa/nháp cũ nào của người này trong cùng đợt
     if (!isDraft && existingSubs.length > 0) {
       existingSubs.forEach(s => {
-        if (s.id !== submissionId && s.status === 'draft') {
+        if (s.id !== submissionId) {
           updated = StorageService.deleteSubmission(s.id);
+          ApiService.deleteSubmission(s.id).catch(() => {});
         }
       });
     }

@@ -40,7 +40,7 @@ export const PeriodManagement: React.FC<PeriodManagementProps> = ({
   onOpenConsolidation,
   onOpenUnsubmittedUsers
 }) => {
-  const { isPrincipal, isAdmin, isDeptHead, canManagePeriods, allUsers = [] } = useAuth();
+  const { currentUser, isPrincipal, isAdmin, isDeptHead, canManagePeriods, allUsers = [] } = useAuth();
   const { 
     periods = [], 
     departments = [], 
@@ -397,13 +397,20 @@ export const PeriodManagement: React.FC<PeriodManagementProps> = ({
                 {/* Actions Footer */}
                 <div className="mt-4 pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => onOpenSubmit(period.id)}
-                      className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-1 cursor-pointer"
-                    >
-                      <Send className="w-3.5 h-3.5" />
-                      <span>Nộp báo cáo</span>
-                    </button>
+                    {submissions.some(s => s.periodId === period.id && s.authorId === currentUser.id && s.status !== 'draft') ? (
+                      <div className="px-3 py-1.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold flex items-center gap-1.5">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                        <span>Bạn đã nộp</span>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => onOpenSubmit(period.id)}
+                        className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-1 cursor-pointer"
+                      >
+                        <Send className="w-3.5 h-3.5" />
+                        <span>Nộp báo cáo</span>
+                      </button>
+                    )}
 
                     {onOpenConsolidation && (isAdmin || isPrincipal) && (
                       <button

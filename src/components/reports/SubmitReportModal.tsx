@@ -163,6 +163,9 @@ export const SubmitReportModal: React.FC<SubmitReportModalProps> = ({
     return subs.find(s => s.status !== 'draft') || subs[0] || null;
   }, [submissions, currentUser.id, selectedPeriodId]);
 
+  const hasAlreadySubmitted = Boolean(userExistingSub && userExistingSub.status !== 'draft');
+  const isApprovedByPrincipal = userExistingSub?.status === 'principal_approved';
+
   // Auto-generate title based on user, role, and period
   const getAutoTitle = () => {
     if (isSpecificLegacyHomeroomMinutes) {
@@ -406,30 +409,39 @@ export const SubmitReportModal: React.FC<SubmitReportModalProps> = ({
 
         {/* THÔNG BÁO TÌNH TRẠNG BẢN GHI ĐÃ LƯU / ĐÃ NỘP */}
         {userExistingSub && (
-          <div className={`p-3 rounded-xl border text-xs flex items-center justify-between gap-2 shadow-2xs ${
+          <div className={`p-3.5 rounded-xl border text-xs shadow-2xs ${
             userExistingSub.status === 'draft'
               ? 'bg-amber-50/90 border-amber-300 text-amber-900'
-              : 'bg-emerald-50/90 border-emerald-300 text-emerald-900'
+              : 'bg-emerald-50/90 border-emerald-300 text-emerald-950'
           }`}>
-            <div className="flex items-center gap-2">
-              <span className="text-base">{userExistingSub.status === 'draft' ? '📝' : '✅'}</span>
-              <div>
-                <span className="font-bold">
-                  {userExistingSub.status === 'draft' ? 'Đang mở Bản Nháp đã lưu:' : 'Thầy/Cô đã nộp báo cáo này:'}
-                </span>{' '}
-                {userExistingSub.status === 'draft' 
-                  ? 'Nội dung và số liệu Thầy/Cô từng lưu nháp đã được tự động nạp vào biểu mẫu bên dưới. Nhấn "Gửi Báo Cáo" để nộp chính thức lên BGH.'
-                  : `Hệ thống đã nhận bài nộp lúc ${new Date(userExistingSub.submittedAt || userExistingSub.updatedAt).toLocaleString('vi-VN')}. Thầy/Cô có thể cập nhật lại số liệu nếu có thay đổi.`
-                }
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex items-start gap-2.5">
+                <span className="text-lg mt-0.5">{userExistingSub.status === 'draft' ? '📝' : '✅'}</span>
+                <div>
+                  <div className="font-bold text-sm">
+                    {userExistingSub.status === 'draft' ? 'Đang mở Bản Nháp đã lưu' : 'Thầy/Cô đã nộp báo cáo cho đợt này thành công!'}
+                  </div>
+                  <div className="mt-1 text-xs leading-relaxed">
+                    {userExistingSub.status === 'draft' 
+                      ? 'Nội dung và số liệu Thầy/Cô từng lưu nháp đã được tự động nạp vào biểu mẫu bên dưới. Nhấn "Gửi Báo Cáo" để nộp chính thức lên Ban Giám Hiệu.'
+                      : `Hệ thống đã ghi nhận bài nộp chính thức vào lúc ${new Date(userExistingSub.submittedAt || userExistingSub.updatedAt).toLocaleString('vi-VN')}. Mỗi Thầy/Cô chỉ nộp 1 lần duy nhất cho đợt báo cáo này.`
+                    }
+                  </div>
+                  {hasAlreadySubmitted && (
+                    <div className="mt-1 text-[11px] font-semibold text-emerald-800">
+                      Trạng thái: {isApprovedByPrincipal ? '🏆 Ban Giám Hiệu đã phê duyệt chính thức' : userExistingSub.status === 'approved' ? 'Tổ trưởng đã duyệt' : 'Đã nộp thành công (Chờ BGH duyệt)'}
+                    </div>
+                  )}
+                </div>
               </div>
+              <span className={`px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider shrink-0 ${
+                userExistingSub.status === 'draft'
+                  ? 'bg-amber-200 text-amber-800'
+                  : 'bg-emerald-200 text-emerald-800'
+              }`}>
+                {userExistingSub.status === 'draft' ? 'Bản nháp' : 'Đã nộp'}
+              </span>
             </div>
-            <span className={`px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider shrink-0 ${
-              userExistingSub.status === 'draft'
-                ? 'bg-amber-200 text-amber-800'
-                : 'bg-emerald-200 text-emerald-800'
-            }`}>
-              {userExistingSub.status === 'draft' ? 'Bản nháp' : 'Đã nộp'}
-            </span>
           </div>
         )}
 
@@ -614,30 +626,51 @@ export const SubmitReportModal: React.FC<SubmitReportModalProps> = ({
             onClick={onClose}
             className="px-4 py-2 rounded-xl border border-slate-300 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition cursor-pointer"
           >
-            Hủy bỏ
+            {hasAlreadySubmitted ? 'Đóng' : 'Hủy bỏ'}
           </button>
 
           <div className="flex items-center gap-2">
-            <button
-              type="button"
-              disabled={isSubmitting}
-              onClick={() => handleSubmit(true)}
-              className="px-4 py-2 rounded-xl border border-emerald-300 text-xs font-bold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 transition flex items-center gap-1.5 cursor-pointer"
-            >
-              <Save className="w-4 h-4" />
-              <span>Lưu Bản Nháp</span>
-            </button>
+            {isApprovedByPrincipal ? (
+              <div className="text-xs font-semibold text-emerald-800 bg-emerald-100 px-3 py-2 rounded-xl border border-emerald-300 flex items-center gap-1.5">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                <span>Báo cáo đã được Ban Giám Hiệu phê duyệt chính thức</span>
+              </div>
+            ) : hasAlreadySubmitted ? (
+              <button
+                type="button"
+                id="btn-submit-report-modal"
+                disabled={isSubmitting}
+                onClick={() => handleSubmit(false)}
+                className="px-5 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold flex items-center gap-2 shadow-xs transition active:scale-98 cursor-pointer"
+                title="Cập nhật trực tiếp số liệu vào bản nộp hiện tại, không tạo thêm bản nộp mới"
+              >
+                <Save className="w-4 h-4" />
+                <span>{isSubmitting ? 'Đang cập nhật...' : 'Cập Nhật Bổ Sung Bản Đã Nộp'}</span>
+              </button>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  disabled={isSubmitting}
+                  onClick={() => handleSubmit(true)}
+                  className="px-4 py-2 rounded-xl border border-emerald-300 text-xs font-bold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 transition flex items-center gap-1.5 cursor-pointer"
+                >
+                  <Save className="w-4 h-4" />
+                  <span>Lưu Bản Nháp</span>
+                </button>
 
-            <button
-              type="button"
-              id="btn-submit-report-modal"
-              disabled={isSubmitting}
-              onClick={() => handleSubmit(false)}
-              className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-2 shadow-xs transition active:scale-98 cursor-pointer"
-            >
-              <Send className="w-4 h-4" />
-              <span>{isSubmitting ? 'Đang gửi...' : 'Gửi Báo Cáo'}</span>
-            </button>
+                <button
+                  type="button"
+                  id="btn-submit-report-modal"
+                  disabled={isSubmitting}
+                  onClick={() => handleSubmit(false)}
+                  className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-2 shadow-xs transition active:scale-98 cursor-pointer"
+                >
+                  <Send className="w-4 h-4" />
+                  <span>{isSubmitting ? 'Đang gửi...' : 'Gửi Báo Cáo'}</span>
+                </button>
+              </>
+            )}
           </div>
         </div>
 
