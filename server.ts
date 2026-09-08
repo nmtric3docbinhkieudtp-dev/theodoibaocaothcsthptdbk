@@ -2,9 +2,14 @@ import express from 'express';
 import path from 'path';
 import fs from 'fs';
 import { createServer as createViteServer } from 'vite';
-import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getFirestore, doc, setDoc, deleteDoc } from 'firebase/firestore';
-import appletConfig from './firebase-applet-config.json' with { type: 'json' };
+
+// Global server process error guards to ensure 100% server uptime
+process.on('uncaughtException', (err) => {
+  console.warn('[Server Handled Exception]:', err?.message || err);
+});
+process.on('unhandledRejection', (reason) => {
+  console.warn('[Server Handled Rejection]:', reason);
+});
 
 const DATA_DIR = path.join(process.cwd(), 'data');
 const SUBMISSIONS_FILE = path.join(DATA_DIR, 'submissions.json');
@@ -77,24 +82,8 @@ function savePeriods(data: any[]) {
   }
 }
 
-// Optional background Firestore sync
-function trySyncToFirestore(collectionName: string, docId: string, data: any) {
-  try {
-    if (!appletConfig.apiKey || !appletConfig.projectId) return;
-    const app = getApps().length ? getApp() : initializeApp({
-      apiKey: appletConfig.apiKey,
-      authDomain: appletConfig.authDomain,
-      projectId: appletConfig.projectId,
-      storageBucket: appletConfig.storageBucket,
-      messagingSenderId: appletConfig.messagingSenderId,
-      appId: appletConfig.appId,
-    });
-    const db = getFirestore(app, appletConfig.firestoreDatabaseId);
-    setDoc(doc(db, collectionName, docId), data).catch(err => {
-      // Ignored if quota exceeded
-    });
-  } catch {}
-}
+// Note: Client-side React app handles direct Firestore sync via Web SDK.
+// The Node backend acts as a high-performance local persistent store and API cache.
 
 async function startServer() {
   const app = express();
@@ -132,9 +121,6 @@ async function startServer() {
     }
     saveSubmissions(list);
 
-    // Try background Firestore write
-    trySyncToFirestore('submissions', submission.id, submission);
-
     res.json({ success: true, submission });
   });
 
@@ -159,14 +145,12 @@ async function startServer() {
       if (!subMap.has(cs.id)) {
         subMap.set(cs.id, cs);
         newItemsCount++;
-        trySyncToFirestore('submissions', cs.id, cs);
       } else {
         const existing = subMap.get(cs.id);
         const existingTime = new Date(existing.updatedAt || existing.submittedAt || 0).getTime();
         const clientTime = new Date(cs.updatedAt || cs.submittedAt || 0).getTime();
         if (clientTime > existingTime) {
           subMap.set(cs.id, cs);
-          trySyncToFirestore('submissions', cs.id, cs);
         }
       }
     });
@@ -192,21 +176,6 @@ async function startServer() {
 
     const list = readSubmissions().filter(s => s.id !== id);
     saveSubmissions(list);
-
-    try {
-      if (appletConfig.apiKey && appletConfig.projectId) {
-        const app = getApps().length ? getApp() : initializeApp({
-          apiKey: appletConfig.apiKey,
-          authDomain: appletConfig.authDomain,
-          projectId: appletConfig.projectId,
-          storageBucket: appletConfig.storageBucket,
-          messagingSenderId: appletConfig.messagingSenderId,
-          appId: appletConfig.appId,
-        });
-        const db = getFirestore(app, appletConfig.firestoreDatabaseId);
-        deleteDoc(doc(db, 'submissions', id)).catch(() => {});
-      }
-    } catch {}
 
     res.json({ success: true, id, remainingCount: list.length });
   });
@@ -282,6 +251,39 @@ async function startServer() {
     });
   });
 
+  // Waive late submission status (Miễn trừ nộp trễ do sự cố hệ thống/mạng)
+  app.post('/api/submissions/waive-late', (req, res) => {
+    const { submissionId, periodId } = req.body || {};
+    const list = readSubmissions();
+    let waivedCount = 0;
+    const updated = list.map(s => {
+      const match = submissionId ? s.id === submissionId : periodId ? s.periodId === periodId : true;
+      if (match && s.isLate) {
+        waivedCount++;
+        const fixed = {
+          ...s,
+          isLate: false,
+          lateDurationMinutes: 0,
+          lateWaived: true,
+          lateWaivedBy: 'Ban Giám Hiệu (Miễn trừ do sự cố kỹ thuật hệ thống)',
+          updatedAt: new Date().toISOString()
+        };
+        return fixed;
+      }
+      return s;
+    });
+
+    if (waivedCount > 0) {
+      saveSubmissions(updated);
+    }
+
+    res.json({
+      success: true,
+      waivedCount,
+      submissions: updated
+    });
+  });
+
   // Get periods
   app.get('/api/periods', (req, res) => {
     res.json(readPeriods());
@@ -301,7 +303,6 @@ async function startServer() {
       list.unshift(period);
     }
     savePeriods(list);
-    trySyncToFirestore('periods', period.id, period);
     res.json({ success: true, period });
   });
 

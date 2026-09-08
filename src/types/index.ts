@@ -168,6 +168,8 @@ export interface ReportSubmission {
   isLate: boolean;
   lateDurationMinutes?: number; // Minutes submitted after deadline
   lateExplanation?: string;
+  lateWaived?: boolean; // BGH miễn trừ nộp trễ do sự cố mạng/hệ thống
+  lateWaivedBy?: string;
   
   // Review records
   deptHeadReview?: ReviewHistory;

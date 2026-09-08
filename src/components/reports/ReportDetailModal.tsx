@@ -49,11 +49,23 @@ export const ReportDetailModal: React.FC<ReportDetailModalProps> = ({
   onEdit
 }) => {
   const { currentUser, isPrincipal, isDeptHead, isAdmin } = useAuth();
-  const { reviewReport, deleteReport } = useReports();
+  const { reviewReport, deleteReport, waiveLateStatus } = useReports();
 
   const [reviewComment, setReviewComment] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isWaiving, setIsWaiving] = useState(false);
+  const [waivedSuccess, setWaivedSuccess] = useState(false);
+
+  const handleWaiveLate = async () => {
+    if (!submission) return;
+    setIsWaiving(true);
+    const res = await waiveLateStatus(submission.id);
+    setIsWaiving(false);
+    if (res.success) {
+      setWaivedSuccess(true);
+    }
+  };
 
   if (!submission) return null;
 
@@ -179,17 +191,31 @@ export const ReportDetailModal: React.FC<ReportDetailModalProps> = ({
             </span>
 
             {/* Late Badge */}
-            {submission.isLate ? (
-              <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-rose-50 text-rose-700 border border-rose-200 flex items-center gap-1">
-                <AlertTriangle className="w-3.5 h-3.5" />
-                <span>
-                  Nộp trễ {submission.lateDurationMinutes ? `${Math.floor(submission.lateDurationMinutes / 60)}h ${submission.lateDurationMinutes % 60}m` : ''}
+            {submission.isLate && !waivedSuccess ? (
+              <div className="flex items-center gap-2">
+                <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-rose-50 text-rose-700 border border-rose-200 flex items-center gap-1">
+                  <AlertTriangle className="w-3.5 h-3.5" />
+                  <span>
+                    Nộp trễ {submission.lateDurationMinutes ? `${Math.floor(submission.lateDurationMinutes / 60)}h ${submission.lateDurationMinutes % 60}m` : ''}
+                  </span>
                 </span>
-              </span>
+                {(isAdmin || isPrincipal) && (
+                  <button
+                    type="button"
+                    onClick={handleWaiveLate}
+                    disabled={isWaiving}
+                    className="px-2.5 py-1 rounded-full text-xs font-bold bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 transition flex items-center gap-1 shadow-2xs cursor-pointer"
+                    title="Xóa trạng thái nộp trễ do sự cố hệ thống và chuyển thành đúng hạn"
+                  >
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                    <span>{isWaiving ? 'Đang cập nhật...' : 'Miễn trừ trễ hạn (Chuyển sang Đúng hạn)'}</span>
+                  </button>
+                )}
+              </div>
             ) : (
               <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
                 <CheckCircle2 className="w-3.5 h-3.5" />
-                <span>Đúng hạn</span>
+                <span>{submission.lateWaived || waivedSuccess ? 'Đúng hạn (Được BGH miễn trừ)' : 'Đúng hạn'}</span>
               </span>
             )}
           </div>

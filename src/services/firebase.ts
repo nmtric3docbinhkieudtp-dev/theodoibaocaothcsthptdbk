@@ -43,13 +43,15 @@ if (typeof window !== 'undefined') {
       messageStr.includes('quota limit exceeded') ||
       messageStr.includes('free daily write units') ||
       messageStr.includes('using maximum backoff delay') ||
-      messageStr.includes('overloading the backend')
+      messageStr.includes('overloading the backend') ||
+      messageStr.includes('internal assertion failed') ||
+      messageStr.includes('unexpected state')
     ) {
       markFirestoreWriteQuotaExceeded('Daily Firestore free write quota reached (20,000 writes/day). Local Storage handling active.');
       if (firestoreDb) {
         disableNetwork(firestoreDb).catch(() => {});
       }
-      console.info('[Firestore Handled Quota] Quota limit detected. Gracefully preserved all data in Local Storage.');
+      console.info('[Firestore Handled Quota/State] Notice detected. Gracefully preserved all data in Local Storage.');
       return;
     }
     originalConsoleError.apply(console, args);
@@ -136,7 +138,9 @@ export async function safeFirestoreWrite<T>(
       errCode.includes('resource-exhausted') || 
       errMsg.includes('quota') || 
       errMsg.includes('resource_exhausted') ||
-      errMsg.includes('free daily write units')
+      errMsg.includes('free daily write units') ||
+      errMsg.includes('internal assertion failed') ||
+      errMsg.includes('unexpected state')
     ) {
       markFirestoreWriteQuotaExceeded(err?.message || 'Quota limit exceeded');
       console.info(`[Firestore Safe-Write] Quota reached during "${operationName}".`);

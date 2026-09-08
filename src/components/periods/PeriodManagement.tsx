@@ -49,7 +49,8 @@ export const PeriodManagement: React.FC<PeriodManagementProps> = ({
     deletePeriod, 
     clearAllPeriods,
     sendBulkReminders, 
-    submissions = [] 
+    submissions = [],
+    waiveAllLateStatus
   } = useReports();
 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -66,6 +67,13 @@ export const PeriodManagement: React.FC<PeriodManagementProps> = ({
     setTimeout(() => {
       setToastMessage(null);
     }, 4000);
+  };
+
+  const handleWaivePeriodLate = async (periodId: string, periodTitle: string) => {
+    const res = await waiveAllLateStatus(periodId);
+    if (res.success) {
+      showToast(`Đã miễn trừ thành công cho ${res.waivedCount} bài nộp trễ của đợt "${periodTitle}". Toàn bộ đã chuyển sang Đúng hạn!`);
+    }
   };
 
   const [initialAudience, setInitialAudience] = useState<TargetAudienceType>('all');
@@ -433,6 +441,18 @@ export const PeriodManagement: React.FC<PeriodManagementProps> = ({
                       >
                         <Clock className="w-3.5 h-3.5 text-amber-700" />
                         <span>DS Chưa Nộp ({Math.max(0, requiredUsers.length - periodSubmissions.length)})</span>
+                      </button>
+                    )}
+
+                    {(isAdmin || isPrincipal) && periodSubmissions.some(s => s.isLate) && (
+                      <button
+                        type="button"
+                        onClick={() => handleWaivePeriodLate(period.id, period.title)}
+                        className="px-2.5 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-800 border border-rose-300 text-xs font-bold flex items-center gap-1 cursor-pointer"
+                        title="Chuyển toàn bộ báo cáo nộp trễ của đợt này thành đúng hạn do sự cố hệ thống"
+                      >
+                        <CheckCircle2 className="w-3.5 h-3.5 text-rose-600" />
+                        <span>Miễn trừ trễ ({periodSubmissions.filter(s => s.isLate).length})</span>
                       </button>
                     )}
                   </div>

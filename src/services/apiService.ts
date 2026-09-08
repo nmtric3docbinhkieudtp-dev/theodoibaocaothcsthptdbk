@@ -82,6 +82,21 @@ export const ApiService = {
     }
   },
 
+  async waiveLateSubmissions(params: { submissionId?: string; periodId?: string }): Promise<{ waivedCount: number; submissions: ReportSubmission[] } | null> {
+    try {
+      const res = await fetch('/api/submissions/waive-late', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(params)
+      });
+      if (!res.ok) return null;
+      return await res.json();
+    } catch (e) {
+      console.warn('[ApiService] Failed to waive late submissions:', e);
+      return null;
+    }
+  },
+
   async fetchPeriods(): Promise<ReportPeriod[] | null> {
     try {
       const res = await fetch('/api/periods');

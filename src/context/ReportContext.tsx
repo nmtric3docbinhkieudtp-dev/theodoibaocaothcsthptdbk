@@ -70,6 +70,8 @@ interface ReportContextType {
   confirmSubmissionForTeacher: (teacher: User, period: ReportPeriod, note?: string) => Promise<ReportSubmission>;
   syncWithServer: () => Promise<void>;
   deduplicateSubmissions: () => Promise<{ removedCount: number }>;
+  waiveLateStatus: (submissionId: string) => Promise<{ success: boolean }>;
+  waiveAllLateStatus: (periodId?: string) => Promise<{ success: boolean; waivedCount: number }>;
 
   // Actions for Periods (Campaigns)
   createPeriod: (periodData: Omit<ReportPeriod, 'id' | 'createdAt'>) => ReportPeriod;
@@ -593,6 +595,67 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     return { removedCount: 0 };
   };
 
+  const waiveLateStatus = async (submissionId: string): Promise<{ success: boolean }> => {
+    try {
+      const now = new Date().toISOString();
+      const updatedList = submissions.map(s => {
+        if (s.id === submissionId) {
+          const updated: ReportSubmission = {
+            ...s,
+            isLate: false,
+            lateDurationMinutes: 0,
+            lateWaived: true,
+            lateWaivedBy: 'Ban Giám Hiệu (Miễn trừ do sự cố kỹ thuật)',
+            updatedAt: now
+          };
+          StorageService.saveSubmission(updated);
+          return updated;
+        }
+        return s;
+      });
+      setSubmissions(updatedList);
+      setLocal('dbk_submissions_data', updatedList);
+      await ApiService.waiveLateSubmissions({ submissionId });
+      return { success: true };
+    } catch (e) {
+      console.warn('Waive late status error:', e);
+      return { success: false };
+    }
+  };
+
+  const waiveAllLateStatus = async (periodId?: string): Promise<{ success: boolean; waivedCount: number }> => {
+    try {
+      const now = new Date().toISOString();
+      let count = 0;
+      const updatedList = submissions.map(s => {
+        const match = periodId ? s.periodId === periodId : true;
+        if (match && s.isLate) {
+          count++;
+          const updated: ReportSubmission = {
+            ...s,
+            isLate: false,
+            lateDurationMinutes: 0,
+            lateWaived: true,
+            lateWaivedBy: 'Ban Giám Hiệu (Miễn trừ do sự cố kỹ thuật)',
+            updatedAt: now
+          };
+          StorageService.saveSubmission(updated);
+          return updated;
+        }
+        return s;
+      });
+      if (count > 0) {
+        setSubmissions(updatedList);
+        setLocal('dbk_submissions_data', updatedList);
+        await ApiService.waiveLateSubmissions({ periodId });
+      }
+      return { success: true, waivedCount: count };
+    } catch (e) {
+      console.warn('Waive all late status error:', e);
+      return { success: false, waivedCount: 0 };
+    }
+  };
+
   const clearAllReports = async (): Promise<{ count: number }> => {
     const count = submissions.length;
     StorageService.clearAllSubmissions();
@@ -836,6 +899,8 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         confirmSubmissionForTeacher,
         syncWithServer,
         deduplicateSubmissions,
+        waiveLateStatus,
+        waiveAllLateStatus,
         createPeriod,
         updatePeriod,
         deletePeriod,
