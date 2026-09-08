@@ -604,23 +604,41 @@ export const StorageService = {
 
       let written = 0;
 
+      const [remotePeriodsSnap, remoteSubmissionsSnap, remoteSchoolSnap] = await Promise.all([
+        getDocs(collection(db, 'periods')),
+        getDocs(collection(db, 'submissions')),
+        getDoc(doc(db, 'metadata', 'schoolInfo'))
+      ]);
+      const remotePeriods = new Map(remotePeriodsSnap.docs.map(item => [item.id, JSON.stringify(cleanFirestorePayload(item.data()))]));
+      const remoteSubmissions = new Map(remoteSubmissionsSnap.docs.map(item => [item.id, JSON.stringify(cleanFirestorePayload(item.data()))]));
+
       for (const p of periods) {
-        const res = await safeFirestoreWrite('sync_period', () => setDoc(doc(db, 'periods', p.id), p));
+        const payload = cleanFirestorePayload(p);
+        if (remotePeriods.get(p.id) === JSON.stringify(payload)) continue;
+        const res = await safeFirestoreWrite('sync_period', () => setDoc(doc(db, 'periods', p.id), payload));
         if (res.quotaExceeded) break;
         written++;
       }
       for (const s of submissions) {
-        const res = await safeFirestoreWrite('sync_sub', () => setDoc(doc(db, 'submissions', s.id), s));
+        const payload = cleanFirestorePayload(s);
+        if (remoteSubmissions.get(s.id) === JSON.stringify(payload)) continue;
+        const res = await safeFirestoreWrite('sync_sub', () => setDoc(doc(db, 'submissions', s.id), payload));
         if (res.quotaExceeded) break;
         written++;
       }
-      await safeFirestoreWrite('sync_school', () => setDoc(doc(db, 'metadata', 'schoolInfo'), cleanFirestorePayload(schoolInfo)));
+      const schoolPayload = cleanFirestorePayload(schoolInfo);
+      if (!remoteSchoolSnap.exists() || JSON.stringify(cleanFirestorePayload(remoteSchoolSnap.data())) !== JSON.stringify(schoolPayload)) {
+        await safeFirestoreWrite('sync_school', () => setDoc(doc(db, 'metadata', 'schoolInfo'), schoolPayload));
+        written++;
+      }
 
       const totalItems = periods.length + submissions.length + 1;
       return { 
         success: true, 
-        count: totalItems, 
-        message: `Đã đồng bộ thành công ${totalItems} đợt báo cáo & bài nộp lên Firebase Firestore!` 
+        count: written,
+        message: written > 0
+          ? `Đã đồng bộ ${written} mục thay đổi lên Firebase Firestore.`
+          : 'Dữ liệu Firebase đã mới nhất, không phát sinh lượt ghi.'
       };
     } catch (e: any) {
       console.error('Sync to Firebase error:', e);

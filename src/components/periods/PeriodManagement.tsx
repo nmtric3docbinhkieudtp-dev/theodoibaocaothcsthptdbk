@@ -26,7 +26,7 @@ import {
   UserCheck
 } from 'lucide-react';
 import { ReportPeriod, ReportType, UserRole, TargetAudienceType, PeriodFormTemplate } from '../../types';
-import { getAudienceLabel, getRequiredUsersForPeriod } from '../../utils/reportFilters';
+import { getAudienceLabel, getRequiredUsersForPeriod, hasSubmittedForPeriod } from '../../utils/reportFilters';
 import { CreatePeriodModal } from './CreatePeriodModal';
 
 interface PeriodManagementProps {
@@ -291,6 +291,7 @@ export const PeriodManagement: React.FC<PeriodManagementProps> = ({
             const isHomeroomPeriod = period.targetAudience === 'homeroom_teachers';
             const requiredUsers = getRequiredUsersForPeriod(period, allUsers);
             const periodSubmissions = submissions.filter(s => s.periodId === period.id && s.status !== 'draft');
+            const submittedCount = requiredUsers.filter(user => hasSubmittedForPeriod(submissions, period.id, user)).length;
 
             return (
               <div
@@ -372,7 +373,7 @@ export const PeriodManagement: React.FC<PeriodManagementProps> = ({
                     <div className="flex items-center justify-between">
                       <span>Tiến độ đã nộp:</span>
                       <span className="font-bold text-emerald-700">
-                        {periodSubmissions.length} / {requiredUsers.length} người
+                        {submittedCount} / {requiredUsers.length} người
                       </span>
                     </div>
 
@@ -384,11 +385,11 @@ export const PeriodManagement: React.FC<PeriodManagementProps> = ({
                           onClick={() => onOpenUnsubmittedUsers(period.id)}
                           className="font-bold text-amber-800 hover:underline inline-flex items-center gap-1 cursor-pointer"
                         >
-                          <span>{Math.max(0, requiredUsers.length - periodSubmissions.length)} người (Xem DS)</span>
+                          <span>{Math.max(0, requiredUsers.length - submittedCount)} người (Xem DS)</span>
                         </button>
                       ) : (
                         <span className="font-bold text-amber-700">
-                          {Math.max(0, requiredUsers.length - periodSubmissions.length)} người
+                          {Math.max(0, requiredUsers.length - submittedCount)} người
                         </span>
                       )}
                     </div>

@@ -1,4 +1,18 @@
-import { User, ReportPeriod, TargetAudienceType } from '../types';
+import { User, ReportPeriod, ReportSubmission, TargetAudienceType } from '../types';
+
+function normalizeIdentity(value?: string): string {
+  return (value || '').trim().toLocaleLowerCase('vi-VN').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
+
+export function submissionBelongsToUser(submission: ReportSubmission, user: User): boolean {
+  if (submission.authorId && submission.authorId === user.id) return true;
+  if (submission.authorEmail && user.email && normalizeIdentity(submission.authorEmail) === normalizeIdentity(user.email)) return true;
+  return Boolean(submission.authorName && user.name && normalizeIdentity(submission.authorName) === normalizeIdentity(user.name));
+}
+
+export function hasSubmittedForPeriod(submissions: ReportSubmission[], periodId: string, user: User): boolean {
+  return submissions.some(sub => sub.periodId === periodId && sub.status !== 'draft' && submissionBelongsToUser(sub, user));
+}
 
 /**
  * Check if a user is eligible to submit or view a specific report period

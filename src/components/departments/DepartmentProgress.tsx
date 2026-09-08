@@ -24,7 +24,7 @@ import {
   ExternalLink
 } from 'lucide-react';
 import { Department, ReportPeriod, ReportSubmission, User } from '../../types';
-import { getRequiredUsersForPeriod } from '../../utils/reportFilters';
+import { getRequiredUsersForPeriod, hasSubmittedForPeriod } from '../../utils/reportFilters';
 import { ExportService } from '../../services/exportService';
 
 interface DepartmentProgressProps {
@@ -87,18 +87,12 @@ export const DepartmentProgress: React.FC<DepartmentProgressProps> = ({
 
     for (const period of targetPeriods) {
       const requiredUsers = getRequiredUsersForPeriod(period, allUsers);
-      const submittedUserIds = new Set(
-        submissions
-          .filter(s => s.periodId === period.id && s.status !== 'draft')
-          .map(s => s.authorId)
-      );
-
       const deadlineTime = new Date(period.deadline).getTime();
       const isOverdue = now > deadlineTime;
       const remainingHours = Math.round((deadlineTime - now) / (1000 * 60 * 60));
 
       for (const u of requiredUsers) {
-        if (!submittedUserIds.has(u.id)) {
+        if (!hasSubmittedForPeriod(submissions, period.id, u)) {
           list.push({
             user: u,
             period,

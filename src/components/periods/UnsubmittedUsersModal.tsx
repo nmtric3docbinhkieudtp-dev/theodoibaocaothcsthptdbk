@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useReports } from '../../context/ReportContext';
 import { ExportService } from '../../services/exportService';
-import { getRequiredUsersForPeriod, getAudienceLabel } from '../../utils/reportFilters';
+import { getRequiredUsersForPeriod, getAudienceLabel, hasSubmittedForPeriod } from '../../utils/reportFilters';
 import { ReportPeriod, User, ReportSubmission } from '../../types';
 import { 
   X, 
@@ -132,22 +132,13 @@ export const UnsubmittedUsersModal: React.FC<UnsubmittedUsersModalProps> = ({
     return submissions.filter(s => s.periodId === currentPeriod.id && s.status !== 'draft');
   }, [currentPeriod, submissions]);
 
-  // Map authorId -> Submission
-  const submissionByAuthorId = useMemo(() => {
-    const map = new Map<string, ReportSubmission>();
-    for (const sub of periodSubmissions) {
-      map.set(sub.authorId, sub);
-    }
-    return map;
-  }, [periodSubmissions]);
-
   // Unsubmitted and Submitted lists
   const { unsubmittedList, submittedList } = useMemo(() => {
     const unsubmitted: Array<User & { submissionStatus: string; submittedAt: string | null; submission?: ReportSubmission }> = [];
     const submitted: Array<User & { submissionStatus: string; submittedAt: string | null; submission?: ReportSubmission }> = [];
 
     for (const user of requiredUsers) {
-      const sub = submissionByAuthorId.get(user.id);
+      const sub = periodSubmissions.find(candidate => hasSubmittedForPeriod([candidate], currentPeriod.id, user));
       if (sub) {
         submitted.push({
           ...user,
@@ -165,7 +156,7 @@ export const UnsubmittedUsersModal: React.FC<UnsubmittedUsersModalProps> = ({
     }
 
     return { unsubmittedList: unsubmitted, submittedList: submitted };
-  }, [requiredUsers, submissionByAuthorId]);
+  }, [requiredUsers, periodSubmissions, currentPeriod]);
 
   // Filtered roster for table display
   const displayedUsers = useMemo(() => {

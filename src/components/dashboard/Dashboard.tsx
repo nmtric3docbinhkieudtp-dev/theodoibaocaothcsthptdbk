@@ -24,7 +24,7 @@ import {
   UserCheck
 } from 'lucide-react';
 import { ReportPeriod, ReportSubmission } from '../../types';
-import { isUserEligibleForPeriod, getRequiredUsersForPeriod, getAudienceLabel } from '../../utils/reportFilters';
+import { isUserEligibleForPeriod, getRequiredUsersForPeriod, getAudienceLabel, hasSubmittedForPeriod, submissionBelongsToUser } from '../../utils/reportFilters';
 
 interface DashboardProps {
   onOpenSubmit: (periodId?: string) => void;
@@ -54,7 +54,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const { submissions = [], periods = [], departments = [], sendBulkReminders } = useReports();
 
   // Filter user's own submissions
-  const mySubmissions = submissions.filter((s: ReportSubmission) => s.authorId === currentUser.id);
+  const mySubmissions = submissions.filter((s: ReportSubmission) => submissionBelongsToUser(s, currentUser));
   const mySubmittedCount = mySubmissions.filter((s: ReportSubmission) => s.status !== 'draft').length;
   const myApprovedCount = mySubmissions.filter((s: ReportSubmission) => s.status === 'principal_approved').length;
 
@@ -87,7 +87,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
     let count = 0;
     for (const p of activePeriods) {
       const required = getRequiredUsersForPeriod(p, allUsers);
-      const submitted = submissions.filter(s => s.periodId === p.id && s.status !== 'draft').length;
+      const submitted = required.filter(user => hasSubmittedForPeriod(submissions, p.id, user)).length;
       count += Math.max(0, required.length - submitted);
     }
     return count;
