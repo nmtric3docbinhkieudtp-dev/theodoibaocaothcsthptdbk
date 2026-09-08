@@ -48,7 +48,8 @@ export const UnsubmittedUsersModal: React.FC<UnsubmittedUsersModalProps> = ({
     departments = [], 
     schoolInfo, 
     sendBulkReminders, 
-    sendDeadlineReminderToUser 
+    sendDeadlineReminderToUser,
+    confirmSubmissionForTeacher
   } = useReports();
 
   // Selected period state
@@ -685,19 +686,36 @@ Trân trọng cảm ơn quý Thầy/Cô!`;
                                 <span className="text-slate-400 text-[11px]">Đã nộp</span>
                               )
                             ) : (
-                              <button
-                                type="button"
-                                onClick={() => handleRemindSingleUser(user)}
-                                className={`px-2.5 py-1 rounded-lg text-[11px] font-bold inline-flex items-center gap-1 transition cursor-pointer ${
-                                  isReminded
-                                    ? 'bg-emerald-600 text-white'
-                                    : 'bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-300'
-                                }`}
-                                title={`Gửi email nhắc hạn cho ${user.name}`}
-                              >
-                                {isReminded ? <Check className="w-3 h-3" /> : <Mail className="w-3 h-3 text-amber-800" />}
-                                <span>{isReminded ? 'Đã gửi' : 'Nhắc email'}</span>
-                              </button>
+                              <div className="flex items-center justify-end gap-1.5">
+                                {(isAdmin || isPrincipal) && currentPeriod && (
+                                  <button
+                                    type="button"
+                                    onClick={async () => {
+                                      if (window.confirm(`Xác nhận Thầy/Cô ${user.name} đã hoàn thành và nộp báo cáo đợt này?\n\nHệ thống sẽ lập tức cập nhật trạng thái "Đã nộp" và đồng bộ liên máy cho toàn trường.`)) {
+                                        await confirmSubmissionForTeacher(user, currentPeriod);
+                                      }
+                                    }}
+                                    className="px-2 py-1 rounded-lg text-[11px] font-bold inline-flex items-center gap-1 bg-emerald-600 hover:bg-emerald-700 text-white shadow-2xs transition cursor-pointer"
+                                    title={`Xác nhận đã nộp cho ${user.name}`}
+                                  >
+                                    <CheckCircle2 className="w-3 h-3" />
+                                    <span>Xác nhận nộp</span>
+                                  </button>
+                                )}
+                                <button
+                                  type="button"
+                                  onClick={() => handleRemindSingleUser(user)}
+                                  className={`px-2 py-1 rounded-lg text-[11px] font-bold inline-flex items-center gap-1 transition cursor-pointer ${
+                                    isReminded
+                                      ? 'bg-slate-200 text-slate-700'
+                                      : 'bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-300'
+                                  }`}
+                                  title={`Gửi email nhắc hạn cho ${user.name}`}
+                                >
+                                  {isReminded ? <Check className="w-3 h-3" /> : <Mail className="w-3 h-3 text-amber-800" />}
+                                  <span>{isReminded ? 'Đã gửi' : 'Nhắc'}</span>
+                                </button>
+                              </div>
                             )}
                           </td>
                         </tr>

@@ -43,8 +43,16 @@ export const DepartmentProgress: React.FC<DepartmentProgressProps> = ({
     if (onOpenReportDetail) onOpenReportDetail(sub);
   };
 
-  const { allUsers = [] } = useAuth();
-  const { departments = [], submissions = [], periods = [], schoolInfo, sendDeadlineReminderToUser, sendBulkReminders } = useReports();
+  const { allUsers = [], isAdmin, isPrincipal } = useAuth();
+  const { 
+    departments = [], 
+    submissions = [], 
+    periods = [], 
+    schoolInfo, 
+    sendDeadlineReminderToUser, 
+    sendBulkReminders,
+    confirmSubmissionForTeacher 
+  } = useReports();
 
   const [selectedDeptId, setSelectedDeptId] = useState<string>('all');
   const [activeTab, setActiveTab] = useState<'departments' | 'unsubmitted' | 'late_history'>('departments');
@@ -625,19 +633,36 @@ export const DepartmentProgress: React.FC<DepartmentProgressProps> = ({
                             )}
                           </td>
                           <td className="p-3 text-right">
-                            <button
-                              type="button"
-                              onClick={() => handleRemindSingle(item.user, item.period)}
-                              className={`px-2.5 py-1 rounded-lg text-xs font-semibold inline-flex items-center gap-1 border transition cursor-pointer ${
-                                isReminded
-                                  ? 'bg-emerald-50 text-emerald-700 border-emerald-300'
-                                  : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-300'
-                              }`}
-                              title={`Gửi email nhắc nhở nộp báo cáo tới ${item.user.email}`}
-                            >
-                              {isReminded ? <Check className="w-3 h-3 text-emerald-600" /> : <Mail className="w-3 h-3 text-slate-500" />}
-                              <span>{isReminded ? 'Đã nhắc' : 'Nhắc email'}</span>
-                            </button>
+                            <div className="flex items-center justify-end gap-1.5">
+                              {(isAdmin || isPrincipal) && (
+                                <button
+                                  type="button"
+                                  onClick={async () => {
+                                    if (window.confirm(`Xác nhận Thầy/Cô ${item.user.name} đã hoàn thành và nộp báo cáo cho đợt "${item.period.title}"?\n\nHệ thống sẽ cập nhật trạng thái "Đã nộp" trên toàn trường.`)) {
+                                      await confirmSubmissionForTeacher(item.user, item.period);
+                                    }
+                                  }}
+                                  className="px-2 py-1 rounded-lg text-[11px] font-bold inline-flex items-center gap-1 bg-emerald-600 hover:bg-emerald-700 text-white shadow-2xs transition cursor-pointer"
+                                  title={`Xác nhận đã nộp cho ${item.user.name}`}
+                                >
+                                  <CheckCircle2 className="w-3 h-3" />
+                                  <span>Xác nhận nộp</span>
+                                </button>
+                              )}
+                              <button
+                                type="button"
+                                onClick={() => handleRemindSingle(item.user, item.period)}
+                                className={`px-2.5 py-1 rounded-lg text-xs font-semibold inline-flex items-center gap-1 border transition cursor-pointer ${
+                                  isReminded
+                                    ? 'bg-emerald-50 text-emerald-700 border-emerald-300'
+                                    : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-300'
+                                }`}
+                                title={`Gửi email nhắc nhở nộp báo cáo tới ${item.user.email}`}
+                              >
+                                {isReminded ? <Check className="w-3 h-3 text-emerald-600" /> : <Mail className="w-3 h-3 text-slate-500" />}
+                                <span>{isReminded ? 'Đã nhắc' : 'Nhắc email'}</span>
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       );

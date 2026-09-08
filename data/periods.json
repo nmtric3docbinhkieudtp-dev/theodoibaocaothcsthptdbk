@@ -1,0 +1,166 @@
+[
+  {
+    "id": "period-1788535581418",
+    "reportType": "hybrid",
+    "defaultTemplateContent": "\\- Số học sinh chưa ra lớp đến thời điểm ngày 07/9/2026:\r\n\r\n\\- Danh sách học sinh chưa ra lớp (theo bảng thống kê)\r\n\r\n|**TT**|**Họ và tên học sinh**|**Lớp năm học trước**|**Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng)**|**Số điện thoại học sinh (nếu có)**|**Số điện thoại phụ huynh (nếu có)**|**Lý do chưa ra lớp (nếu biết)**|\r\n| :-: | :-: | :-: | :-: | :-: | :-: | :-: |\r\n|**1**|||||||\r\n|**2**|||||||\r\n|**3**|||||||\r\n|**4**|||||||\r\n|**5**|||||||\r\n- Thông tin học sinh có thành tích về hội thi, phong trào:\r\n\r\n|**TT**|**Cuộc thi**|**Đạt giải**|**Họ tên học sinh đạt giải**|\r\n| :-: | :-: | :-: | :-: |\r\n|1|Văn nghệ vòng tỉnh, vòng xã|||\r\n|2|Hội khỏe phù đổng|||\r\n|3|Giải thể thao học sinh tỉnh Đồng Tháp|||\r\n|4|Sáng tạo thanh thiếu niên nhi đồng|||\r\n|5|Khoa học kỹ thuật|||\r\n|6|Vẽ tranh |||\r\n|7|<p>Phong trào khác:</p><p>...............................</p><p>...............................</p>|||\r\n|8|<p>Thành tích khác:</p><p>...............................</p>|||\r\n\\- Họ và tên lớp trưởng: \r\n2\r\n\r\n",
+    "isRequired": true,
+    "createdBy": "Ban Giám Hiệu",
+    "targetRoles": [
+      "teacher",
+      "dept_head"
+    ],
+    "status": "active",
+    "title": "Báo cáo kết quả tập trung học sinh đầu năm học 2026-2027",
+    "targetAudience": "homeroom_teachers",
+    "description": "Yêu cầu nộp báo cáo theo mẫu trực tuyến gồm 2 mục thông tin và 2 bảng số liệu. Thầy/Cô điền trực tiếp vào form trên hệ thống trước thời hạn.",
+    "academicYear": "2026-2027",
+    "targetDepartmentIds": [
+      "all"
+    ],
+    "createdAt": "2026-09-04T15:26:21.418Z",
+    "deadline": "2026-09-08T02:00:00.000Z",
+    "semester": "HK1",
+    "startDate": "2026-09-04T15:26:21.418Z",
+    "formTemplate": {
+      "fields": [
+        {
+          "placeholder": "Nhập số học sinh chưa ra lớp đến thời điểm ngày 07/9/2026...",
+          "required": false,
+          "type": "number",
+          "id": "fld-1788535567817-w89u",
+          "label": "Số học sinh chưa ra lớp đến thời điểm ngày 07/9/2026"
+        },
+        {
+          "placeholder": "Giá trị mặc định: 2",
+          "id": "fld-1788535567817-afs9",
+          "required": false,
+          "type": "text",
+          "label": "Họ và tên lớp trưởng"
+        }
+      ],
+      "defaultTemplateContent": "\\- Số học sinh chưa ra lớp đến thời điểm ngày 07/9/2026:\r\n\r\n\\- Danh sách học sinh chưa ra lớp (theo bảng thống kê)\r\n\r\n|**TT**|**Họ và tên học sinh**|**Lớp năm học trước**|**Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng)**|**Số điện thoại học sinh (nếu có)**|**Số điện thoại phụ huynh (nếu có)**|**Lý do chưa ra lớp (nếu biết)**|\r\n| :-: | :-: | :-: | :-: | :-: | :-: | :-: |\r\n|**1**|||||||\r\n|**2**|||||||\r\n|**3**|||||||\r\n|**4**|||||||\r\n|**5**|||||||\r\n- Thông tin học sinh có thành tích về hội thi, phong trào:\r\n\r\n|**TT**|**Cuộc thi**|**Đạt giải**|**Họ tên học sinh đạt giải**|\r\n| :-: | :-: | :-: | :-: |\r\n|1|Văn nghệ vòng tỉnh, vòng xã|||\r\n|2|Hội khỏe phù đổng|||\r\n|3|Giải thể thao học sinh tỉnh Đồng Tháp|||\r\n|4|Sáng tạo thanh thiếu niên nhi đồng|||\r\n|5|Khoa học kỹ thuật|||\r\n|6|Vẽ tranh |||\r\n|7|<p>Phong trào khác:</p><p>...............................</p><p>...............................</p>|||\r\n|8|<p>Thành tích khác:</p><p>...............................</p>|||\r\n\\- Họ và tên lớp trưởng: \r\n2\r\n\r\n",
+      "tables": [
+        {
+          "headers": [
+            "TT",
+            "Họ và tên học sinh",
+            "Lớp năm học trước",
+            "Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng)",
+            "Số điện thoại học sinh (nếu có)",
+            "Số điện thoại phụ huynh (nếu có)",
+            "Lý do chưa ra lớp (nếu biết)"
+          ],
+          "title": "Danh sách học sinh chưa ra lớp (theo bảng thống kê)",
+          "rows": [
+            {
+              "Họ và tên học sinh": "",
+              "Lớp năm học trước": "",
+              "Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng)": "",
+              "Số điện thoại học sinh (nếu có)": "",
+              "Số điện thoại phụ huynh (nếu có)": "",
+              "TT": "1",
+              "Lý do chưa ra lớp (nếu biết)": ""
+            },
+            {
+              "Số điện thoại học sinh (nếu có)": "",
+              "Số điện thoại phụ huynh (nếu có)": "",
+              "Lý do chưa ra lớp (nếu biết)": "",
+              "Lớp năm học trước": "",
+              "Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng)": "",
+              "Họ và tên học sinh": "",
+              "TT": "2"
+            },
+            {
+              "Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng)": "",
+              "Số điện thoại học sinh (nếu có)": "",
+              "Số điện thoại phụ huynh (nếu có)": "",
+              "Lý do chưa ra lớp (nếu biết)": "",
+              "TT": "3",
+              "Họ và tên học sinh": "",
+              "Lớp năm học trước": ""
+            },
+            {
+              "Họ và tên học sinh": "",
+              "TT": "4",
+              "Lý do chưa ra lớp (nếu biết)": "",
+              "Số điện thoại phụ huynh (nếu có)": "",
+              "Lớp năm học trước": "",
+              "Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng)": "",
+              "Số điện thoại học sinh (nếu có)": ""
+            },
+            {
+              "Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng)": "",
+              "Số điện thoại phụ huynh (nếu có)": "",
+              "Lớp năm học trước": "",
+              "Lý do chưa ra lớp (nếu biết)": "",
+              "TT": "5",
+              "Số điện thoại học sinh (nếu có)": "",
+              "Họ và tên học sinh": ""
+            }
+          ],
+          "id": "tbl-1788535567817-egt2"
+        },
+        {
+          "headers": [
+            "TT",
+            "Cuộc thi",
+            "Đạt giải",
+            "Họ tên học sinh đạt giải"
+          ],
+          "title": "Thông tin học sinh có thành tích về hội thi, phong trào",
+          "rows": [
+            {
+              "Cuộc thi": "Văn nghệ vòng tỉnh, vòng xã",
+              "TT": "1",
+              "Đạt giải": "",
+              "Họ tên học sinh đạt giải": ""
+            },
+            {
+              "Đạt giải": "",
+              "Cuộc thi": "Hội khỏe phù đổng",
+              "Họ tên học sinh đạt giải": "",
+              "TT": "2"
+            },
+            {
+              "Cuộc thi": "Giải thể thao học sinh tỉnh Đồng Tháp",
+              "TT": "3",
+              "Đạt giải": "",
+              "Họ tên học sinh đạt giải": ""
+            },
+            {
+              "TT": "4",
+              "Họ tên học sinh đạt giải": "",
+              "Đạt giải": "",
+              "Cuộc thi": "Sáng tạo thanh thiếu niên nhi đồng"
+            },
+            {
+              "Đạt giải": "",
+              "Cuộc thi": "Khoa học kỹ thuật",
+              "Họ tên học sinh đạt giải": "",
+              "TT": "5"
+            },
+            {
+              "Họ tên học sinh đạt giải": "",
+              "Cuộc thi": "Vẽ tranh",
+              "Đạt giải": "",
+              "TT": "6"
+            },
+            {
+              "Họ tên học sinh đạt giải": "",
+              "Cuộc thi": "Phong trào khác:",
+              "TT": "7",
+              "Đạt giải": ""
+            },
+            {
+              "Họ tên học sinh đạt giải": "",
+              "TT": "8",
+              "Đạt giải": "",
+              "Cuộc thi": "Thành tích khác:"
+            }
+          ],
+          "id": "tbl-1788535567817-fpw0"
+        }
+      ]
+    }
+  }
+]

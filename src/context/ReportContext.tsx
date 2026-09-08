@@ -24,6 +24,7 @@ import { collection, doc, onSnapshot, getDocs, getDoc, setDoc, deleteDoc } from 
 import { OFFICIAL_DEPARTMENTS, OFFICIAL_USERS } from '../data/staffRoster';
 import { INITIAL_SUBMISSIONS, INITIAL_PERIODS } from '../data/initialData';
 import { EmailService } from '../services/emailService';
+import { ApiService } from '../services/apiService';
 import { useAuth } from './AuthContext';
 
 interface ReportContextType {
@@ -65,6 +66,9 @@ interface ReportContextType {
     action: 'approved' | 'rejected' | 'requested_edit',
     comment: string
   ) => Promise<void>;
+
+  confirmSubmissionForTeacher: (teacher: User, period: ReportPeriod, note?: string) => Promise<ReportSubmission>;
+  syncWithServer: () => Promise<void>;
 
   // Actions for Periods (Campaigns)
   createPeriod: (periodData: Omit<ReportPeriod, 'id' | 'createdAt'>) => ReportPeriod;
@@ -285,6 +289,43 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     };
   }, []);
 
+  // Bi-directional Server Sync (Express Backend on Cloud Run)
+  const syncWithServer = async () => {
+    try {
+      const localSubs = StorageService.getSubmissions();
+      // Batch sync client submissions with server store
+      const serverMerged = await ApiService.batchSyncSubmissions(localSubs);
+      if (serverMerged && Array.isArray(serverMerged) && serverMerged.length > 0) {
+        setSubmissions(serverMerged);
+        setLocal('dbk_submissions_data', serverMerged);
+      } else {
+        const fetched = await ApiService.fetchSubmissions();
+        if (fetched && Array.isArray(fetched) && fetched.length > 0) {
+          setSubmissions(fetched);
+          setLocal('dbk_submissions_data', fetched);
+        }
+      }
+
+      // Sync periods
+      const serverPeriods = await ApiService.fetchPeriods();
+      if (serverPeriods && Array.isArray(serverPeriods) && serverPeriods.length > 0) {
+        setPeriods(serverPeriods);
+        setLocal('dbk_periods_data', serverPeriods);
+      }
+    } catch (e) {
+      console.warn('[ReportContext] Server sync warning:', e);
+    }
+  };
+
+  // Run server sync on mount and periodically every 5 seconds
+  useEffect(() => {
+    syncWithServer();
+    const interval = setInterval(() => {
+      syncWithServer();
+    }, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
   // Update browser tab favicon dynamically if logo changes
   useEffect(() => {
     if (schoolInfo.logoUrl) {
@@ -392,6 +433,9 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
     setSubmissions(updated);
 
+    // Persist to Server API immediately (Central Express store)
+    ApiService.saveSubmission(cleanSub).catch(e => console.warn('ApiService save error:', e));
+
     // Notify Department Head if submitted
     if (!isDraft) {
       const dept = departments.find(d => d.id === currentUser.departmentId);
@@ -432,6 +476,56 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
 
     return newSub;
+  };
+
+  const confirmSubmissionForTeacher = async (
+    teacher: User, 
+    period: ReportPeriod, 
+    note?: string
+  ): Promise<ReportSubmission> => {
+    const now = new Date();
+    const isLate = now.getTime() > new Date(period.deadline).getTime();
+    const subId = `sub-${Date.now()}-${teacher.id}`;
+    const classText = teacher.homeroomClass ? ` - Lớp ${teacher.homeroomClass}` : '';
+    const newSub: ReportSubmission = {
+      id: subId,
+      periodId: period.id,
+      periodTitle: period.title,
+      authorId: teacher.id,
+      authorName: teacher.name,
+      authorEmail: teacher.email,
+      authorRole: teacher.role,
+      authorRoleTitle: teacher.roleTitle,
+      departmentId: teacher.departmentId,
+      departmentName: teacher.departmentName,
+      isHomeroomReport: Boolean(teacher.isHomeroomTeacher || period.targetAudience === 'homeroom_teachers'),
+      homeroomClass: teacher.homeroomClass,
+      homeroomStudentCount: teacher.homeroomStudentCount,
+      homeroomCampus: teacher.homeroomCampus,
+      title: `${period.title}${classText} - ${teacher.name}`,
+      content: note || `Báo cáo công tác đã hoàn thành đầy đủ cho đợt "${period.title}". Ban Giám Hiệu xác nhận ghi nhận trên hệ thống.`,
+      attachments: [],
+      status: 'submitted',
+      submittedAt: now.toISOString(),
+      updatedAt: now.toISOString(),
+      isLate,
+      reviewHistory: [],
+      version: 1
+    };
+
+    const cleanSub: ReportSubmission = JSON.parse(JSON.stringify(newSub));
+    const updated = StorageService.saveSubmission(cleanSub);
+    setSubmissions(updated);
+    setLocal('dbk_submissions_data', updated);
+
+    // Save to server API immediately
+    try {
+      await ApiService.saveSubmission(cleanSub);
+    } catch (apiErr) {
+      console.warn('ApiService save error in confirmSubmissionForTeacher:', apiErr);
+    }
+
+    return cleanSub;
   };
 
   const updateReport = async (id: string, data: Partial<ReportSubmission>): Promise<ReportSubmission> => {
@@ -705,6 +799,8 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         clearTestReports,
         clearAllReports,
         reviewReport,
+        confirmSubmissionForTeacher,
+        syncWithServer,
         createPeriod,
         updatePeriod,
         deletePeriod,
