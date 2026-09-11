@@ -437,17 +437,7 @@ export const LoginPage: React.FC = () => {
                 const hasChanged = isSelectedAdmin || Boolean(userCred?.hasChangedPassword || selectedUser.hasChangedPassword || isLocallyChanged);
 
                 if (isSelectedAdmin) {
-                  return (
-                    <div className="p-3 rounded-2xl bg-purple-50 border border-purple-200 text-purple-900 text-xs flex items-start gap-2.5">
-                      <ShieldCheck className="w-4 h-4 text-purple-700 shrink-0 mt-0.5" />
-                      <div>
-                        <div className="font-bold text-purple-950">Tài khoản Quản trị viên hệ thống (Admin)</div>
-                        <div className="text-[11px] text-purple-800 mt-0.5 leading-relaxed">
-                          Yêu cầu mật khẩu Quản trị bảo mật của Thầy Nguyễn Minh Trí. Tuyệt đối không áp dụng mật khẩu mặc định 123456.
-                        </div>
-                      </div>
-                    </div>
-                  );
+                  return null;
                 }
 
                 if (hasChanged) {

@@ -84,18 +84,21 @@ export const SubmitReportModal: React.FC<SubmitReportModalProps> = ({
   // Sync selected period whenever modal opens or defaultPeriodId changes
   useEffect(() => {
     if (isOpen) {
-      if (defaultPeriodId) {
+      if (defaultPeriodId && periods.some(p => p.id === defaultPeriodId)) {
         setSelectedPeriodId(defaultPeriodId);
       } else if (eligiblePeriods.length > 0) {
-        const firstActive = eligiblePeriods.find(p => p.status === 'active') || eligiblePeriods[0];
+        const unsubmitted = eligiblePeriods.find(p => p.status === 'active' && !submissions.some(s => s.periodId === p.id && s.authorId === currentUser.id && s.status !== 'draft'));
+        const firstActive = unsubmitted || eligiblePeriods.find(p => p.status === 'active') || eligiblePeriods[0];
         setSelectedPeriodId(firstActive.id);
+      } else if (periods.length > 0) {
+        setSelectedPeriodId(periods[0].id);
       } else {
-        setSelectedPeriodId('adhoc');
+        setSelectedPeriodId('');
       }
     }
-  }, [isOpen, defaultPeriodId]);
+  }, [isOpen, defaultPeriodId, eligiblePeriods, periods, submissions, currentUser.id]);
 
-  const currentPeriod = selectedPeriodId === 'adhoc' ? null : periods.find(p => p.id === selectedPeriodId);
+  const currentPeriod = periods.find(p => p.id === selectedPeriodId) || eligiblePeriods[0] || periods[0] || null;
 
   // Determine mode automatically based on selected period
   // Only the specific historical student gathering minutes uses the 10-table legacy minutes form
@@ -114,24 +117,22 @@ export const SubmitReportModal: React.FC<SubmitReportModalProps> = ({
 
   // Load period form template or previous user draft/submission if available
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen || !currentPeriod) return;
 
     // Tìm xem người dùng hiện tại đã có bản nháp hoặc bài nộp nào cho đợt này chưa
-    const userSubs = selectedPeriodId && selectedPeriodId !== 'adhoc'
-      ? submissions.filter(s => s.authorId === currentUser.id && s.periodId === selectedPeriodId)
-      : [];
+    const userSubs = submissions.filter(s => s.authorId === currentUser.id && s.periodId === currentPeriod.id);
     const existingSub = userSubs.find(s => s.status !== 'draft') || userSubs[0];
 
     if (existingSub) {
-      setContent(existingSub.content || currentPeriod?.defaultTemplateContent || '');
-      setCustomFields(existingSub.structuredData?.customFields || currentPeriod?.formTemplate?.fields || []);
-      setCustomTables(existingSub.structuredData?.customTables || currentPeriod?.formTemplate?.tables || []);
+      setContent(existingSub.content || currentPeriod.defaultTemplateContent || '');
+      setCustomFields(existingSub.structuredData?.customFields || currentPeriod.formTemplate?.fields || []);
+      setCustomTables(existingSub.structuredData?.customTables || currentPeriod.formTemplate?.tables || []);
       setCustomFieldValues(existingSub.structuredData?.customFieldValues || {});
       setCustomNotes(existingSub.structuredData?.customNotes || '');
       setLateExplanation(existingSub.lateExplanation || '');
       setHomeroomData(existingSub.structuredData?.homeroomMinutes || null);
       setAttachments(existingSub.attachments || []);
-    } else if (currentPeriod) {
+    } else {
       setContent(currentPeriod.defaultTemplateContent || '');
       setCustomFields(currentPeriod.formTemplate?.fields || []);
       setCustomTables(currentPeriod.formTemplate?.tables || []);
@@ -140,17 +141,8 @@ export const SubmitReportModal: React.FC<SubmitReportModalProps> = ({
       setLateExplanation('');
       setHomeroomData(null);
       setAttachments([]);
-    } else {
-      setCustomFields([]);
-      setCustomTables([]);
-      setCustomFieldValues({});
-      setContent('');
-      setCustomNotes('');
-      setLateExplanation('');
-      setHomeroomData(null);
-      setAttachments([]);
     }
-  }, [isOpen, selectedPeriodId]);
+  }, [isOpen, currentPeriod?.id]);
 
   // Check if current submission is past deadline
   const isPastDeadline = currentPeriod 
@@ -158,10 +150,10 @@ export const SubmitReportModal: React.FC<SubmitReportModalProps> = ({
     : false;
 
   const userExistingSub = useMemo(() => {
-    if (!selectedPeriodId || selectedPeriodId === 'adhoc') return null;
-    const subs = submissions.filter(s => s.authorId === currentUser.id && s.periodId === selectedPeriodId);
-    return subs.find(s => s.status !== 'draft') || subs[0] || null;
-  }, [submissions, currentUser.id, selectedPeriodId]);
+    if (!currentPeriod) return null;
+    const userSubs = submissions.filter(s => s.authorId === currentUser.id && s.periodId === currentPeriod.id);
+    return userSubs.find(s => s.status !== 'draft') || userSubs[0] || null;
+  }, [submissions, currentUser.id, currentPeriod]);
 
   const hasAlreadySubmitted = Boolean(userExistingSub && userExistingSub.status !== 'draft');
   const isApprovedByPrincipal = userExistingSub?.status === 'principal_approved';
@@ -301,8 +293,13 @@ export const SubmitReportModal: React.FC<SubmitReportModalProps> = ({
 
     setIsSubmitting(true);
     try {
+      if (!currentPeriod) {
+        alert('Không tìm thấy thông tin đợt báo cáo hợp lệ.');
+        return;
+      }
+
       await submitReport({
-        periodId: selectedPeriodId === 'adhoc' ? 'adhoc-' + Date.now() : selectedPeriodId,
+        periodId: currentPeriod.id,
         title: autoTitle,
         content: finalContent,
         structuredData: Object.keys(structuredDataPayload).length > 0 ? structuredDataPayload : undefined,
@@ -335,75 +332,112 @@ export const SubmitReportModal: React.FC<SubmitReportModalProps> = ({
     }
   };
 
+  if (!currentPeriod) {
+    return (
+      <Modal
+        isOpen={isOpen}
+        onClose={onClose}
+        title="Nộp Báo Cáo"
+        subtitle={`Người nộp: ${currentUser.name} (${currentUser.roleTitle} - ${currentUser.departmentName})`}
+        maxWidth="md"
+      >
+        <div className="text-center py-8 px-4 space-y-3">
+          <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center mx-auto text-slate-400">
+            <CalendarRange className="w-6 h-6" />
+          </div>
+          <h3 className="text-sm font-bold text-slate-800">Chưa có đợt báo cáo nào</h3>
+          <p className="text-xs text-slate-500 leading-relaxed max-w-sm mx-auto">
+            Hiện tại Ban Giám Hiệu chưa ban hành đợt báo cáo mới hoặc Thầy/Cô chưa thuộc đối tượng nộp trong các đợt đã đóng.
+          </p>
+          <div className="pt-2">
+            <button
+              onClick={onClose}
+              className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-800 text-xs font-bold rounded-xl transition cursor-pointer"
+            >
+              Đóng
+            </button>
+          </div>
+        </div>
+      </Modal>
+    );
+  }
+
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Nộp Báo Cáo"
+      title={`Nộp Báo Cáo: ${currentPeriod.title}`}
       subtitle={`Người nộp: ${currentUser.name} (${currentUser.roleTitle} - ${currentUser.departmentName}${currentUser.isHomeroomTeacher ? ` - Lớp ${currentUser.homeroomClass}` : ''})`}
       maxWidth={isSpecificLegacyHomeroomMinutes || hasFormTemplate ? '5xl' : '4xl'}
     >
       <div className="space-y-4">
         
-        {/* TOP SELECTOR & DEADLINE BANNER */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 bg-slate-50 p-3.5 rounded-2xl border border-slate-200/80">
-          <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center justify-between">
-              <span>Đợt Báo Cáo / Phạm Vi Nộp <span className="text-rose-500">*</span></span>
-              {currentPeriod?.targetAudience === 'homeroom_teachers' && (
-                <span className="text-[10px] font-bold text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full flex items-center gap-1">
-                  <GraduationCap className="w-3.5 h-3.5" />
-                  Dành Cho 53 GVCN
+        {/* FIXED REQUIRED REPORT PERIOD BANNER (NO DROPDOWN - PREVENTS SELECTING WRONG PERIOD OR AD-HOC) */}
+        <div className="bg-gradient-to-r from-slate-50 via-emerald-50/20 to-slate-50 p-4 rounded-2xl border border-slate-200/90 shadow-2xs">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2 flex-wrap mb-1.5">
+                <span className="px-2.5 py-0.5 rounded-md bg-emerald-700 text-white font-bold text-[10px] uppercase tracking-wider flex items-center gap-1 shadow-2xs">
+                  <BookOpen className="w-3 h-3" />
+                  <span>Đợt Báo Cáo Yêu Cầu</span>
                 </span>
-              )}
-            </label>
-            <select
-              id="select-period"
-              value={selectedPeriodId}
-              onChange={(e) => setSelectedPeriodId(e.target.value)}
-              className="w-full text-xs px-3 py-2 rounded-xl bg-white border border-slate-300 focus:outline-emerald-600 font-medium"
-            >
-              <optgroup label="Danh sách đợt nộp trong trường">
-                {eligiblePeriods.map(p => (
-                  <option key={p.id} value={p.id}>
-                    {p.targetAudience === 'homeroom_teachers' ? '[GVCN] ' : ''}{p.title} ({p.status === 'active' ? 'Đang mở' : 'Đã đóng'})
-                  </option>
-                ))}
-              </optgroup>
-              <optgroup label="Tùy chọn tạo báo cáo độc lập">
-                <option value="adhoc">🌟 Báo cáo Đột xuất / Tự do (Không theo đợt)</option>
-              </optgroup>
-            </select>
-          </div>
 
-          <div className="flex items-center">
-            {selectedPeriodId === 'adhoc' ? (
-              <div className="w-full p-2.5 rounded-xl border border-blue-200 bg-blue-50 text-blue-900 text-xs flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-blue-600 shrink-0" />
-                <div>
-                  <div className="font-bold">Báo cáo Đột xuất / Tự do</div>
-                  <div className="text-[11px] opacity-80">Báo cáo không ràng buộc thời hạn, gửi trực tiếp tới BGH.</div>
+                {currentPeriod.targetAudience === 'homeroom_teachers' && (
+                  <span className="text-[10px] font-bold text-amber-800 bg-amber-100 border border-amber-300 px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                    <GraduationCap className="w-3.5 h-3.5 text-amber-700" />
+                    Dành Cho 53 GVCN
+                  </span>
+                )}
+                {currentPeriod.targetAudience === 'dept_heads_only' && (
+                  <span className="text-[10px] font-bold text-blue-800 bg-blue-100 border border-blue-300 px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                    19 Tổ trưởng & Tổ phó CM
+                  </span>
+                )}
+                {currentPeriod.targetUserIds && currentPeriod.targetUserIds.length > 0 && (
+                  <span className="text-[10px] font-bold text-purple-800 bg-purple-100 border border-purple-300 px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                    Chỉ định đích danh ({currentPeriod.targetUserIds.length} Thầy/Cô)
+                  </span>
+                )}
+                {currentPeriod.isRequired && (
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-600 border border-rose-200">
+                    Bắt buộc
+                  </span>
+                )}
+              </div>
+
+              <h2 className="text-base sm:text-lg font-black text-slate-900 leading-tight">
+                {currentPeriod.title}
+              </h2>
+
+              {currentPeriod.description && (
+                <p className="text-xs text-slate-600 mt-1 leading-relaxed line-clamp-2">
+                  {currentPeriod.description}
+                </p>
+              )}
+            </div>
+
+            {/* Hạn chót & Trạng thái */}
+            <div className={`p-3 rounded-xl border text-xs flex items-center gap-2.5 shrink-0 self-start sm:self-center shadow-2xs ${
+              isPastDeadline 
+                ? 'bg-rose-50 border-rose-200 text-rose-800' 
+                : 'bg-emerald-50 border-emerald-200 text-emerald-800'
+            }`}>
+              {isPastDeadline ? (
+                <AlertTriangle className="w-5 h-5 text-rose-600 shrink-0" />
+              ) : (
+                <Clock className="w-5 h-5 text-emerald-600 shrink-0" />
+              )}
+              <div>
+                <div className="font-bold text-xs sm:text-sm">
+                  Hạn chót: {new Date(currentPeriod.deadline).toLocaleString('vi-VN')}
+                </div>
+                <div className="text-[11px] opacity-90 mt-0.5">
+                  {isPastDeadline 
+                    ? '⚠️ Đã quá hạn quy định (Ghi nhận nộp trễ)' 
+                    : 'Đang trong thời hạn nộp hợp lệ'}
                 </div>
               </div>
-            ) : currentPeriod ? (
-              <div className={`w-full p-2.5 rounded-xl border text-xs flex items-center gap-2.5 ${
-                isPastDeadline 
-                  ? 'bg-rose-50 border-rose-200 text-rose-800' 
-                  : 'bg-emerald-50 border-emerald-200 text-emerald-800'
-              }`}>
-                {isPastDeadline ? <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" /> : <Clock className="w-4 h-4 text-emerald-600 shrink-0" />}
-                <div>
-                  <div className="font-bold">
-                    Hạn chót: {new Date(currentPeriod.deadline).toLocaleString('vi-VN')}
-                  </div>
-                  <div className="text-[11px] opacity-90">
-                    {isPastDeadline 
-                      ? '⚠️ Đợt báo cáo đã qua hạn quy định. Hệ thống sẽ ghi nhận Nộp trễ.' 
-                      : 'Đang trong thời hạn nộp hợp lệ.'}
-                  </div>
-                </div>
-              </div>
-            ) : null}
+            </div>
           </div>
         </div>
 

@@ -93,6 +93,10 @@ export const Dashboard: React.FC<DashboardProps> = ({
     return count;
   }, [activePeriods, allUsers, submissions]);
 
+  // Priority: active period that this user hasn't submitted yet
+  const userPendingPeriod = activePeriods.find((p: ReportPeriod) => !hasSubmittedForPeriod(submissions, p.id, currentUser));
+  const targetPeriodToSubmitId = userPendingPeriod?.id || activePeriods[0]?.id;
+
   // Helper to format remaining time
   const getRemainingTimeBadge = (deadline: string) => {
     const diff = new Date(deadline).getTime() - Date.now();
@@ -190,7 +194,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             ) : (
               <button
                 id="btn-dash-submit-report"
-                onClick={() => onOpenSubmit()}
+                onClick={() => onOpenSubmit(targetPeriodToSubmitId)}
                 className="px-4 py-2.5 rounded-xl bg-emerald-400 hover:bg-emerald-300 text-slate-950 font-bold text-xs sm:text-sm flex items-center gap-2 shadow-md hover:shadow-lg transition active:scale-98 cursor-pointer"
               >
                 <Send className="w-4 h-4" />
@@ -396,7 +400,11 @@ export const Dashboard: React.FC<DashboardProps> = ({
                         )}
                       </div>
 
-                      <h3 className="text-sm sm:text-base font-bold text-slate-900 group-hover:text-emerald-700 transition">
+                      <h3 
+                        onClick={() => !hasSubmitted && onOpenSubmit(period.id)}
+                        className={`text-sm sm:text-base font-bold text-slate-900 group-hover:text-emerald-700 transition ${!hasSubmitted ? 'cursor-pointer' : ''}`}
+                        title={!hasSubmitted ? "Nhấp để vào nộp báo cáo cho đợt này" : undefined}
+                      >
                         {period.title}
                       </h3>
                       <p className="text-xs text-slate-500 mt-1 line-clamp-2">
@@ -489,7 +497,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                       Thầy/Cô hãy chọn đợt báo cáo để nộp cho tổ hoặc BGH.
                     </p>
                     <button
-                      onClick={() => onOpenSubmit()}
+                      onClick={() => onOpenSubmit(targetPeriodToSubmitId)}
                       className="px-3.5 py-1.5 rounded-xl bg-emerald-600 text-white font-bold text-xs inline-flex items-center gap-1 cursor-pointer"
                     >
                       <Send className="w-3 h-3" />
