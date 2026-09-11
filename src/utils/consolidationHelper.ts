@@ -9,7 +9,7 @@ import {
   CustomFormField,
   CustomDynamicTable
 } from '../types';
-import { HOMEROOM_ROSTER_53, SPECIALIZED_DEPT_HEADS_19 } from '../data/staffRoster';
+import { HOMEROOM_ROSTER_53, SPECIALIZED_DEPT_HEADS_19, OFFICIAL_DEPARTMENTS } from '../data/staffRoster';
 
 export interface ConsolidatedDeptHeadStat {
   stt: number;
@@ -145,6 +145,7 @@ export interface PeriodConsolidationResult {
   periodTitle: string;
   targetAudienceLabel: string;
   totalHomeroomClasses: number;
+  totalTargetCount: number;
   submittedCount: number;
   pendingCount: number;
   completionRate: number;
@@ -646,63 +647,41 @@ export function aggregatePeriodReportData(
     if (c.type === 'number') numericTotals[c.id] = 0;
   });
 
-  // Xây dựng ma trận 53 lớp
-  const fieldRows: ConsolidatedFieldRow[] = HOMEROOM_ROSTER_53.map((hr, idx) => {
-    const classKey = hr.className.trim().toUpperCase();
-    const sub = subByClassMap.get(classKey);
-    const hasSubmitted = !!sub && sub.status !== 'draft';
-    const values: Record<string, any> = {};
-
-    fieldColumns.forEach(c => {
-      const val = sub?.structuredData?.customFieldValues?.[c.id];
-      values[c.id] = val !== undefined && val !== null ? val : '';
-      if (c.type === 'number' && typeof val === 'number') {
-        numericTotals[c.id] = (numericTotals[c.id] || 0) + val;
-      }
-    });
-
-    return {
-      stt: idx + 1,
-      className: hr.className,
-      campus: hr.campus,
-      grade: hr.grade,
-      authorName: sub?.authorName || hr.teacherName,
-      departmentName: 'Chủ nhiệm',
-      submittedAt: sub?.submittedAt || null,
-      values,
-      hasSubmitted
-    };
-  });
-
-  const fieldMatrix: ConsolidatedFieldMatrix = {
-    columns: fieldColumns,
-    rows: fieldRows,
-    numericTotals
-  };
-
   // 5. Tính toán tỷ lệ & số liệu tổng quan
-  const isDeptHeadAudience = period?.targetAudience === 'dept_heads_only';
+  const isDeptHeadAudience = period?.targetAudience === 'dept_heads_only' || (!period?.targetAudience && periodTitle.toLowerCase().includes('tổ trưởng'));
   const isSpecificUsersAudience = period?.targetAudience === 'specific_users';
+  const isHomeroomAudience = period?.targetAudience === 'homeroom_teachers' || (!period?.targetAudience && (periodTitle.toLowerCase().includes('chủ nhiệm') || periodTitle.toLowerCase().includes('53 lớp') || periodSubs.some(s => s.isHomeroomReport)));
   const targetUserIds = period?.targetUserIds || [];
 
-  // Thống kê 19 Tổ trưởng & Tổ phó thuộc 6 tổ chuyên môn
-  const deptHeadStats: ConsolidatedDeptHeadStat[] = SPECIALIZED_DEPT_HEADS_19.map((dh, idx) => {
+  // Lấy danh sách Tổ trưởng chuyên môn
+  // Ưu tiên 7 Tổ trưởng chính của 7 tổ trong trường (nếu có lọc theo tổ thì lọc theo targetDepartmentIds)
+  const targetedDeptIds = period?.targetDepartmentIds && !period.targetDepartmentIds.includes('all')
+    ? period.targetDepartmentIds
+    : null;
+
+  const relevantDepts = targetedDeptIds 
+    ? OFFICIAL_DEPARTMENTS.filter(d => targetedDeptIds.includes(d.id))
+    : OFFICIAL_DEPARTMENTS;
+
+  const deptHeadStats: ConsolidatedDeptHeadStat[] = relevantDepts.map((dept, idx) => {
+    const headUser = allUsers.find(u => u.id === dept.headUserId || u.name === dept.headUserName);
     const userSubs = periodSubs.filter(s => 
-      s.authorId === dh.id || 
-      (s.authorName && s.authorName.trim().toLowerCase() === dh.name.trim().toLowerCase())
+      s.authorId === dept.headUserId || 
+      s.departmentId === dept.id ||
+      (s.authorName && s.authorName.trim().toLowerCase() === dept.headUserName.trim().toLowerCase())
     );
     const sub = userSubs.find(s => s.status !== 'draft') || userSubs[0];
     const hasSubmitted = !!sub && sub.status !== 'draft';
     return {
       stt: idx + 1,
-      orderNo: dh.orderNo || idx + 1,
-      userId: dh.id,
-      teacherName: dh.name,
-      roleTitle: dh.roleTitle,
-      departmentId: dh.departmentId,
-      departmentName: dh.departmentName,
-      originalSchool: dh.originalSchool || '',
-      subject: dh.subject || '',
+      orderNo: idx + 1,
+      userId: dept.headUserId,
+      teacherName: dept.headUserName,
+      roleTitle: 'Tổ trưởng chuyên môn',
+      departmentId: dept.id,
+      departmentName: dept.name,
+      originalSchool: headUser?.originalSchool || '',
+      subject: headUser?.subject || dept.name,
       hasSubmitted,
       submittedAt: sub?.submittedAt || null,
       submissionId: sub?.id || null,
@@ -738,6 +717,132 @@ export function aggregatePeriodReportData(
     };
   });
 
+  // Xây dựng ma trận các trường dữ liệu tùy theo đối tượng của đợt
+  let fieldRows: ConsolidatedFieldRow[] = [];
+
+  if (isDeptHeadAudience) {
+    // Đợt dành cho Tổ trưởng (ví dụ: 7 tổ trưởng khảo sát an toàn giao thông)
+    fieldRows = deptHeadStats.map((dh, idx) => {
+      const userSubs = periodSubs.filter(s => 
+        s.authorId === dh.userId || 
+        s.departmentId === dh.departmentId ||
+        (s.authorName && s.authorName.trim().toLowerCase() === dh.teacherName.trim().toLowerCase())
+      );
+      const sub = userSubs.find(s => s.status !== 'draft') || userSubs[0];
+      const hasSubmitted = !!sub && sub.status !== 'draft';
+      const values: Record<string, any> = {};
+
+      fieldColumns.forEach(c => {
+        const val = sub?.structuredData?.customFieldValues?.[c.id];
+        values[c.id] = val !== undefined && val !== null ? val : '';
+        if (c.type === 'number' && typeof val === 'number') {
+          numericTotals[c.id] = (numericTotals[c.id] || 0) + val;
+        }
+      });
+
+      return {
+        stt: idx + 1,
+        className: dh.departmentName,
+        campus: dh.originalSchool || 'Toàn trường',
+        grade: 0,
+        authorName: dh.teacherName,
+        departmentName: dh.departmentName,
+        submittedAt: sub?.submittedAt || null,
+        values,
+        hasSubmitted
+      };
+    });
+  } else if (isSpecificUsersAudience) {
+    // Đợt chỉ định đích danh từng Thầy Cô
+    fieldRows = specificUserStats.map((sp, idx) => {
+      const userSubs = periodSubs.filter(s => 
+        s.authorId === sp.userId || 
+        (s.authorName && s.authorName.trim().toLowerCase() === sp.teacherName.trim().toLowerCase())
+      );
+      const sub = userSubs.find(s => s.status !== 'draft') || userSubs[0];
+      const hasSubmitted = !!sub && sub.status !== 'draft';
+      const values: Record<string, any> = {};
+
+      fieldColumns.forEach(c => {
+        const val = sub?.structuredData?.customFieldValues?.[c.id];
+        values[c.id] = val !== undefined && val !== null ? val : '';
+        if (c.type === 'number' && typeof val === 'number') {
+          numericTotals[c.id] = (numericTotals[c.id] || 0) + val;
+        }
+      });
+
+      return {
+        stt: idx + 1,
+        className: sp.departmentName || 'Cá nhân',
+        campus: sp.originalSchool || 'Toàn trường',
+        grade: 0,
+        authorName: sp.teacherName,
+        departmentName: sp.departmentName,
+        submittedAt: sub?.submittedAt || null,
+        values,
+        hasSubmitted
+      };
+    });
+  } else if (isHomeroomAudience) {
+    // Đợt 53 Lớp chủ nhiệm
+    fieldRows = HOMEROOM_ROSTER_53.map((hr, idx) => {
+      const classKey = hr.className.trim().toUpperCase();
+      const sub = subByClassMap.get(classKey);
+      const hasSubmitted = !!sub && sub.status !== 'draft';
+      const values: Record<string, any> = {};
+
+      fieldColumns.forEach(c => {
+        const val = sub?.structuredData?.customFieldValues?.[c.id];
+        values[c.id] = val !== undefined && val !== null ? val : '';
+        if (c.type === 'number' && typeof val === 'number') {
+          numericTotals[c.id] = (numericTotals[c.id] || 0) + val;
+        }
+      });
+
+      return {
+        stt: idx + 1,
+        className: hr.className,
+        campus: hr.campus,
+        grade: hr.grade,
+        authorName: sub?.authorName || hr.teacherName,
+        departmentName: 'Chủ nhiệm',
+        submittedAt: sub?.submittedAt || null,
+        values,
+        hasSubmitted
+      };
+    });
+  } else {
+    // Đợt chung toàn trường hoặc giáo viên bộ môn
+    fieldRows = periodSubs.map((sub, idx) => {
+      const values: Record<string, any> = {};
+      fieldColumns.forEach(c => {
+        const val = sub.structuredData?.customFieldValues?.[c.id];
+        values[c.id] = val !== undefined && val !== null ? val : '';
+        if (c.type === 'number' && typeof val === 'number') {
+          numericTotals[c.id] = (numericTotals[c.id] || 0) + val;
+        }
+      });
+
+      return {
+        stt: idx + 1,
+        className: sub.homeroomClass || sub.departmentName,
+        campus: sub.homeroomCampus || 'Toàn trường',
+        grade: 0,
+        authorName: sub.authorName,
+        departmentName: sub.departmentName,
+        submittedAt: sub.submittedAt || null,
+        values,
+        hasSubmitted: sub.status !== 'draft'
+      };
+    });
+  }
+
+  const fieldMatrix: ConsolidatedFieldMatrix = {
+    columns: fieldColumns,
+    rows: fieldRows,
+    numericTotals
+  };
+
   const submittedClasses = classStats.filter(c => c.hasSubmitted);
   const submittedDeptHeads = deptHeadStats.filter(d => d.hasSubmitted);
   const submittedSpecificUsers = specificUserStats.filter(s => s.hasSubmitted);
@@ -745,23 +850,27 @@ export function aggregatePeriodReportData(
   const totalTargetCount = isSpecificUsersAudience 
     ? (targetUserIds.length || 1)
     : isDeptHeadAudience 
-    ? 19 
-    : 53;
+    ? deptHeadStats.length 
+    : isHomeroomAudience
+    ? 53
+    : Math.max(periodSubs.length, 1);
 
   const submittedCount = isSpecificUsersAudience
     ? submittedSpecificUsers.length
     : isDeptHeadAudience 
     ? submittedDeptHeads.length 
-    : submittedClasses.length;
+    : isHomeroomAudience
+    ? submittedClasses.length
+    : periodSubs.filter(s => s.status !== 'draft').length;
 
   const pendingCount = Math.max(0, totalTargetCount - submittedCount);
   const completionRate = totalTargetCount > 0 ? Math.round((submittedCount / totalTargetCount) * 100) : 0;
 
-  const totalEnrolled = submittedClasses.reduce((sum, c) => sum + c.totalStudents, 0);
-  const totalMale = submittedClasses.reduce((sum, c) => sum + c.maleStudents, 0);
-  const totalFemale = submittedClasses.reduce((sum, c) => sum + c.femaleStudents, 0);
-  const totalPresent = submittedClasses.reduce((sum, c) => sum + c.presentStudents, 0);
-  const totalAbsent = absentStudents.length;
+  const totalEnrolled = isHomeroomAudience ? submittedClasses.reduce((sum, c) => sum + c.totalStudents, 0) : 0;
+  const totalMale = isHomeroomAudience ? submittedClasses.reduce((sum, c) => sum + c.maleStudents, 0) : 0;
+  const totalFemale = isHomeroomAudience ? submittedClasses.reduce((sum, c) => sum + c.femaleStudents, 0) : 0;
+  const totalPresent = isHomeroomAudience ? submittedClasses.reduce((sum, c) => sum + c.presentStudents, 0) : 0;
+  const totalAbsent = isHomeroomAudience ? absentStudents.length : 0;
   const overallAttendanceRate = totalEnrolled > 0 ? Math.round((totalPresent / totalEnrolled) * 100) : 0;
 
   const totalDynamicRows = dynamicTables.reduce((sum, t) => sum + t.rows.length, 0);
@@ -772,9 +881,12 @@ export function aggregatePeriodReportData(
     targetAudienceLabel: isSpecificUsersAudience
       ? `Chỉ định đích danh (${targetUserIds.length} Thầy/Cô)`
       : isDeptHeadAudience 
-      ? '19 Tổ trưởng & Tổ phó chuyên môn' 
+      ? `${deptHeadStats.length} Tổ trưởng chuyên môn` 
+      : isHomeroomAudience
+      ? '53 Giáo viên chủ nhiệm'
       : targetAudienceLabel,
     totalHomeroomClasses: 53,
+    totalTargetCount,
     submittedCount,
     pendingCount,
     completionRate,
@@ -794,7 +906,7 @@ export function aggregatePeriodReportData(
     cadres,
     feedbacks,
     isDeptHeadAudience,
-    totalDeptHeads: 19,
+    totalDeptHeads: deptHeadStats.length,
     deptHeadStats,
     isSpecificUsersAudience,
     totalSpecificUsers: targetUserIds.length,

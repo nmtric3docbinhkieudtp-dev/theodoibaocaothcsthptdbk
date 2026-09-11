@@ -382,88 +382,54 @@ export const ExportService = {
   // TỔNG HỢP NỘI DUNG TOÀN TRƯỜNG & 53 LỚP (CONSOLIDATION ENGINE)
   // -------------------------------------------------------------
 
-  // Xuất file Excel tổng hợp nội dung chi tiết đa sheet (Sĩ số, Học sinh chưa ra lớp, Năng khiếu, Ban cán sự, Nội dung báo cáo)
+  // Xuất file Excel tổng hợp nội dung chi tiết đa sheet theo từng đợt
   exportConsolidatedPeriodToExcel(
     data: PeriodConsolidationResult,
     schoolInfo: SchoolInfo,
-    fileNamePrefix = 'Bao_Cao_Tong_Hop_53_Lop'
+    fileNamePrefix = 'Bao_Cao_Tong_Hop'
   ) {
     const wb = XLSX.utils.book_new();
+    const isHomeroom = data.period?.targetAudience === 'homeroom_teachers' || (!data.period?.targetAudience && (data.periodTitle.toLowerCase().includes('chủ nhiệm') || data.periodTitle.toLowerCase().includes('53 lớp')));
+    const isDeptHead = data.isDeptHeadAudience;
+    const isSpecific = data.isSpecificUsersAudience;
 
     // 1. Sheet Tổng Quan
-    const summaryData = [
-      { 'Chỉ Số / Hạng Mục': 'Tên đợt báo cáo', 'Giá Trị': data.period?.title || 'Tổng hợp báo cáo 53 lớp' },
+    const summaryData: { 'Chỉ Số / Hạng Mục': string; 'Giá Trị': any }[] = [
+      { 'Chỉ Số / Hạng Mục': 'Tên đợt báo cáo', 'Giá Trị': data.period?.title || data.periodTitle },
       { 'Chỉ Số / Hạng Mục': 'Năm học', 'Giá Trị': data.period?.academicYear || '2026 - 2027' },
       { 'Chỉ Số / Hạng Mục': 'Đơn vị', 'Giá Trị': schoolInfo.formalName },
-      { 'Chỉ Số / Hạng Mục': 'Tổng số lớp chủ nhiệm', 'Giá Trị': 53 },
-      { 'Chỉ Số / Hạng Mục': 'Số lớp đã nộp báo cáo', 'Giá Trị': `${data.submittedCount} / 53` },
-      { 'Chỉ Số / Hạng Mục': 'Tỷ lệ nộp báo cáo (%)', 'Giá Trị': `${data.completionRate}%` },
-      { 'Chỉ Số / Hạng Mục': 'Tổng sĩ số học sinh ghi nhận', 'Giá Trị': data.totalEnrolledStudents },
-      { 'Chỉ Số / Hạng Mục': 'Số học sinh hiện diện (đã ra lớp)', 'Giá Trị': data.totalPresentStudents },
-      { 'Chỉ Số / Hạng Mục': 'Số học sinh chưa ra lớp toàn trường', 'Giá Trị': data.totalAbsentStudents },
-      { 'Chỉ Số / Hạng Mục': 'Tỷ lệ ra lớp toàn trường (%)', 'Giá Trị': `${data.overallAttendanceRate}%` },
-      { 'Chỉ Số / Hạng Mục': 'Số lượng học sinh năng khiếu ghi nhận', 'Giá Trị': data.talents.length },
+      { 'Chỉ Số / Hạng Mục': 'Đối tượng thực hiện', 'Giá Trị': data.targetAudienceLabel },
+      { 'Chỉ Số / Hạng Mục': 'Hạn chót nộp', 'Giá Trị': data.period?.deadline || 'Không ấn định' },
+      { 'Chỉ Số / Hạng Mục': 'Tổng số đối tượng yêu cầu', 'Giá Trị': data.totalTargetCount || (isDeptHead ? data.deptHeadStats?.length : isHomeroom ? 53 : data.submittedCount) },
+      { 'Chỉ Số / Hạng Mục': 'Số lượng đã nộp báo cáo', 'Giá Trị': `${data.submittedCount} / ${data.totalTargetCount || (isDeptHead ? data.deptHeadStats?.length : isHomeroom ? 53 : data.submittedCount)}` },
+      { 'Chỉ Số / Hạng Mục': 'Tỷ lệ hoàn thành (%)', 'Giá Trị': `${data.completionRate}%` },
+      { 'Chỉ Số / Hạng Mục': 'Số lượng chưa nộp', 'Giá Trị': data.pendingCount },
       { 'Chỉ Số / Hạng Mục': 'Ngày xuất file', 'Giá Trị': new Date().toLocaleDateString('vi-VN') }
     ];
+
+    if (isHomeroom) {
+      summaryData.push(
+        { 'Chỉ Số / Hạng Mục': 'Tổng sĩ số học sinh ghi nhận', 'Giá Trị': data.totalEnrolledStudents },
+        { 'Chỉ Số / Hạng Mục': 'Số học sinh hiện diện (đã ra lớp)', 'Giá Trị': data.totalPresentStudents },
+        { 'Chỉ Số / Hạng Mục': 'Số học sinh chưa ra lớp toàn trường', 'Giá Trị': data.totalAbsentStudents },
+        { 'Chỉ Số / Hạng Mục': 'Tỷ lệ ra lớp toàn trường (%)', 'Giá Trị': `${data.overallAttendanceRate}%` }
+      );
+    }
+
     const wsSummary = XLSX.utils.json_to_sheet(summaryData);
-    XLSX.utils.book_append_sheet(wb, wsSummary, 'Tổng Quan');
+    XLSX.utils.book_append_sheet(wb, wsSummary, 'Tong_Quan');
 
-    // 2. Dynamic Tables Sheets (DANH SÁCH TỔNG HỢP NỘI DUNG TỪ 53 LỚP / TOÀN TRƯỜNG)
-    data.dynamicTables.forEach((tbl, tIdx) => {
-      // Loại bỏ các cột TT/STT thừa từ template vì đã có STT tự động ở đầu
-      const contentHeaders = tbl.headers.filter(h => !/^(tt|stt|số\s*thứ\s*tự|thứ\s*tự)$/i.test(h.trim()));
-
-      // Chỉ giữ lại những hàng thực sự có dữ liệu người dùng nhập vào
-      const meaningfulRows = tbl.rows.filter(r => isMeaningfulTableRow(r.data, tbl.headers));
-
-      const rows = meaningfulRows.map((r, rIdx) => {
-        const rowData: Record<string, any> = {
-          'STT': rIdx + 1,
-          'Lớp': r.className,
-          'Điểm Trường': r.campus,
-          'Khối': r.grade ? `Khối ${r.grade}` : '',
-          'Người Nộp / GVCN': r.authorName,
-          'Thời Gian Nộp': r.submittedAt ? new Date(r.submittedAt).toLocaleString('vi-VN') : ''
-        };
-        contentHeaders.forEach(h => {
-          rowData[h] = r.data[h] || '';
-        });
-        return rowData;
-      });
-
-      if (rows.length > 0) {
-        const wsDyn = XLSX.utils.json_to_sheet(rows);
-        let sheetTitle = '';
-        if (/chưa ra lớp/i.test(tbl.title)) {
-          sheetTitle = 'DS_HS_Chua_Ra_Lop';
-        } else if (/năng khiếu|thành tích|hội thi/i.test(tbl.title)) {
-          sheetTitle = 'DS_HS_Thanh_Tich_Hoi_Thi';
-        } else {
-          const cleanName = tbl.title.replace(/[\\/?*[\]:]/g, '').substring(0, 26);
-          sheetTitle = `DS_${tIdx + 1}_${cleanName}`.substring(0, 31);
-        }
-
-        // Đảm bảo tên sheet duy nhất
-        let finalSheetName = sheetTitle;
-        let counter = 1;
-        while (wb.SheetNames.includes(finalSheetName)) {
-          finalSheetName = `${sheetTitle.substring(0, 28)}_${counter++}`;
-        }
-
-        XLSX.utils.book_append_sheet(wb, wsDyn, finalSheetName);
-      }
-    });
-
-    // 3. Sheet Ma Trận Chỉ Số Biểu Mẫu 53 Lớp (nếu có các trường tùy biến)
+    // 2. Sheet Kết Quả Khảo Sát / Ma Trận Biểu Mẫu (nếu đợt có câu hỏi / trường dữ liệu)
     if (data.fieldMatrix && data.fieldMatrix.columns.length > 0) {
       const matrixRows = data.fieldMatrix.rows.map(r => {
         const rowData: Record<string, any> = {
           'STT': r.stt,
-          'Lớp': r.className,
+          'Đơn Vị / Tổ / Lớp': r.className,
           'Cơ Sở': r.campus,
-          'Khối': `Khối ${r.grade}`,
           'Người Báo Cáo': r.authorName,
-          'Trạng Thái': r.hasSubmitted ? 'Đã nộp' : 'Chưa nộp'
+          'Tổ / Bộ Phận': r.departmentName,
+          'Trạng Thái Nộp': r.hasSubmitted ? 'Đã nộp' : 'Chưa nộp',
+          'Thời Gian Nộp': r.submittedAt ? new Date(r.submittedAt).toLocaleString('vi-VN') : ''
         };
         data.fieldMatrix.columns.forEach(col => {
           rowData[col.label] = r.values[col.id] !== undefined ? r.values[col.id] : '';
@@ -475,11 +441,12 @@ export const ExportService = {
       if (Object.keys(data.fieldMatrix.numericTotals).length > 0) {
         const totalsRow: Record<string, any> = {
           'STT': 0,
-          'Lớp': 'TỔNG CỘNG TOÀN TRƯỜNG',
+          'Đơn Vị / Tổ / Lớp': 'TỔNG CỘNG',
           'Cơ Sở': '-',
-          'Khối': '-',
           'Người Báo Cáo': '-',
-          'Trạng Thái': `${data.submittedCount}/53 lớp`
+          'Tổ / Bộ Phận': '-',
+          'Trạng Thái Nộp': `${data.submittedCount} người đã nộp`,
+          'Thời Gian Nộp': '-'
         };
         data.fieldMatrix.columns.forEach(col => {
           if (col.type === 'number') {
@@ -492,70 +459,50 @@ export const ExportService = {
       }
 
       const wsMatrix = XLSX.utils.json_to_sheet(matrixRows);
-      XLSX.utils.book_append_sheet(wb, wsMatrix, 'Ma_Tran_Chi_So_53_Lop');
+      XLSX.utils.book_append_sheet(wb, wsMatrix, 'Ket_Qua_Khao_Sat');
     }
 
-    // 4. Sheet Danh Sách Học Sinh Vắng (nếu có)
-    if (data.absentStudents.length > 0) {
-      const absentRows = data.absentStudents.map((s, idx) => ({
-        'STT': idx + 1,
-        'Lớp': s.className,
-        'Khối': `Khối ${s.grade}`,
-        'Điểm Trường': s.campus === 'THPT' ? 'Điểm THPT' : (s.campus === 'TK' ? 'Điểm Tân Kiều' : 'Điểm Đốc Binh Kiều'),
-        'Giáo Viên Chủ Nhiệm': s.teacherName,
-        'Họ và Tên Học Sinh': s.studentName,
-        'Lớp Năm Trước': s.previousClass,
-        'Nơi Ở Hiện Nay': s.currentAddress,
-        'Số ĐT Học Sinh': s.studentPhone,
-        'Số ĐT Phụ Huynh': s.parentPhone,
-        'Lý Do Chưa Ra Lớp': s.reason
-      }));
-      const wsAbsent = XLSX.utils.json_to_sheet(absentRows);
-      XLSX.utils.book_append_sheet(wb, wsAbsent, 'DS_HS_Chua_Ra_Lop_53_Lop');
-    }
+    // 3. Dynamic Tables Sheets (nếu có các bảng động được thiết kế riêng cho đợt)
+    data.dynamicTables.forEach((tbl, tIdx) => {
+      const contentHeaders = tbl.headers.filter(h => !/^(tt|stt|số\s*thứ\s*tự|thứ\s*tự)$/i.test(h.trim()));
+      const meaningfulRows = tbl.rows.filter(r => isMeaningfulTableRow(r.data, tbl.headers));
 
-    // 5. Sheet Bảng Tổng Hợp Sĩ Số & Tỷ Lệ Ra Lớp (53 Lớp)
-    const classRows = data.classStats.map((c) => ({
-      'STT': c.stt,
-      'Lớp': c.className,
-      'Điểm Trường': c.campus === 'THPT' ? 'THPT' : (c.campus === 'TK' ? 'Tân Kiều' : 'Đốc Binh Kiều'),
-      'Khối': `Khối ${c.grade}`,
-      'Giáo Viên Chủ Nhiệm': c.teacherName,
-      'Sĩ Số Đầu Năm': c.totalStudents,
-      'Hiện Diện': c.presentStudents,
-      'Vắng / Chưa Ra Lớp': c.absentStudentsCount,
-      'Tỷ Lệ Ra Lớp (%)': c.hasSubmitted ? `${c.attendanceRate}%` : 'Chưa nộp',
-      'Trạng Thái Nộp': c.hasSubmitted ? 'Đã nộp báo cáo' : 'Chưa nộp',
-      'Ghi Chú / Đề Xuất': c.notes || ''
-    }));
+      const rows = meaningfulRows.map((r, rIdx) => {
+        const rowData: Record<string, any> = {
+          'STT': rIdx + 1,
+          'Đơn Vị / Lớp / Tổ': r.className,
+          'Điểm Trường': r.campus,
+          'Người Nộp': r.authorName,
+          'Thời Gian Nộp': r.submittedAt ? new Date(r.submittedAt).toLocaleString('vi-VN') : ''
+        };
+        contentHeaders.forEach(h => {
+          rowData[h] = r.data[h] || '';
+        });
+        return rowData;
+      });
 
-    // Thêm dòng Tổng cộng toàn trường ở cuối
-    classRows.push({
-      'STT': 0,
-      'Lớp': 'TỔNG CỘNG TOÀN TRƯỜNG',
-      'Điểm Trường': '-',
-      'Khối': '-',
-      'Giáo Viên Chủ Nhiệm': '-',
-      'Sĩ Số Đầu Năm': data.totalEnrolledStudents,
-      'Hiện Diện': data.totalPresentStudents,
-      'Vắng / Chưa Ra Lớp': data.totalAbsentStudents,
-      'Tỷ Lệ Ra Lớp (%)': `${data.overallAttendanceRate}%`,
-      'Trạng Thái Nộp': `${data.submittedCount}/53 lớp`,
-      'Ghi Chú / Đề Xuất': ''
+      if (rows.length > 0) {
+        const wsDyn = XLSX.utils.json_to_sheet(rows);
+        const cleanName = tbl.title.replace(/[\\/?*[\]:]/g, '').substring(0, 24);
+        let sheetTitle = `Bang_${tIdx + 1}_${cleanName}`.substring(0, 31);
+        let finalSheetName = sheetTitle;
+        let counter = 1;
+        while (wb.SheetNames.includes(finalSheetName)) {
+          finalSheetName = `${sheetTitle.substring(0, 28)}_${counter++}`;
+        }
+        XLSX.utils.book_append_sheet(wb, wsDyn, finalSheetName);
+      }
     });
 
-    const wsClasses = XLSX.utils.json_to_sheet(classRows);
-    XLSX.utils.book_append_sheet(wb, wsClasses, 'Tong_Hop_Si_So_53_Lop');
-
-    // 5.b Sheet Tiến Độ 19 Tổ Trưởng & Tổ Phó Chuyên Môn
-    if (data.isDeptHeadAudience && data.deptHeadStats && data.deptHeadStats.length > 0) {
+    // 4. Sheet Theo Dõi Tiến Độ Theo Đối Tượng Riêng Của Đợt
+    if (isDeptHead && data.deptHeadStats && data.deptHeadStats.length > 0) {
+      // Đợt Tổ trưởng chuyên môn
       const deptHeadRows = data.deptHeadStats.map(dh => ({
         'STT': dh.stt,
         'Họ và Tên Thầy Cô': dh.teacherName,
         'Chức Vụ': dh.roleTitle,
         'Tổ Chuyên Môn': dh.departmentName,
         'Môn Giảng Dạy': dh.subject || '-',
-        'Đơn Vị Cũ': dh.originalSchool || '-',
         'Trạng Thái Nộp': dh.hasSubmitted ? 'Đã nộp báo cáo' : 'Chưa nộp',
         'Thời Gian Nộp': dh.submittedAt ? new Date(dh.submittedAt).toLocaleString('vi-VN') : 'Chưa nộp',
         'Tiêu Đề Báo Cáo': dh.reportTitle || '',
@@ -564,30 +511,26 @@ export const ExportService = {
 
       deptHeadRows.push({
         'STT': 0,
-        'Họ và Tên Thầy Cô': 'TỔNG CỘNG 19 TỔ TRƯỞNG & TỔ PHÓ',
-        'Chức Vụ': `Đã nộp: ${data.submittedCount}/19 (${data.completionRate}%)`,
-        'Tổ Chuyên Môn': '6 Tổ chuyên môn',
+        'Họ và Tên Thầy Cô': `TỔNG CỘNG ${data.deptHeadStats.length} TỔ TRƯỞNG`,
+        'Chức Vụ': `Đã nộp: ${data.submittedCount}/${data.deptHeadStats.length} (${data.completionRate}%)`,
+        'Tổ Chuyên Môn': `${data.deptHeadStats.length} Tổ`,
         'Môn Giảng Dạy': '-',
-        'Đơn Vị Cũ': '-',
-        'Trạng Thái Nộp': `${data.submittedCount}/19 người`,
+        'Trạng Thái Nộp': `${data.submittedCount}/${data.deptHeadStats.length} người`,
         'Thời Gian Nộp': '-',
         'Tiêu Đề Báo Cáo': '-',
         'Trích Yếu Nội Dung': `Còn ${data.pendingCount} người chưa nộp`
       });
 
       const wsDeptHeads = XLSX.utils.json_to_sheet(deptHeadRows);
-      XLSX.utils.book_append_sheet(wb, wsDeptHeads, 'Tien_Do_19_To_Truong_Pho');
-    }
-
-    // 5.c Sheet Tiến Độ Chỉ Định Đích Danh Từng Cá Nhân
-    if (data.isSpecificUsersAudience && data.specificUserStats && data.specificUserStats.length > 0) {
+      XLSX.utils.book_append_sheet(wb, wsDeptHeads, 'Tien_Do_To_Truong');
+    } else if (isSpecific && data.specificUserStats && data.specificUserStats.length > 0) {
+      // Đợt chỉ định đích danh
       const specificRows = data.specificUserStats.map(u => ({
         'STT': u.stt,
         'Họ và Tên Thầy Cô': u.teacherName,
         'Chức Vụ': u.roleTitle,
         'Tổ / Bộ Phận': u.departmentName,
         'Môn Giảng Dạy': u.subject || '-',
-        'Cơ sở / Đơn vị': u.originalSchool || '-',
         'Trạng Thái Nộp': u.hasSubmitted ? 'Đã nộp báo cáo' : 'Chưa nộp',
         'Thời Gian Nộp': u.submittedAt ? new Date(u.submittedAt).toLocaleString('vi-VN') : 'Chưa nộp',
         'Tiêu Đề Báo Cáo': u.reportTitle || '',
@@ -596,58 +539,75 @@ export const ExportService = {
 
       specificRows.push({
         'STT': 0,
-        'Họ và Tên Thầy Cô': `TỔNG CỘNG ${data.totalSpecificUsers || data.specificUserStats.length} THẦY/CÔ CHỈ ĐỊNH`,
-        'Chức Vụ': `Đã nộp: ${data.submittedCount}/${data.totalSpecificUsers || data.specificUserStats.length} (${data.completionRate}%)`,
+        'Họ và Tên Thầy Cô': `TỔNG CỘNG ${data.specificUserStats.length} THẦY/CÔ CHỈ ĐỊNH`,
+        'Chức Vụ': `Đã nộp: ${data.submittedCount}/${data.specificUserStats.length} (${data.completionRate}%)`,
         'Tổ / Bộ Phận': '-',
         'Môn Giảng Dạy': '-',
-        'Cơ sở / Đơn vị': '-',
-        'Trạng Thái Nộp': `${data.submittedCount}/${data.totalSpecificUsers || data.specificUserStats.length} người`,
+        'Trạng Thái Nộp': `${data.submittedCount}/${data.specificUserStats.length} người`,
         'Thời Gian Nộp': '-',
         'Tiêu Đề Báo Cáo': '-',
         'Trích Yếu Nội Dung': `Còn ${data.pendingCount} người chưa nộp`
       });
 
       const wsSpecific = XLSX.utils.json_to_sheet(specificRows);
-      XLSX.utils.book_append_sheet(wb, wsSpecific, 'Tien_Do_Chi_Dinh_Dich_Danh');
-    }
+      XLSX.utils.book_append_sheet(wb, wsSpecific, 'Tien_Do_Chi_Dinh');
+    } else if (isHomeroom) {
+      // Đợt 53 Lớp Chủ Nhiệm: xuất Sĩ số và Học sinh vắng
+      if (data.absentStudents.length > 0) {
+        const absentRows = data.absentStudents.map((s, idx) => ({
+          'STT': idx + 1,
+          'Lớp': s.className,
+          'Khối': `Khối ${s.grade}`,
+          'Điểm Trường': s.campus === 'THPT' ? 'Điểm THPT' : (s.campus === 'TK' ? 'Điểm Tân Kiều' : 'Điểm Đốc Binh Kiều'),
+          'Giáo Viên Chủ Nhiệm': s.teacherName,
+          'Họ và Tên Học Sinh': s.studentName,
+          'Lớp Năm Trước': s.previousClass,
+          'Nơi Ở Hiện Nay': s.currentAddress,
+          'Số ĐT Học Sinh': s.studentPhone,
+          'Số ĐT Phụ Huynh': s.parentPhone,
+          'Lý Do Chưa Ra Lớp': s.reason
+        }));
+        const wsAbsent = XLSX.utils.json_to_sheet(absentRows);
+        XLSX.utils.book_append_sheet(wb, wsAbsent, 'DS_HS_Chua_Ra_Lop');
+      }
 
-    // 6. Sheet Học Sinh Năng Khiếu Toàn Trường
-    if (data.talents.length > 0) {
-      const talentRows = data.talents.map((t, idx) => ({
-        'STT': idx + 1,
-        'Lớp': t.className,
-        'Giáo Viên Chủ Nhiệm': t.teacherName,
-        'Họ và Tên Học Sinh': t.studentName,
-        'Cuộc Thi / Năng Khiếu': t.competition,
-        'Giải Thưởng / Thành Tích': t.prize,
-        'Ghi Chú / Bồi Dưỡng': t.note
+      const classRows = data.classStats.map((c) => ({
+        'STT': c.stt,
+        'Lớp': c.className,
+        'Điểm Trường': c.campus === 'THPT' ? 'THPT' : (c.campus === 'TK' ? 'Tân Kiều' : 'Đốc Binh Kiều'),
+        'Khối': `Khối ${c.grade}`,
+        'Giáo Viên Chủ Nhiệm': c.teacherName,
+        'Sĩ Số Đầu Năm': c.totalStudents,
+        'Hiện Diện': c.presentStudents,
+        'Vắng / Chưa Ra Lớp': c.absentStudentsCount,
+        'Tỷ Lệ Ra Lớp (%)': c.hasSubmitted ? `${c.attendanceRate}%` : 'Chưa nộp',
+        'Trạng Thái Nộp': c.hasSubmitted ? 'Đã nộp báo cáo' : 'Chưa nộp',
+        'Ghi Chú / Đề Xuất': c.notes || ''
       }));
-      const wsTalent = XLSX.utils.json_to_sheet(talentRows);
-      XLSX.utils.book_append_sheet(wb, wsTalent, 'DS_Hoc_Sinh_Nang_Khieu');
+
+      classRows.push({
+        'STT': 0,
+        'Lớp': 'TỔNG CỘNG TOÀN TRƯỜNG',
+        'Điểm Trường': '-',
+        'Khối': '-',
+        'Giáo Viên Chủ Nhiệm': '-',
+        'Sĩ Số Đầu Năm': data.totalEnrolledStudents,
+        'Hiện Diện': data.totalPresentStudents,
+        'Vắng / Chưa Ra Lớp': data.totalAbsentStudents,
+        'Tỷ Lệ Ra Lớp (%)': `${data.overallAttendanceRate}%`,
+        'Trạng Thái Nộp': `${data.submittedCount}/53 lớp`,
+        'Ghi Chú / Đề Xuất': ''
+      });
+
+      const wsClasses = XLSX.utils.json_to_sheet(classRows);
+      XLSX.utils.book_append_sheet(wb, wsClasses, 'Si_So_53_Lop');
     }
 
-    // 7. Sheet Ban Cán Sự 53 Lớp
-    if (data.cadres.length > 0) {
-      const cadreRows = data.cadres.map((cd, idx) => ({
-        'STT': idx + 1,
-        'Lớp': cd.className,
-        'GVCN': cd.teacherName,
-        'Chức Vụ': cd.role,
-        'Họ và Tên': cd.studentName,
-        'Học Lực Năm Trước': cd.academicPerf,
-        'Hạnh Kiểm Năm Trước': cd.conductPerf,
-        'Số Điện Thoại': cd.phone
-      }));
-      const wsCadre = XLSX.utils.json_to_sheet(cadreRows);
-      XLSX.utils.book_append_sheet(wb, wsCadre, 'Ban_Can_Su_53_Lop');
-    }
-
-    // 8. Sheet Tổng Hợp Nội Dung Chi Tiết Của 53 Báo Cáo
+    // 5. Sheet Tổng Hợp Nội Dung Chi Tiết & Ý Kiến Kiến Nghị của đợt này
     const feedbackRows = data.feedbacks.map((f, idx) => ({
       'STT': idx + 1,
-      'Lớp / Đơn Vị': f.className,
       'Người Báo Cáo': f.authorName,
-      'Tổ Bộ Môn': f.departmentName,
+      'Đơn Vị / Lớp / Tổ': f.className || f.departmentName,
       'Thời Gian Nộp': f.submittedAt ? new Date(f.submittedAt).toLocaleString('vi-VN') : '',
       'Tiêu Đề Báo Cáo': f.title,
       'Nội Dung Chi Tiết': f.content,
@@ -655,16 +615,20 @@ export const ExportService = {
     }));
     if (feedbackRows.length > 0) {
       const wsFeedbacks = XLSX.utils.json_to_sheet(feedbackRows);
-      XLSX.utils.book_append_sheet(wb, wsFeedbacks, 'Tong_Hop_Noi_Dung_53_Nguoi');
+      XLSX.utils.book_append_sheet(wb, wsFeedbacks, 'Noi_Dung_Bao_Cao');
     }
 
-    // Xuất file
+    // Xuất file với tên đợt cụ thể và ngày xuất
+    const cleanPeriodTitle = (data.period?.title || data.periodTitle || fileNamePrefix)
+      .replace(/[\\/?*[\]:"]/g, '_')
+      .replace(/\s+/g, '_')
+      .substring(0, 45);
     const dateStr = new Date().toISOString().split('T')[0];
-    const fullFileName = `${fileNamePrefix}_${dateStr}.xlsx`;
+    const fullFileName = `${cleanPeriodTitle}_${dateStr}.xlsx`;
     XLSX.writeFile(wb, fullFileName);
   },
 
-  // Xuất file Word (.doc) Tổng Hợp Nội Dung 53 Lớp Toàn Trường
+  // Xuất file Word (.doc) Tổng Hợp Nội Dung theo từng đợt
   exportConsolidatedPeriodToWord(
     data: PeriodConsolidationResult,
     schoolInfo: SchoolInfo,
@@ -680,7 +644,11 @@ export const ExportService = {
     const month = parts[1] || '08';
     const year = parts[2] || '2026';
 
-    // Bảng sĩ số 53 lớp HTML
+    const isHomeroom = data.period?.targetAudience === 'homeroom_teachers' || (!data.period?.targetAudience && (data.periodTitle.toLowerCase().includes('chủ nhiệm') || data.periodTitle.toLowerCase().includes('53 lớp')));
+    const isDeptHead = data.isDeptHeadAudience;
+    const isSpecific = data.isSpecificUsersAudience;
+
+    // Bảng sĩ số 53 lớp HTML (chỉ khi là đợt chủ nhiệm)
     const classRowsHtml = data.classStats.map(c => `
       <tr>
         <td style="text-align: center; border: 1px solid #000; padding: 5px;">${c.stt}</td>
@@ -711,31 +679,43 @@ export const ExportService = {
       : `
         <tr>
           <td colspan="8" style="border: 1px solid #000; padding: 12px; text-align: center; font-style: italic; color: green;">
-            Tất cả 53 lớp đều đạt 100% sĩ số. Không có học sinh vắng.
+            Tất cả các lớp đều đạt 100% sĩ số. Không có học sinh vắng.
           </td>
         </tr>
       `;
 
-    // Bảng học sinh năng khiếu HTML
-    const talentRowsHtml = data.talents.map(t => `
+    // Bảng tiến độ Tổ trưởng chuyên môn
+    const deptHeadRowsHtml = (isDeptHead && data.deptHeadStats) ? data.deptHeadStats.map(dh => `
       <tr>
-        <td style="text-align: center; border: 1px solid #000; padding: 5px;">${t.stt}</td>
-        <td style="text-align: center; border: 1px solid #000; padding: 5px; font-weight: bold;">${t.className}</td>
-        <td style="border: 1px solid #000; padding: 5px; font-weight: bold;">${t.studentName}</td>
-        <td style="border: 1px solid #000; padding: 5px;">${t.competition}</td>
-        <td style="text-align: center; border: 1px solid #000; padding: 5px;">${t.prize}</td>
-        <td style="border: 1px solid #000; padding: 5px;">${t.note || '-'}</td>
+        <td style="text-align: center; border: 1px solid #000; padding: 5px;">${dh.stt}</td>
+        <td style="border: 1px solid #000; padding: 5px; font-weight: bold;">${dh.teacherName}</td>
+        <td style="border: 1px solid #000; padding: 5px;">${dh.departmentName}</td>
+        <td style="text-align: center; border: 1px solid #000; padding: 5px; font-weight: bold; ${dh.hasSubmitted ? 'color: green;' : 'color: red;'}">${dh.hasSubmitted ? 'Đã nộp' : 'Chưa nộp'}</td>
+        <td style="text-align: center; border: 1px solid #000; padding: 5px;">${dh.submittedAt ? new Date(dh.submittedAt).toLocaleDateString('vi-VN') : '-'}</td>
+        <td style="border: 1px solid #000; padding: 5px; font-size: 10pt;">${dh.summaryNote || '-'}</td>
       </tr>
-    `).join('');
+    `).join('') : '';
 
-    // Tổng hợp phản ánh kiến nghị của 53 GVCN
+    // Bảng tiến độ Giáo viên chỉ định đích danh
+    const specificUserRowsHtml = (isSpecific && data.specificUserStats) ? data.specificUserStats.map(u => `
+      <tr>
+        <td style="text-align: center; border: 1px solid #000; padding: 5px;">${u.stt}</td>
+        <td style="border: 1px solid #000; padding: 5px; font-weight: bold;">${u.teacherName}</td>
+        <td style="border: 1px solid #000; padding: 5px;">${u.departmentName}</td>
+        <td style="text-align: center; border: 1px solid #000; padding: 5px; font-weight: bold; ${u.hasSubmitted ? 'color: green;' : 'color: red;'}">${u.hasSubmitted ? 'Đã nộp' : 'Chưa nộp'}</td>
+        <td style="text-align: center; border: 1px solid #000; padding: 5px;">${u.submittedAt ? new Date(u.submittedAt).toLocaleDateString('vi-VN') : '-'}</td>
+        <td style="border: 1px solid #000; padding: 5px; font-size: 10pt;">${u.summaryNote || '-'}</td>
+      </tr>
+    `).join('') : '';
+
+    // Tổng hợp ý kiến đề xuất kiến nghị
     const feedbackItemsHtml = data.feedbacks
       .filter(f => f.notes || f.content)
       .map(f => `
         <div style="margin-bottom: 12px; padding: 8px; border-left: 3px solid #047857; background-color: #f9fafb;">
-          <strong>- Lớp ${f.className} (${f.authorName}):</strong>
+          <strong>- ${f.authorName} (${f.className || f.departmentName}):</strong>
           ${f.notes ? `<div style="margin-top: 3px;"><em>Đề xuất:</em> ${f.notes}</div>` : ''}
-          ${f.content && f.content.length > 50 ? `<div style="margin-top: 3px; font-size: 10pt; color: #4b5563;"><em>Trích đoạn:</em> ${f.content.substring(0, 300)}...</div>` : ''}
+          ${f.content && f.content.length > 50 ? `<div style="margin-top: 3px; font-size: 10pt; color: #4b5563;"><em>Trích đoạn báo cáo:</em> ${f.content.substring(0, 300)}...</div>` : ''}
         </div>
       `).join('');
 
@@ -744,7 +724,7 @@ export const ExportService = {
       <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
       <head>
         <meta charset="utf-8">
-        <title>Báo Cáo Tổng Hợp 53 Lớp - ${schoolInfo.name}</title>
+        <title>Báo Cáo Tổng Hợp - ${data.period?.title || data.periodTitle}</title>
         <style>
           body { font-family: "Times New Roman", Times, serif; font-size: 12pt; line-height: 1.4; color: #000; margin: 30px 40px; }
           .header-grid { width: 100%; margin-bottom: 20px; border-collapse: collapse; }
@@ -776,67 +756,88 @@ export const ExportService = {
           </tr>
         </table>
 
-        <div class="main-title">BÁO CÁO TỔNG HỢP KẾT QUẢ VÀ NỘI DUNG BÁO CÁO TOÀN TRƯỜNG</div>
-        <div class="subtitle">Đợt báo cáo: ${data.period?.title || 'Biên bản tập trung học sinh đầu năm học 2026 - 2027'} (Tổng hợp từ 53 lớp)</div>
+        <div class="main-title">BÁO CÁO TỔNG HỢP: ${(data.period?.title || data.periodTitle).toUpperCase()}</div>
+        <div class="subtitle">Đơn vị: ${schoolInfo.formalName} • Đối tượng: ${data.targetAudienceLabel} • Năm học: ${data.period?.academicYear || '2026 - 2027'}</div>
 
-        <div class="section-title">I. TỔNG QUAN TÌNH HÌNH THỰC HIỆN VÀ TIẾN ĐỘ NỘP BÁO CÁO</div>
-        <p>- Tổng số lớp chủ nhiệm toàn trường: <strong>53 lớp</strong> (Gồm 18 lớp THPT, 20 lớp THCS Điểm Đốc Binh Kiều, 15 lớp THCS Điểm Tân Kiều).</p>
-        <p>- Số lớp đã nộp báo cáo hoàn tất: <strong>${data.submittedCount} / 53 lớp</strong> (Đạt tỷ lệ: <strong>${data.completionRate}%</strong>).</p>
-        <p>- Tổng sĩ số học sinh ghi nhận: <strong>${data.totalEnrolledStudents.toLocaleString('vi-VN')}</strong> học sinh.</p>
-        <p>- Số học sinh hiện diện có mặt: <strong>${data.totalPresentStudents.toLocaleString('vi-VN')}</strong> học sinh. Tỷ lệ ra lớp: <strong>${data.overallAttendanceRate}%</strong>.</p>
-        <p>- Tổng số học sinh chưa ra lớp cần tiếp tục vận động: <strong>${data.totalAbsentStudents}</strong> học sinh.</p>
+        <div class="section-title">I. TỔNG QUAN TIẾN ĐỘ THỰC HIỆN</div>
+        <p>- Đối tượng yêu cầu báo cáo: <strong>${data.targetAudienceLabel}</strong>.</p>
+        <p>- Tổng số đối tượng yêu cầu: <strong>${data.totalTargetCount}</strong> đối tượng.</p>
+        <p>- Số lượng đã nộp báo cáo hoàn tất: <strong>${data.submittedCount} / ${data.totalTargetCount}</strong> (Đạt tỷ lệ: <strong>${data.completionRate}%</strong>).</p>
+        <p>- Số lượng chưa nộp báo cáo: <strong>${data.pendingCount}</strong>.</p>
+        <p>- Thời hạn hoàn thành: <strong>${data.period?.deadline || 'Không ấn định'}</strong>.</p>
 
-        ${data.dynamicTables.length > 0 ? data.dynamicTables.map((tbl, tIdx) => `
-          <div class="section-title">II.${tIdx + 1}. DANH SÁCH TỔNG HỢP: ${tbl.title.toUpperCase()} (TỔNG HỢP 53 LỚP / TOÀN TRƯỜNG)</div>
-          <p><em>(Tổng cộng ${tbl.totalRows} bản ghi được tổng hợp từ các lớp đã nộp báo cáo)</em></p>
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th style="width: 35px;">STT</th>
-                <th style="width: 60px;">Lớp</th>
-                <th style="width: 140px;">GVCN / Người Báo Cáo</th>
-                ${tbl.headers.map(h => `<th>${h}</th>`).join('')}
-              </tr>
-            </thead>
-            <tbody>
-              ${tbl.rows.map(r => `
-                <tr>
-                  <td style="text-align: center; border: 1px solid #000; padding: 5px;">${r.stt}</td>
-                  <td style="text-align: center; border: 1px solid #000; padding: 5px; font-weight: bold;">${r.className}</td>
-                  <td style="border: 1px solid #000; padding: 5px;">${r.authorName}</td>
-                  ${tbl.headers.map(h => `<td style="border: 1px solid #000; padding: 5px;">${r.data[h] || '-'}</td>`).join('')}
-                </tr>
-              `).join('')}
-            </tbody>
-          </table>
-        `).join('') : ''}
+        ${isHomeroom ? `
+          <p>- Tổng sĩ số học sinh ghi nhận: <strong>${data.totalEnrolledStudents.toLocaleString('vi-VN')}</strong> học sinh.</p>
+          <p>- Số học sinh hiện diện có mặt: <strong>${data.totalPresentStudents.toLocaleString('vi-VN')}</strong> học sinh (Tỷ lệ ra lớp: <strong>${data.overallAttendanceRate}%</strong>).</p>
+          <p>- Tổng số học sinh chưa ra lớp: <strong>${data.totalAbsentStudents}</strong> học sinh.</p>
+        ` : ''}
 
         ${data.fieldMatrix.columns.length > 0 ? `
-          <div class="section-title">III. BẢNG MA TRẬN CHỈ SỐ BIỂU MẪU CỦA 53 LỚP CHỦ NHIỆM</div>
+          <div class="section-title">II. BẢNG TỔNG HỢP KẾT QUẢ KHẢO SÁT & BIỂU MẪU</div>
           <table class="data-table">
             <thead>
               <tr>
                 <th style="width: 35px;">STT</th>
-                <th style="width: 60px;">Lớp</th>
-                <th style="width: 140px;">GVCN</th>
+                <th style="width: 130px;">Người báo cáo</th>
+                <th style="width: 110px;">Đơn vị / Tổ</th>
                 ${data.fieldMatrix.columns.map(c => `<th>${c.label}</th>`).join('')}
+                <th style="width: 80px;">Trạng thái</th>
               </tr>
             </thead>
             <tbody>
               ${data.fieldMatrix.rows.map(r => `
                 <tr>
                   <td style="text-align: center; border: 1px solid #000; padding: 5px;">${r.stt}</td>
-                  <td style="text-align: center; border: 1px solid #000; padding: 5px; font-weight: bold;">${r.className}</td>
-                  <td style="border: 1px solid #000; padding: 5px;">${r.authorName}</td>
+                  <td style="border: 1px solid #000; padding: 5px; font-weight: bold;">${r.authorName}</td>
+                  <td style="border: 1px solid #000; padding: 5px;">${r.className}</td>
                   ${data.fieldMatrix.columns.map(c => `<td style="text-align: ${c.type === 'number' ? 'center' : 'left'}; border: 1px solid #000; padding: 5px;">${r.values[c.id] !== undefined && r.values[c.id] !== '' ? r.values[c.id] : '-'}</td>`).join('')}
+                  <td style="text-align: center; border: 1px solid #000; padding: 5px; font-weight: bold; ${r.hasSubmitted ? 'color: green;' : 'color: red;'}">${r.hasSubmitted ? 'Đã nộp' : 'Chưa nộp'}</td>
                 </tr>
               `).join('')}
             </tbody>
           </table>
         ` : ''}
 
-        ${data.absentStudents.length > 0 ? `
-          <div class="section-title">IV. DANH SÁCH TỔNG HỢP HỌC SINH CHƯA RA LỚP TOÀN TRƯỜNG</div>
+        ${(isDeptHead && data.deptHeadStats && data.deptHeadStats.length > 0) ? `
+          <div class="section-title">III. BẢNG TIẾN ĐỘ THỰC HIỆN CỦA CÁC TỔ TRƯỞNG CHUYÊN MÔN</div>
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th style="width: 35px;">STT</th>
+                <th style="width: 140px;">Tổ trưởng</th>
+                <th style="width: 140px;">Tổ chuyên môn</th>
+                <th style="width: 85px;">Trạng thái</th>
+                <th style="width: 90px;">Ngày nộp</th>
+                <th>Nội dung báo cáo tóm tắt</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${deptHeadRowsHtml}
+            </tbody>
+          </table>
+        ` : ''}
+
+        ${(isSpecific && data.specificUserStats && data.specificUserStats.length > 0) ? `
+          <div class="section-title">III. BẢNG TIẾN ĐỘ THỰC HIỆN CỦA CÁC THẦY CÔ ĐƯỢC CHỈ ĐỊNH</div>
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th style="width: 35px;">STT</th>
+                <th style="width: 140px;">Họ và tên</th>
+                <th style="width: 140px;">Tổ / Bộ phận</th>
+                <th style="width: 85px;">Trạng thái</th>
+                <th style="width: 90px;">Ngày nộp</th>
+                <th>Nội dung báo cáo tóm tắt</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${specificUserRowsHtml}
+            </tbody>
+          </table>
+        ` : ''}
+
+        ${isHomeroom && data.absentStudents.length > 0 ? `
+          <div class="section-title">DANH SÁCH TỔNG HỢP HỌC SINH CHƯA RA LỚP TOÀN TRƯỜNG</div>
           <p><em>(Danh sách phục vụ công tác chỉ đạo Đoàn thanh niên, Đội TNTP và GVCN đi vận động học sinh đến trường)</em></p>
           <table class="data-table">
             <thead>
@@ -857,54 +858,61 @@ export const ExportService = {
           </table>
         ` : ''}
 
-        <div class="section-title">V. BẢNG TỔNG HỢP SĨ SỐ VÀ TIẾN ĐỘ 53 LỚP CHỦ NHIỆM</div>
-        <table class="data-table">
-          <thead>
-            <tr>
-              <th style="width: 30px;">STT</th>
-              <th style="width: 55px;">Lớp</th>
-              <th style="width: 140px;">GVCN</th>
-              <th style="width: 50px;">Sĩ số</th>
-              <th style="width: 50px;">Hiện diện</th>
-              <th style="width: 50px;">Vắng</th>
-              <th style="width: 65px;">Tỷ lệ (%)</th>
-              <th>Ghi chú / Phản ánh của GVCN</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${classRowsHtml}
-            <tr style="font-weight: bold; background-color: #f3f4f6;">
-              <td colspan="3" style="text-align: center; border: 1px solid #000; padding: 6px;">TỔNG CỘNG TOÀN TRƯỜNG</td>
-              <td style="text-align: center; border: 1px solid #000; padding: 6px;">${data.totalEnrolledStudents}</td>
-              <td style="text-align: center; border: 1px solid #000; padding: 6px;">${data.totalPresentStudents}</td>
-              <td style="text-align: center; border: 1px solid #000; padding: 6px; color: red;">${data.totalAbsentStudents}</td>
-              <td style="text-align: center; border: 1px solid #000; padding: 6px;">${data.overallAttendanceRate}%</td>
-              <td style="border: 1px solid #000; padding: 6px;">Đã nộp ${data.submittedCount}/53 lớp</td>
-            </tr>
-          </tbody>
-        </table>
-
-        ${data.talents.length > 0 ? `
-          <div class="section-title">IV. TỔNG HỢP HỌC SINH CÓ NĂNG KHIẾU / ĐẠT GIẢI THƯỞNG</div>
+        ${isHomeroom ? `
+          <div class="section-title">BẢNG TỔNG HỢP SĨ SỐ VÀ TIẾN ĐỘ 53 LỚP CHỦ NHIỆM</div>
           <table class="data-table">
             <thead>
               <tr>
                 <th style="width: 30px;">STT</th>
                 <th style="width: 55px;">Lớp</th>
-                <th style="width: 140px;">Họ tên học sinh</th>
-                <th>Cuộc thi / Lĩnh vực năng khiếu</th>
-                <th style="width: 80px;">Giải thưởng</th>
-                <th style="width: 150px;">Ghi chú</th>
+                <th style="width: 140px;">GVCN</th>
+                <th style="width: 50px;">Sĩ số</th>
+                <th style="width: 50px;">Hiện diện</th>
+                <th style="width: 50px;">Vắng</th>
+                <th style="width: 65px;">Tỷ lệ (%)</th>
+                <th>Ghi chú / Phản ánh của GVCN</th>
               </tr>
             </thead>
             <tbody>
-              ${talentRowsHtml}
+              ${classRowsHtml}
+              <tr style="font-weight: bold; background-color: #f3f4f6;">
+                <td colspan="3" style="text-align: center; border: 1px solid #000; padding: 6px;">TỔNG CỘNG TOÀN TRƯỜNG</td>
+                <td style="text-align: center; border: 1px solid #000; padding: 6px;">${data.totalEnrolledStudents}</td>
+                <td style="text-align: center; border: 1px solid #000; padding: 6px;">${data.totalPresentStudents}</td>
+                <td style="text-align: center; border: 1px solid #000; padding: 6px; color: red;">${data.totalAbsentStudents}</td>
+                <td style="text-align: center; border: 1px solid #000; padding: 6px;">${data.overallAttendanceRate}%</td>
+                <td style="border: 1px solid #000; padding: 6px;">Đã nộp ${data.submittedCount}/53 lớp</td>
+              </tr>
             </tbody>
           </table>
         ` : ''}
 
-        <div class="section-title">V. TỔNG HỢP Ý KIẾN VÀ ĐỀ XUẤT KIẾN NGHỊ CỦA GIÁO VIÊN VỚI BGH</div>
-        ${feedbackItemsHtml || '<p><em>(Không có kiến nghị đặc biệt nào)</em></p>'}
+        ${data.dynamicTables.length > 0 ? data.dynamicTables.map((tbl) => `
+          <div class="section-title">DANH SÁCH BẢNG SỐ LIỆU: ${tbl.title.toUpperCase()}</div>
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th style="width: 35px;">STT</th>
+                <th style="width: 110px;">Đơn vị / Lớp</th>
+                <th style="width: 130px;">Người nộp</th>
+                ${tbl.headers.map(h => `<th>${h}</th>`).join('')}
+              </tr>
+            </thead>
+            <tbody>
+              ${tbl.rows.map(r => `
+                <tr>
+                  <td style="text-align: center; border: 1px solid #000; padding: 5px;">${r.stt}</td>
+                  <td style="border: 1px solid #000; padding: 5px; font-weight: bold;">${r.className}</td>
+                  <td style="border: 1px solid #000; padding: 5px;">${r.authorName}</td>
+                  ${tbl.headers.map(h => `<td style="border: 1px solid #000; padding: 5px;">${r.data[h] || '-'}</td>`).join('')}
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        `).join('') : ''}
+
+        <div class="section-title">TỔNG HỢP Ý KIẾN VÀ ĐỀ XUẤT KIẾN NGHỊ VỚI BGH</div>
+        ${feedbackItemsHtml || '<p><em>(Không có ý kiến đề xuất nào)</em></p>'}
 
         <table class="footer-sign">
           <tr>
@@ -932,7 +940,11 @@ export const ExportService = {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `Bao_Cao_Tong_Hop_53_Lop_Doc_Binh_Kieu_${year}_${month}_${day}.doc`;
+    const cleanPeriodTitle = (data.period?.title || data.periodTitle || 'Bao_Cao_Tong_Hop')
+      .replace(/[\\/?*[\]:"]/g, '_')
+      .replace(/\s+/g, '_')
+      .substring(0, 45);
+    a.download = `${cleanPeriodTitle}_${year}_${month}_${day}.doc`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
