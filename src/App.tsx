@@ -19,12 +19,13 @@ import { PeriodConsolidationModal } from './components/reports/PeriodConsolidati
 import { UnsubmittedUsersModal } from './components/periods/UnsubmittedUsersModal';
 import { FirebaseSettingsModal } from './components/admin/FirebaseSettingsModal';
 import { LogoManagementModal } from './components/admin/LogoManagementModal';
+import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { StorageService } from './services/storage';
 import { isFirestoreWriteQuotaExceeded } from './services/firebase';
 import { ReportSubmission } from './types';
 
 const MainLayout: React.FC = () => {
-  const { isAuthenticated, currentUser, isAdmin, isPrincipal, isImpersonating, returnToAdmin } = useAuth();
+  const { currentUser, isAdmin, isPrincipal, isImpersonating, returnToAdmin } = useAuth();
   const [activeView, setActiveView] = useState<NavTab>('dashboard');
   const [isSubmitModalOpen, setIsSubmitModalOpen] = useState(false);
   const [isCreatePeriodModalOpen, setIsCreatePeriodModalOpen] = useState(false);
@@ -56,11 +57,6 @@ const MainLayout: React.FC = () => {
   const [selectedSubmission, setSelectedSubmission] = useState<ReportSubmission | null>(null);
   const [defaultPeriodForSubmit, setDefaultPeriodForSubmit] = useState<string | undefined>(undefined);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
-
-  // If user is not authenticated, show full login portal
-  if (!isAuthenticated) {
-    return <LoginPage />;
-  }
 
   // Check if first-time mandatory password change is required and not dismissed
   const creds = StorageService.getUserCredentials();
@@ -349,13 +345,25 @@ const MainLayout: React.FC = () => {
   );
 };
 
+const AppContent: React.FC = () => {
+  const { isAuthenticated } = useAuth();
+
+  if (!isAuthenticated) {
+    return <LoginPage />;
+  }
+
+  return <MainLayout />;
+};
+
 export const App: React.FC = () => {
   return (
-    <AuthProvider>
-      <ReportProvider>
-        <MainLayout />
-      </ReportProvider>
-    </AuthProvider>
+    <ErrorBoundary>
+      <AuthProvider>
+        <ReportProvider>
+          <AppContent />
+        </ReportProvider>
+      </AuthProvider>
+    </ErrorBoundary>
   );
 };
 

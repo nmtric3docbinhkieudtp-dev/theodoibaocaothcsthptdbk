@@ -113,12 +113,11 @@ export const LoginPage: React.FC = () => {
       const res = await login(selectedUser.email, password.trim());
       if (!res.success) {
         setErrorMsg(res.message);
-      } else {
-        setSuccessMsg(res.message);
+        setIsSubmitting(false);
       }
+      // On success, AuthProvider updates isAuthenticated, transitioning smoothly to MainLayout
     } catch (err: any) {
       setErrorMsg(err.message || 'Lỗi đăng nhập');
-    } finally {
       setIsSubmitting(false);
     }
   };
@@ -509,13 +508,12 @@ export const LoginPage: React.FC = () => {
                       {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
                   </div>
-                  <div className="flex items-center justify-between text-[11px] text-slate-500 mt-2 px-0.5">
+                  <div className="text-[11px] text-slate-500 mt-2 px-0.5">
                     {selectedUser.id === 'staff-2' || selectedUser.role === 'admin' ? (
                       <span className="text-purple-700 font-bold">Chỉ dành riêng cho Quản trị viên</span>
                     ) : (
                       <span>Quên mật khẩu? Liên hệ Admin</span>
                     )}
-                    <span className="text-slate-400">Hỗ trợ kỹ thuật: 0908.718.318</span>
                   </div>
                 </div>
 

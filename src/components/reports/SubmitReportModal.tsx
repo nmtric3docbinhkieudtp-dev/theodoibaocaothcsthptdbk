@@ -42,12 +42,14 @@ interface SubmitReportModalProps {
   isOpen: boolean;
   onClose: () => void;
   defaultPeriodId?: string;
+  onOpenCreatePeriod?: () => void;
 }
 
 export const SubmitReportModal: React.FC<SubmitReportModalProps> = ({
   isOpen,
   onClose,
-  defaultPeriodId
+  defaultPeriodId,
+  onOpenCreatePeriod
 }) => {
   const { periods, submitReport, submissions } = useReports();
   const { currentUser } = useAuth();
@@ -463,7 +465,7 @@ export const SubmitReportModal: React.FC<SubmitReportModalProps> = ({
                   </div>
                   {hasAlreadySubmitted && (
                     <div className="mt-1 text-[11px] font-semibold text-emerald-800">
-                      Trạng thái: {isApprovedByPrincipal ? '🏆 Ban Giám Hiệu đã phê duyệt chính thức' : userExistingSub.status === 'approved' ? 'Tổ trưởng đã duyệt' : 'Đã nộp thành công (Chờ BGH duyệt)'}
+                      Trạng thái: {isApprovedByPrincipal ? '🏆 Ban Giám Hiệu đã phê duyệt chính thức' : userExistingSub.status === 'dept_approved' ? 'Tổ trưởng đã duyệt' : 'Đã nộp thành công (Chờ BGH duyệt)'}
                     </div>
                   )}
                 </div>
