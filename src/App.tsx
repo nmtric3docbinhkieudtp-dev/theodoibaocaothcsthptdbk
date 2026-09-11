@@ -24,7 +24,7 @@ import { isFirestoreWriteQuotaExceeded } from './services/firebase';
 import { ReportSubmission } from './types';
 
 const MainLayout: React.FC = () => {
-  const { isAuthenticated, currentUser, isAdmin, isPrincipal } = useAuth();
+  const { isAuthenticated, currentUser, isAdmin, isPrincipal, isImpersonating, returnToAdmin } = useAuth();
   const [activeView, setActiveView] = useState<NavTab>('dashboard');
   const [isSubmitModalOpen, setIsSubmitModalOpen] = useState(false);
   const [isCreatePeriodModalOpen, setIsCreatePeriodModalOpen] = useState(false);
@@ -140,6 +140,26 @@ const MainLayout: React.FC = () => {
   return (
     <div className="min-h-screen bg-[#F8FAFC] flex flex-col font-sans text-slate-800 antialiased selection:bg-emerald-100 selection:text-emerald-900">
       
+      {/* Sticky Admin Impersonation Notice */}
+      {isImpersonating && (
+        <aside aria-label="Quản trị viên đang truy cập" className="bg-gradient-to-r from-amber-600 via-amber-700 to-amber-800 text-white px-4 py-2 text-xs sm:text-sm font-medium flex items-center justify-between shadow-md z-50 sticky top-0">
+          <div className="flex items-center gap-2">
+            <span className="px-2 py-0.5 rounded-md bg-white/20 text-amber-100 font-bold text-[11px] uppercase tracking-wider">
+              Quyền Quản Trị
+            </span>
+            <span>
+              Thầy Nguyễn Minh Trí đang truy cập tài khoản: <strong>{currentUser.name}</strong> ({currentUser.roleTitle})
+            </span>
+          </div>
+          <button
+            onClick={returnToAdmin}
+            className="px-3 py-1 bg-white hover:bg-amber-50 text-amber-950 font-bold rounded-lg shadow-xs transition flex items-center gap-1.5 cursor-pointer text-xs shrink-0"
+          >
+            <span>← Trở về tài khoản Quản trị</span>
+          </button>
+        </aside>
+      )}
+
       {/* Top High-Density Header */}
       <Header
         onOpenSubmit={() => handleOpenSubmit()}

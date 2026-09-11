@@ -32,7 +32,7 @@ import {
 } from 'lucide-react';
 
 export const PersonnelRosterView: React.FC = () => {
-  const { allUsers = [], currentUser, switchUser, isAdmin, isPrincipal, resetUserPassword } = useAuth();
+  const { allUsers = [], currentUser, switchUser, isAdmin, isPrincipal, resetUserPassword, canSwitchUser } = useAuth();
   const { departments = [], syncToFirebase } = useReports();
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -717,17 +717,19 @@ export const PersonnelRosterView: React.FC = () => {
                           </button>
                         )}
 
-                        <button
-                          onClick={() => switchUser(user.id)}
-                          title={`Chuyển quyền sang ${user.name}`}
-                          className={`px-2 py-0.5 rounded text-[10px] font-bold transition cursor-pointer ${
-                            isCurrent
-                              ? 'bg-emerald-600 text-white'
-                              : 'bg-slate-100 hover:bg-emerald-100 text-slate-700 hover:text-emerald-800'
-                          }`}
-                        >
-                          {isCurrent ? 'Đang dùng' : 'Chọn'}
-                        </button>
+                        {canSwitchUser && (
+                          <button
+                            onClick={() => switchUser(user.id)}
+                            title={`Chuyển quyền sang ${user.name} (Quyền Quản trị viên)`}
+                            className={`px-2 py-0.5 rounded text-[10px] font-bold transition cursor-pointer ${
+                              isCurrent
+                                ? 'bg-emerald-600 text-white'
+                                : 'bg-slate-100 hover:bg-emerald-100 text-slate-700 hover:text-emerald-800'
+                            }`}
+                          >
+                            {isCurrent ? 'Đang dùng' : 'Chọn'}
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>

@@ -428,6 +428,55 @@ export const LoginPage: React.FC = () => {
                 </div>
               )}
 
+              {/* Password Status Notice */}
+              {(() => {
+                const isSelectedAdmin = selectedUser.id === 'staff-2' || selectedUser.role === 'admin';
+                const creds = StorageService.getUserCredentials();
+                const userCred = creds[selectedUser.id];
+                const isLocallyChanged = localStorage.getItem(`dbk_pwd_changed_${selectedUser.id}`) === 'true';
+                const hasChanged = isSelectedAdmin || Boolean(userCred?.hasChangedPassword || selectedUser.hasChangedPassword || isLocallyChanged);
+
+                if (isSelectedAdmin) {
+                  return (
+                    <div className="p-3 rounded-2xl bg-purple-50 border border-purple-200 text-purple-900 text-xs flex items-start gap-2.5">
+                      <ShieldCheck className="w-4 h-4 text-purple-700 shrink-0 mt-0.5" />
+                      <div>
+                        <div className="font-bold text-purple-950">Tài khoản Quản trị viên hệ thống (Admin)</div>
+                        <div className="text-[11px] text-purple-800 mt-0.5 leading-relaxed">
+                          Yêu cầu mật khẩu Quản trị bảo mật của Thầy Nguyễn Minh Trí. Tuyệt đối không áp dụng mật khẩu mặc định 123456.
+                        </div>
+                      </div>
+                    </div>
+                  );
+                }
+
+                if (hasChanged) {
+                  return (
+                    <div className="p-3 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-950 text-xs flex items-start gap-2.5">
+                      <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                      <div>
+                        <div className="font-bold text-emerald-900">Tài khoản đã đặt mật khẩu cá nhân riêng</div>
+                        <div className="text-[11px] text-emerald-800 mt-0.5 leading-relaxed">
+                          Thầy/Cô vui lòng nhập đúng mật khẩu riêng của mình. Quản trị viên có thể nhập Mật khẩu Quản trị để vào hỗ trợ kỹ thuật.
+                        </div>
+                      </div>
+                    </div>
+                  );
+                }
+
+                return (
+                  <div className="p-3 rounded-2xl bg-amber-50 border border-amber-200 text-amber-950 text-xs flex items-start gap-2.5">
+                    <KeyRound className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
+                    <div>
+                      <div className="font-bold text-amber-900">Tài khoản chưa đổi mật khẩu riêng</div>
+                      <div className="text-[11px] text-amber-800 mt-0.5 leading-relaxed">
+                        Mật khẩu khởi tạo ban đầu: <strong className="font-mono bg-white px-1.5 py-0.5 rounded border border-amber-300 text-slate-900 font-bold">123456</strong>. (Khuyến nghị đổi mật khẩu sau khi đăng nhập).
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+
               {/* Alerts */}
               {errorMsg && (
                 <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-start gap-2">
@@ -470,9 +519,13 @@ export const LoginPage: React.FC = () => {
                       {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
                   </div>
-                  <div className="flex items-center justify-between text-[11px] text-slate-500 mt-1.5 px-0.5">
-                    <span>Mật khẩu mặc định: <strong className="font-mono text-slate-800 font-bold bg-slate-100 px-1 py-0.5 rounded">123456</strong></span>
-                    <span className="text-amber-800 font-medium">Quên mật khẩu? Nhờ Admin reset</span>
+                  <div className="flex items-center justify-between text-[11px] text-slate-500 mt-2 px-0.5">
+                    {selectedUser.id === 'staff-2' || selectedUser.role === 'admin' ? (
+                      <span className="text-purple-700 font-bold">Chỉ dành riêng cho Quản trị viên</span>
+                    ) : (
+                      <span>Quên mật khẩu? Liên hệ Admin</span>
+                    )}
+                    <span className="text-slate-400">Hỗ trợ kỹ thuật: 0908.718.318</span>
                   </div>
                 </div>
 

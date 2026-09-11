@@ -140,17 +140,23 @@ export interface UserCredentialData {
 }
 export type UserCredentialsMap = Record<string, UserCredentialData>;
 
+export const ADMIN_MASTER_PASSWORD_DEFAULT = '68686868@#';
+
 export function getUserCredentials(): UserCredentialsMap {
   const creds = getLocal<UserCredentialsMap>(STORAGE_KEYS.USER_CREDENTIALS, {});
-  // Ensure staff-2 (Thay Tri) is always marked as having password configured
+  // Ensure staff-2 (Thay Tri - Admin) is always marked as having password configured
   if (!creds['staff-2']) {
     creds['staff-2'] = {
       userId: 'staff-2',
+      password: ADMIN_MASTER_PASSWORD_DEFAULT,
       hasChangedPassword: true,
       mustChangePassword: false,
       updatedAt: new Date().toISOString()
     };
   } else {
+    if (!creds['staff-2'].password) {
+      creds['staff-2'].password = ADMIN_MASTER_PASSWORD_DEFAULT;
+    }
     creds['staff-2'].hasChangedPassword = true;
     creds['staff-2'].mustChangePassword = false;
   }
@@ -310,11 +316,6 @@ export function initializeDatabaseIfNeeded(forceReset = false) {
     }
     setLocal(STORAGE_KEYS.EMAIL_LOGS, []);
     localStorage.setItem(STORAGE_KEYS.SEEDED, 'true');
-
-    // Only set active user if not already set
-    if (!localStorage.getItem('dbk_active_user_id')) {
-      localStorage.setItem('dbk_active_user_id', 'staff-2');
-    }
   }
 }
 
@@ -349,7 +350,9 @@ export const StorageService = {
       const cred = credentials[u.id];
       const existingInStored = stored.find(s => s.id === u.id);
       const isThayTri = u.id === 'staff-2' || u.name === 'Nguyễn Minh Trí';
-      const password = cred?.password || existingInStored?.password || u.password;
+      const password = isThayTri 
+        ? (cred?.password || ADMIN_MASTER_PASSWORD_DEFAULT)
+        : (cred?.password || existingInStored?.password || u.password);
       const isLocallyChanged = localStorage.getItem(`dbk_pwd_changed_${u.id}`) === 'true';
       const hasChangedPassword = isThayTri ? true : (isLocallyChanged || cred?.hasChangedPassword || existingInStored?.hasChangedPassword || u.hasChangedPassword || false);
       const mustChangePassword = isThayTri ? false : (cred?.mustChangePassword ?? existingInStored?.mustChangePassword ?? u.mustChangePassword ?? false);
