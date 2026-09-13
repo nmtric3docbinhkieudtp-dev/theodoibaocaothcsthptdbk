@@ -110,3 +110,51 @@ export function getAudienceLabel(audience?: TargetAudienceType, depts?: string[]
       return 'Toàn trường (Tất cả cán bộ, GV, NV)';
   }
 }
+
+/**
+ * Calculate full submission statistics for a period
+ */
+export function getPeriodSubmissionStats(
+  period: ReportPeriod, 
+  submissions: ReportSubmission[], 
+  allUsers: User[]
+): {
+  requiredUsers: User[];
+  requiredCount: number;
+  submittedCount: number;
+  pendingCount: number;
+  is100Percent: boolean;
+  isCompleted: boolean;
+  completionRate: number;
+} {
+  const requiredUsers = getRequiredUsersForPeriod(period, allUsers);
+  const requiredCount = requiredUsers.length;
+  const submittedCount = requiredUsers.filter(user => hasSubmittedForPeriod(submissions, period.id, user)).length;
+  const pendingCount = Math.max(0, requiredCount - submittedCount);
+  const is100Percent = requiredCount > 0 && submittedCount >= requiredCount;
+  const isCompleted = is100Percent || period.status === 'closed' || period.status === 'completed';
+  const completionRate = requiredCount > 0 ? Math.round((submittedCount / requiredCount) * 100) : 100;
+
+  return {
+    requiredUsers,
+    requiredCount,
+    submittedCount,
+    pendingCount,
+    is100Percent,
+    isCompleted,
+    completionRate
+  };
+}
+
+/**
+ * Check if a period has 100% submissions or is closed/completed
+ */
+export function isPeriodFullySubmitted(
+  period: ReportPeriod, 
+  submissions: ReportSubmission[], 
+  allUsers: User[]
+): boolean {
+  if (period.status === 'closed' || period.status === 'completed') return true;
+  const stats = getPeriodSubmissionStats(period, submissions, allUsers);
+  return stats.is100Percent;
+}

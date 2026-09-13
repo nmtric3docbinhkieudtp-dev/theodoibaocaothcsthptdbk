@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useReports } from '../../context/ReportContext';
 import { 
   FileText, 
   CheckCircle, 
+  CheckCircle2,
   Clock, 
   AlertCircle, 
   ArrowRight, 
@@ -24,7 +25,14 @@ import {
   UserCheck
 } from 'lucide-react';
 import { ReportPeriod, ReportSubmission } from '../../types';
-import { isUserEligibleForPeriod, getRequiredUsersForPeriod, getAudienceLabel, hasSubmittedForPeriod, submissionBelongsToUser } from '../../utils/reportFilters';
+import { 
+  isUserEligibleForPeriod, 
+  getRequiredUsersForPeriod, 
+  getAudienceLabel, 
+  hasSubmittedForPeriod, 
+  submissionBelongsToUser,
+  getPeriodSubmissionStats
+} from '../../utils/reportFilters';
 
 interface DashboardProps {
   onOpenSubmit: (periodId?: string) => void;
@@ -51,7 +59,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
   };
 
   const { currentUser, allUsers = [], isPrincipal, isDeptHead, isAdmin } = useAuth();
-  const { submissions = [], periods = [], departments = [], sendBulkReminders } = useReports();
+  const { submissions = [], periods = [], departments = [], sendBulkReminders, closePeriod } = useReports();
+  const [periodTab, setPeriodTab] = useState<'all' | 'ongoing' | 'completed'>('all');
 
   // Filter user's own submissions
   const mySubmissions = submissions.filter((s: ReportSubmission) => submissionBelongsToUser(s, currentUser));
@@ -69,36 +78,67 @@ export const Dashboard: React.FC<DashboardProps> = ({
     return false;
   });
 
-  // Filter active periods based on role:
-  // Non-admins only see periods that they are assigned to (e.g. GVCN-only periods only appear for GVCN)
-  const activePeriods = periods.filter((p: ReportPeriod) => {
-    if (p.status !== 'active') return false;
-    if (isPrincipal || isAdmin) return true;
-    return isUserEligibleForPeriod(currentUser, p);
-  });
+  // Visible periods for current user:
+  // Admin and Principal see all periods, others see periods targeted to them
+  const visiblePeriods = useMemo(() => {
+    return periods.filter((p: ReportPeriod) => {
+      if (isPrincipal || isAdmin) return true;
+      return isUserEligibleForPeriod(currentUser, p);
+    });
+  }, [periods, isPrincipal, isAdmin, currentUser]);
+
+  // Compute stats for each period
+  const periodsWithStats = useMemo(() => {
+    return visiblePeriods.map((p: ReportPeriod) => {
+      const stats = getPeriodSubmissionStats(p, submissions, allUsers);
+      return {
+        period: p,
+        stats,
+        isCompleted: stats.isCompleted,
+        is100Percent: stats.is100Percent,
+        isClosed: p.status === 'closed'
+      };
+    });
+  }, [visiblePeriods, submissions, allUsers]);
+
+  const ongoingCount = useMemo(() => periodsWithStats.filter(item => !item.isCompleted).length, [periodsWithStats]);
+  const completedCount = useMemo(() => periodsWithStats.filter(item => item.isCompleted).length, [periodsWithStats]);
+
+  const displayedPeriods = useMemo(() => {
+    if (periodTab === 'ongoing') return periodsWithStats.filter(item => !item.isCompleted);
+    if (periodTab === 'completed') return periodsWithStats.filter(item => item.isCompleted);
+    return periodsWithStats;
+  }, [periodsWithStats, periodTab]);
+
   const totalSubmissionsCount = submissions.length;
   const totalLateCount = submissions.filter((s: ReportSubmission) => s.isLate).length;
   const onTimeRate = totalSubmissionsCount > 0 
     ? Math.round(((totalSubmissionsCount - totalLateCount) / totalSubmissionsCount) * 100) 
     : 100;
 
-  // Total pending unsubmitted across active periods
-  const totalActivePendingCount = React.useMemo(() => {
+  // Total pending unsubmitted across ongoing (not completed) periods
+  const totalActivePendingCount = useMemo(() => {
     let count = 0;
-    for (const p of activePeriods) {
-      const required = getRequiredUsersForPeriod(p, allUsers);
-      const submitted = required.filter(user => hasSubmittedForPeriod(submissions, p.id, user)).length;
-      count += Math.max(0, required.length - submitted);
+    for (const item of periodsWithStats) {
+      if (!item.isCompleted && item.period.status === 'active') {
+        count += item.stats.pendingCount;
+      }
     }
     return count;
-  }, [activePeriods, allUsers, submissions]);
+  }, [periodsWithStats]);
 
-  // Priority: active period that this user hasn't submitted yet
-  const userPendingPeriod = activePeriods.find((p: ReportPeriod) => !hasSubmittedForPeriod(submissions, p.id, currentUser));
-  const targetPeriodToSubmitId = userPendingPeriod?.id || activePeriods[0]?.id;
+  // Priority: ongoing active period that this user hasn't submitted yet
+  const userPendingPeriod = periodsWithStats.find(item => !item.isCompleted && item.period.status === 'active' && !hasSubmittedForPeriod(submissions, item.period.id, currentUser))?.period;
+  const targetPeriodToSubmitId = userPendingPeriod?.id || displayedPeriods[0]?.period?.id;
 
-  // Helper to format remaining time
-  const getRemainingTimeBadge = (deadline: string) => {
+  // Helper to format remaining time (stops countdown if 100% submitted or completed)
+  const getRemainingTimeBadge = (deadline: string, isCompleted: boolean = false, is100Percent: boolean = false) => {
+    if (isCompleted || is100Percent) {
+      return {
+        text: '✅ Đã hoàn thành (100% nộp đủ)',
+        color: 'bg-emerald-100 text-emerald-800 border-emerald-300 font-bold'
+      };
+    }
     const diff = new Date(deadline).getTime() - Date.now();
     if (diff < 0) {
       const pastHours = Math.floor(Math.abs(diff) / (1000 * 60 * 60));
@@ -341,128 +381,212 @@ export const Dashboard: React.FC<DashboardProps> = ({
         
         {/* Active Periods & Deadlines (2 Cols) */}
         <div className="lg:col-span-2 space-y-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
             <div className="flex items-center gap-2">
               <Calendar className="w-5 h-5 text-emerald-700" />
               <h2 className="text-base font-bold text-slate-900">
-                Các đợt nộp báo cáo đang mở ({activePeriods.length})
+                Các đợt nộp báo cáo ({displayedPeriods.length})
               </h2>
             </div>
-            <button
-              onClick={() => handleNav('periods')}
-              className="text-xs text-emerald-700 hover:text-emerald-800 font-semibold flex items-center gap-1 cursor-pointer"
-            >
-              <span>Xem tất cả</span>
-              <ChevronRight className="w-3.5 h-3.5" />
-            </button>
+            
+            {/* Filter Tabs: Tất cả / Đang mở / Đã hoàn thành */}
+            <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl text-xs font-semibold">
+              <button
+                onClick={() => setPeriodTab('all')}
+                className={`px-2.5 py-1 rounded-lg transition cursor-pointer ${
+                  periodTab === 'all'
+                    ? 'bg-white text-slate-900 shadow-2xs font-bold'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                Tất cả ({periodsWithStats.length})
+              </button>
+              <button
+                onClick={() => setPeriodTab('ongoing')}
+                className={`px-2.5 py-1 rounded-lg transition cursor-pointer flex items-center gap-1 ${
+                  periodTab === 'ongoing'
+                    ? 'bg-white text-amber-900 shadow-2xs font-bold'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <span>Đang mở</span>
+                <span className="px-1.5 py-0.2 rounded-full bg-amber-100 text-amber-800 text-[10px] font-bold">
+                  {ongoingCount}
+                </span>
+              </button>
+              <button
+                onClick={() => setPeriodTab('completed')}
+                className={`px-2.5 py-1 rounded-lg transition cursor-pointer flex items-center gap-1 ${
+                  periodTab === 'completed'
+                    ? 'bg-white text-emerald-900 shadow-2xs font-bold'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <span>Đã xong</span>
+                <span className="px-1.5 py-0.2 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">
+                  {completedCount}
+                </span>
+              </button>
+            </div>
           </div>
 
           <div className="space-y-3">
-            {activePeriods.map((period: ReportPeriod) => {
-              const badge = getRemainingTimeBadge(period.deadline);
-              const hasSubmitted = mySubmissions.some((s: ReportSubmission) => s.periodId === period.id && s.status !== 'draft');
+            {displayedPeriods.length === 0 ? (
+              <div className="bg-white rounded-2xl p-8 border border-slate-200 text-center space-y-2">
+                <CheckCircle2 className="w-10 h-10 text-emerald-500 mx-auto" />
+                <p className="text-sm font-bold text-slate-700">Không có đợt báo cáo nào trong mục này</p>
+                <p className="text-xs text-slate-500">Các đợt báo cáo sẽ xuất hiện tại đây khi được ban hành.</p>
+              </div>
+            ) : (
+              displayedPeriods.map(({ period, stats, isCompleted, is100Percent, isClosed }) => {
+                const badge = getRemainingTimeBadge(period.deadline, isCompleted, is100Percent);
+                const hasSubmitted = mySubmissions.some((s: ReportSubmission) => s.periodId === period.id && s.status !== 'draft');
 
-              return (
-                <div
-                  key={period.id}
-                  className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/90 shadow-2xs hover:border-emerald-300 transition group"
-                >
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                    <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-center gap-2 mb-1.5">
-                        <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold border ${badge.color}`}>
-                          {badge.text}
-                        </span>
-                        {period.targetAudience === 'homeroom_teachers' ? (
-                          <span className="px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-900 border border-amber-300 text-[11px] font-bold flex items-center gap-1">
-                            <GraduationCap className="w-3.5 h-3.5 text-amber-700" />
-                            <span>Dành riêng cho 53 GVCN</span>
+                return (
+                  <div
+                    key={period.id}
+                    className={`bg-white rounded-2xl p-4 sm:p-5 border transition group ${
+                      isCompleted
+                        ? 'border-emerald-200/90 bg-gradient-to-r from-emerald-50/20 to-white hover:border-emerald-400 shadow-2xs'
+                        : 'border-slate-200/90 hover:border-emerald-300 shadow-2xs'
+                    }`}
+                  >
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2 mb-1.5">
+                          <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold border ${badge.color}`}>
+                            {badge.text}
                           </span>
-                        ) : period.targetAudience === 'specific_users' ? (
-                          <span className="px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-900 border border-indigo-300 text-[11px] font-bold flex items-center gap-1">
-                            <UserCheck className="w-3.5 h-3.5 text-indigo-700" />
-                            <span>Chỉ định đích danh ({period.targetUserIds?.length || 0} Thầy/Cô)</span>
-                          </span>
-                        ) : period.targetAudience === 'dept_heads_only' ? (
-                          <span className="px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-900 border border-blue-300 text-[11px] font-bold flex items-center gap-1">
-                            <Users className="w-3.5 h-3.5 text-blue-700" />
-                            <span>19 Tổ trưởng & Tổ phó CM</span>
-                          </span>
-                        ) : (
-                          <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 text-[11px] font-medium">
-                            {period.reportType === 'text_only' ? 'Văn bản nhập liệu' : 'Kèm tệp đính kèm'}
-                          </span>
-                        )}
-                        {period.isRequired && (
-                          <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-rose-50 text-rose-600 border border-rose-200">
-                            Bắt buộc
-                          </span>
-                        )}
-                      </div>
-
-                      <h3 
-                        onClick={() => !hasSubmitted && onOpenSubmit(period.id)}
-                        className={`text-sm sm:text-base font-bold text-slate-900 group-hover:text-emerald-700 transition ${!hasSubmitted ? 'cursor-pointer' : ''}`}
-                        title={!hasSubmitted ? "Nhấp để vào nộp báo cáo cho đợt này" : undefined}
-                      >
-                        {period.title}
-                      </h3>
-                      <p className="text-xs text-slate-500 mt-1 line-clamp-2">
-                        {period.description}
-                      </p>
-                      <div className="text-[11px] text-slate-400 mt-2 flex items-center gap-3">
-                        <span>Hạn chót: <strong>{new Date(period.deadline).toLocaleString('vi-VN')}</strong></span>
-                        <span>•</span>
-                        <span>Người ban hành: {period.createdBy}</span>
-                      </div>
-                    </div>
-
-                    <div className="flex sm:flex-col items-center sm:items-end justify-between gap-2 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100">
-                      {hasSubmitted ? (
-                        <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold">
-                          <Check className="w-4 h-4" />
-                          <span>Bạn đã nộp</span>
+                          {period.targetAudience === 'homeroom_teachers' ? (
+                            <span className="px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-900 border border-amber-300 text-[11px] font-bold flex items-center gap-1">
+                              <GraduationCap className="w-3.5 h-3.5 text-amber-700" />
+                              <span>Dành riêng cho 53 GVCN</span>
+                            </span>
+                          ) : period.targetAudience === 'specific_users' ? (
+                            <span className="px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-900 border border-indigo-300 text-[11px] font-bold flex items-center gap-1">
+                              <UserCheck className="w-3.5 h-3.5 text-indigo-700" />
+                              <span>Chỉ định đích danh ({period.targetUserIds?.length || 0} Thầy/Cô)</span>
+                            </span>
+                          ) : period.targetAudience === 'dept_heads_only' ? (
+                            <span className="px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-900 border border-blue-300 text-[11px] font-bold flex items-center gap-1">
+                              <Users className="w-3.5 h-3.5 text-blue-700" />
+                              <span>19 Tổ trưởng & Tổ phó CM</span>
+                            </span>
+                          ) : (
+                            <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 text-[11px] font-medium">
+                              {period.reportType === 'text_only' ? 'Văn bản nhập liệu' : 'Kèm tệp đính kèm'}
+                            </span>
+                          )}
+                          {period.isRequired && (
+                            <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-rose-50 text-rose-600 border border-rose-200">
+                              Bắt buộc
+                            </span>
+                          )}
                         </div>
-                      ) : (
-                        <button
-                          id={`btn-submit-period-${period.id}`}
-                          onClick={() => onOpenSubmit(period.id)}
-                          className="w-full sm:w-auto px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs transition active:scale-98 cursor-pointer"
-                        >
-                          <Send className="w-3.5 h-3.5" />
-                          <span>Nộp ngay</span>
-                        </button>
-                      )}
 
-                      {(isDeptHead || isPrincipal || isAdmin) && onOpenUnsubmittedUsers && (
-                        <button
-                          onClick={() => onOpenUnsubmittedUsers(period.id)}
-                          className="w-full sm:w-auto px-3 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 font-bold text-xs flex items-center justify-center gap-1.5 shadow-2xs transition cursor-pointer"
-                          title="Xem danh sách những người chưa nộp báo cáo đợt này để đôn đốc trước hạn"
+                        <h3 
+                          onClick={() => !hasSubmitted && !isCompleted && onOpenSubmit(period.id)}
+                          className={`text-sm sm:text-base font-bold text-slate-900 group-hover:text-emerald-700 transition ${!hasSubmitted && !isCompleted ? 'cursor-pointer' : ''}`}
+                          title={!hasSubmitted && !isCompleted ? "Nhấp để vào nộp báo cáo cho đợt này" : undefined}
                         >
-                          <Clock className="w-3.5 h-3.5 text-amber-700" />
-                          <span>DS Chưa Nộp</span>
-                        </button>
-                      )}
+                          {period.title}
+                        </h3>
+                        <p className="text-xs text-slate-500 mt-1 line-clamp-2">
+                          {period.description}
+                        </p>
+                        <div className="text-[11px] text-slate-500 mt-2 flex flex-wrap items-center gap-2 sm:gap-3">
+                          {isCompleted ? (
+                            <span className="inline-flex items-center gap-1 font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                              <span>100% đã nộp đủ ({stats.submittedCount}/{stats.requiredCount})</span>
+                            </span>
+                          ) : (
+                            <span>Hạn chót: <strong>{new Date(period.deadline).toLocaleString('vi-VN')}</strong></span>
+                          )}
+                          <span>•</span>
+                          <span>Tiến độ: <strong className={isCompleted ? 'text-emerald-700 font-bold' : 'text-slate-700'}>{stats.submittedCount}/{stats.requiredCount} người ({stats.completionRate}%)</strong></span>
+                          <span>•</span>
+                          <span>Người ban hành: {period.createdBy}</span>
+                        </div>
+                      </div>
 
-                      {(isDeptHead || isPrincipal) && (
-                        <button
-                          onClick={() => {
-                            sendBulkReminders(period, allUsers);
-                            alert(`Đã gửi email nhắc hạn đợt "${period.title}" tới tất cả cán bộ giáo viên!`);
-                          }}
-                          title="Gửi email nhắc nhở cho tất cả giáo viên"
-                          className="text-[11px] text-slate-500 hover:text-emerald-700 font-medium flex items-center gap-1 py-1 cursor-pointer"
-                        >
-                          <Mail className="w-3 h-3" />
-                          <span>Gửi email nhắc hạn</span>
-                        </button>
-                      )}
+                      <div className="flex sm:flex-col items-center sm:items-end justify-between gap-2 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100">
+                        {hasSubmitted ? (
+                          <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold">
+                            <Check className="w-4 h-4" />
+                            <span>Bạn đã nộp</span>
+                          </div>
+                        ) : isCompleted ? (
+                          <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 text-slate-700 border border-slate-300 text-xs font-bold">
+                            <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                            <span>Đã hoàn thành</span>
+                          </div>
+                        ) : (
+                          <button
+                            id={`btn-submit-period-${period.id}`}
+                            onClick={() => onOpenSubmit(period.id)}
+                            className="w-full sm:w-auto px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs transition active:scale-98 cursor-pointer"
+                          >
+                            <Send className="w-3.5 h-3.5" />
+                            <span>Nộp ngay</span>
+                          </button>
+                        )}
+
+                        {/* If Admin/Principal: quick action to end / close period */}
+                        {(isAdmin || isPrincipal) && !isClosed && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              closePeriod(period.id);
+                              alert(`Đã kết thúc đợt báo cáo "${period.title}" thành công!`);
+                            }}
+                            className="w-full sm:w-auto px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-slate-900 border border-slate-300 font-semibold text-[11px] flex items-center justify-center gap-1 transition cursor-pointer"
+                            title="Đóng / Kết thúc đợt báo cáo này"
+                          >
+                            <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                            <span>Kết thúc đợt</span>
+                          </button>
+                        )}
+
+                        {/* If Admin/Principal and already closed: can reopen */}
+                        {(isAdmin || isPrincipal) && isClosed && (
+                          <span className="text-[11px] text-slate-400 font-medium italic">
+                            🔒 Đã đóng đợt nộp
+                          </span>
+                        )}
+
+                        {/* Unsubmitted list button if not completed */}
+                        {(isDeptHead || isPrincipal || isAdmin) && onOpenUnsubmittedUsers && !isCompleted && (
+                          <button
+                            onClick={() => onOpenUnsubmittedUsers(period.id)}
+                            className="w-full sm:w-auto px-3 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 font-bold text-xs flex items-center justify-center gap-1.5 shadow-2xs transition cursor-pointer"
+                            title="Xem danh sách những người chưa nộp báo cáo đợt này để đôn đốc trước hạn"
+                          >
+                            <Clock className="w-3.5 h-3.5 text-amber-700" />
+                            <span>DS Chưa Nộp ({stats.pendingCount})</span>
+                          </button>
+                        )}
+
+                        {/* Reminders button if still pending */}
+                        {(isDeptHead || isPrincipal) && !isCompleted && stats.pendingCount > 0 && (
+                          <button
+                            onClick={() => {
+                              sendBulkReminders(period, allUsers);
+                              alert(`Đã gửi email nhắc hạn đợt "${period.title}" tới tất cả cán bộ giáo viên!`);
+                            }}
+                            title="Gửi email nhắc nhở cho tất cả giáo viên"
+                            className="text-[11px] text-slate-500 hover:text-emerald-700 font-medium flex items-center gap-1 py-1 cursor-pointer"
+                          >
+                            <Mail className="w-3 h-3" />
+                            <span>Gửi email nhắc hạn</span>
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })
+            )}
           </div>
         </div>
 

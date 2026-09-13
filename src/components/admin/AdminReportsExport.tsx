@@ -23,6 +23,7 @@ import {
   Phone
 } from 'lucide-react';
 import { ReportSubmission } from '../../types';
+import { isPeriodFullySubmitted } from '../../utils/reportFilters';
 
 interface AdminReportsExportProps {
   onOpenConsolidation?: (periodId?: string) => void;
@@ -232,9 +233,14 @@ export const AdminReportsExport: React.FC<AdminReportsExportProps> = ({
               className="w-full text-xs px-3 py-2 rounded-xl border border-slate-300 bg-white focus:outline-emerald-600 font-semibold text-slate-800"
             >
               <option value="all">-- Toàn bộ các đợt nộp trong năm học --</option>
-              {periods.map((p: any) => (
-                <option key={p.id} value={p.id}>{p.title}</option>
-              ))}
+              {periods.map((p: any) => {
+                const isDone = isPeriodFullySubmitted(p, submissions, allUsers);
+                return (
+                  <option key={p.id} value={p.id}>
+                    {isDone ? `[✅ Đã xong] ${p.title}` : p.title}
+                  </option>
+                );
+              })}
             </select>
           </div>
 

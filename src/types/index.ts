@@ -115,7 +115,7 @@ export interface ReportPeriod {
   targetAudience?: TargetAudienceType; // Phân nhóm đối tượng nộp báo cáo (GVCN, Tổ trưởng, toàn trường, cá nhân cụ thể...)
   targetUserIds?: string[]; // Danh sách ID các Thầy Cô được chỉ định đích danh khi targetAudience === 'specific_users'
   isRequired: boolean;
-  status: 'active' | 'closed' | 'upcoming';
+  status: 'active' | 'closed' | 'upcoming' | 'completed';
   createdBy: string;
   createdAt: string;
   defaultTemplateContent?: string;

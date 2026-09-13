@@ -26,6 +26,7 @@ import {
   Plus
 } from 'lucide-react';
 import { ReportSubmission, SubmissionStatus } from '../../types';
+import { isPeriodFullySubmitted } from '../../utils/reportFilters';
 
 interface ReportListProps {
   onOpenReportDetail?: (submission: ReportSubmission) => void;
@@ -50,6 +51,7 @@ export const ReportList: React.FC<ReportListProps> = ({
     submissions = [], 
     periods = [], 
     departments = [], 
+    allUsers = [],
     deleteReport, 
     bulkDeleteReports, 
     clearTestReports,
@@ -503,9 +505,14 @@ export const ReportList: React.FC<ReportListProps> = ({
               className="w-full text-xs px-2.5 py-2 rounded-xl border border-slate-300 bg-white focus:outline-emerald-600"
             >
               <option value="all">Tất cả đợt báo cáo</option>
-              {periods.map(p => (
-                <option key={p.id} value={p.id}>{p.title}</option>
-              ))}
+              {periods.map(p => {
+                const isDone = isPeriodFullySubmitted(p, submissions, allUsers);
+                return (
+                  <option key={p.id} value={p.id}>
+                    {isDone ? `[✅ Đã xong] ${p.title}` : p.title}
+                  </option>
+                );
+              })}
             </select>
           </div>
 

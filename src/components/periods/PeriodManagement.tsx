@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useReports } from '../../context/ReportContext';
 import { Modal } from '../common/Modal';
@@ -23,10 +23,17 @@ import {
   FolderX,
   UploadCloud,
   FileSpreadsheet,
-  UserCheck
+  UserCheck,
+  Cloud
 } from 'lucide-react';
 import { ReportPeriod, ReportType, UserRole, TargetAudienceType, PeriodFormTemplate } from '../../types';
-import { getAudienceLabel, getRequiredUsersForPeriod, hasSubmittedForPeriod } from '../../utils/reportFilters';
+import { 
+  getAudienceLabel, 
+  getRequiredUsersForPeriod, 
+  hasSubmittedForPeriod,
+  getPeriodSubmissionStats,
+  isPeriodFullySubmitted
+} from '../../utils/reportFilters';
 import { CreatePeriodModal } from './CreatePeriodModal';
 
 interface PeriodManagementProps {
@@ -46,15 +53,20 @@ export const PeriodManagement: React.FC<PeriodManagementProps> = ({
     departments = [], 
     createPeriod, 
     updatePeriod, 
+    closePeriod,
+    reopenPeriod,
     deletePeriod, 
     clearAllPeriods,
     sendBulkReminders, 
     submissions = [],
-    waiveAllLateStatus
+    waiveAllLateStatus,
+    syncPeriodsToFirebase
   } = useReports();
 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [editingPeriod, setEditingPeriod] = useState<ReportPeriod | null>(null);
+  const [periodStatusFilter, setPeriodStatusFilter] = useState<'all' | 'ongoing' | 'completed'>('all');
+  const [isSyncingPeriods, setIsSyncingPeriods] = useState(false);
   
   // Deletion modals state
   const [periodToDelete, setPeriodToDelete] = useState<ReportPeriod | null>(null);
@@ -69,12 +81,57 @@ export const PeriodManagement: React.FC<PeriodManagementProps> = ({
     }, 4000);
   };
 
+  const handleSyncPeriodsToFirebase = async () => {
+    setIsSyncingPeriods(true);
+    try {
+      const res = await syncPeriodsToFirebase();
+      showToast(res.message);
+    } catch (e: any) {
+      showToast('Lỗi đẩy đợt báo cáo lên Firebase: ' + (e.message || e));
+    } finally {
+      setIsSyncingPeriods(false);
+    }
+  };
+
+  const handleClosePeriod = (periodId: string, periodTitle: string) => {
+    closePeriod(periodId);
+    showToast(`Đã kết thúc đợt báo cáo "${periodTitle}" thành công!`);
+  };
+
+  const handleReopenPeriod = (periodId: string, periodTitle: string) => {
+    reopenPeriod(periodId);
+    showToast(`Đã mở lại đợt báo cáo "${periodTitle}" thành công!`);
+  };
+
   const handleWaivePeriodLate = async (periodId: string, periodTitle: string) => {
     const res = await waiveAllLateStatus(periodId);
     if (res.success) {
       showToast(`Đã miễn trừ thành công cho ${res.waivedCount} bài nộp trễ của đợt "${periodTitle}". Toàn bộ đã chuyển sang Đúng hạn!`);
     }
   };
+
+  // Compute stats for all periods
+  const periodsWithStats = useMemo(() => {
+    return periods.map(p => {
+      const stats = getPeriodSubmissionStats(p, submissions, allUsers);
+      return {
+        period: p,
+        stats,
+        is100Percent: stats.is100Percent,
+        isCompleted: stats.isCompleted,
+        isClosed: p.status === 'closed'
+      };
+    });
+  }, [periods, submissions, allUsers]);
+
+  const ongoingCount = useMemo(() => periodsWithStats.filter(item => !item.isCompleted).length, [periodsWithStats]);
+  const completedCount = useMemo(() => periodsWithStats.filter(item => item.isCompleted).length, [periodsWithStats]);
+
+  const filteredPeriods = useMemo(() => {
+    if (periodStatusFilter === 'ongoing') return periodsWithStats.filter(item => !item.isCompleted);
+    if (periodStatusFilter === 'completed') return periodsWithStats.filter(item => item.isCompleted);
+    return periodsWithStats;
+  }, [periodsWithStats, periodStatusFilter]);
 
   const [initialAudience, setInitialAudience] = useState<TargetAudienceType>('all');
 
@@ -214,6 +271,24 @@ export const PeriodManagement: React.FC<PeriodManagementProps> = ({
               </button>
             )}
 
+            {(isAdmin || isPrincipal) && (
+              <button
+                id="btn-sync-periods-to-firebase"
+                type="button"
+                onClick={handleSyncPeriodsToFirebase}
+                disabled={isSyncingPeriods}
+                className="px-3.5 py-2 rounded-xl bg-sky-600 hover:bg-sky-700 disabled:bg-sky-300 text-white font-bold text-xs flex items-center gap-1.5 shadow-xs transition active:scale-98 cursor-pointer"
+                title="Đẩy các đợt báo cáo đã tạo/sửa lên Cloud Firestore (Chỉ tiêu tốn 1 lượt ghi cho đợt mới, không vượt hạn ngạch 20.000)"
+              >
+                {isSyncingPeriods ? (
+                  <RefreshCw className="w-4 h-4 animate-spin text-white" />
+                ) : (
+                  <Cloud className="w-4 h-4 text-sky-200" />
+                )}
+                <span>{isSyncingPeriods ? 'Đang đẩy lên Cloud...' : 'Đẩy Đợt Báo Cáo Lên Firebase'}</span>
+              </button>
+            )}
+
             <button
               id="btn-create-period"
               onClick={() => handleOpenCreate('all')}
@@ -226,20 +301,72 @@ export const PeriodManagement: React.FC<PeriodManagementProps> = ({
         )}
       </div>
 
-      {/* Quick Summary Pill Bar */}
-      <div className="flex flex-wrap gap-2 text-xs">
-        <span className="px-3 py-1.5 rounded-xl bg-slate-100 border border-slate-200 text-slate-700 font-semibold flex items-center gap-1.5">
-          <Users className="w-3.5 h-3.5 text-slate-500" />
-          Tổng số đợt: <strong className="text-slate-900">{periods.length}</strong>
-        </span>
-        <span className="px-3 py-1.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 font-semibold flex items-center gap-1.5">
-          <GraduationCap className="w-3.5 h-3.5 text-amber-600" />
-          Số đợt dành riêng cho GVCN: <strong className="text-amber-800">{periods.filter(p => p.targetAudience === 'homeroom_teachers').length}</strong>
-        </span>
-        <span className="px-3 py-1.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 font-semibold flex items-center gap-1.5">
-          <School className="w-3.5 h-3.5 text-emerald-600" />
-          Đội ngũ GVCN: <strong className="text-emerald-800">53 Lớp</strong> (14 THPT + 24 ĐBK + 15 Tân Kiều)
-        </span>
+      {/* Info notice for Admin about manual Firestore push */}
+      {(isAdmin || isPrincipal) && (
+        <div className="p-3 px-4 rounded-xl bg-sky-50/80 border border-sky-200/80 text-xs text-sky-900 flex items-center justify-between gap-3 shadow-2xs">
+          <div className="flex items-center gap-2.5">
+            <span className="w-2 h-2 rounded-full bg-sky-500 animate-pulse shrink-0"></span>
+            <span>
+              <strong>Kiểm soát ghi Firebase:</strong> Các đợt báo cáo tạo mới hoặc sửa đổi được lưu an toàn trên máy. Khi hoàn tất, Thầy nhấn nút <strong>"Đẩy Đợt Báo Cáo Lên Firebase"</strong> ở trên để cập nhật lên Cloud (chỉ tốn đúng 1 lượt ghi/đợt mới, hoàn toàn không phát sinh lượt ghi tự động).
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* Quick Summary Pill Bar & Filter Tabs */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Status Filter Tabs */}
+          <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl font-semibold">
+            <button
+              onClick={() => setPeriodStatusFilter('all')}
+              className={`px-3 py-1.5 rounded-lg transition cursor-pointer ${
+                periodStatusFilter === 'all'
+                  ? 'bg-white text-slate-900 shadow-2xs font-bold'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              Tất cả ({periods.length})
+            </button>
+            <button
+              onClick={() => setPeriodStatusFilter('ongoing')}
+              className={`px-3 py-1.5 rounded-lg transition cursor-pointer flex items-center gap-1.5 ${
+                periodStatusFilter === 'ongoing'
+                  ? 'bg-white text-amber-900 shadow-2xs font-bold'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <span>Đang mở</span>
+              <span className="px-1.5 py-0.2 rounded-full bg-amber-100 text-amber-800 text-[10px] font-bold">
+                {ongoingCount}
+              </span>
+            </button>
+            <button
+              onClick={() => setPeriodStatusFilter('completed')}
+              className={`px-3 py-1.5 rounded-lg transition cursor-pointer flex items-center gap-1.5 ${
+                periodStatusFilter === 'completed'
+                  ? 'bg-white text-emerald-900 shadow-2xs font-bold'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <span>Đã hoàn thành</span>
+              <span className="px-1.5 py-0.2 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">
+                {completedCount}
+              </span>
+            </button>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2 text-slate-500">
+          <span className="px-3 py-1.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 font-semibold flex items-center gap-1.5">
+            <GraduationCap className="w-3.5 h-3.5 text-amber-600" />
+            Số đợt GVCN: <strong className="text-amber-800">{periods.filter(p => p.targetAudience === 'homeroom_teachers').length}</strong>
+          </span>
+          <span className="px-3 py-1.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 font-semibold flex items-center gap-1.5">
+            <School className="w-3.5 h-3.5 text-emerald-600" />
+            Đội ngũ GVCN: <strong className="text-emerald-800">53 Lớp</strong>
+          </span>
+        </div>
       </div>
 
       {/* Empty State when no periods exist */}
@@ -280,24 +407,34 @@ export const PeriodManagement: React.FC<PeriodManagementProps> = ({
             </div>
           )}
         </div>
+      ) : filteredPeriods.length === 0 ? (
+        <div className="bg-white rounded-3xl p-8 border border-slate-200 text-center space-y-2 shadow-xs">
+          <CheckCircle2 className="w-10 h-10 text-emerald-500 mx-auto" />
+          <h3 className="text-base font-bold text-slate-800">Không có đợt báo cáo nào trong mục này</h3>
+          <p className="text-xs text-slate-500">
+            Vui lòng chọn tab "Tất cả" hoặc tạo thêm đợt báo cáo mới.
+          </p>
+        </div>
       ) : (
         /* List of Periods */
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {periods.map((period: ReportPeriod) => {
-            const isOverdue = new Date(period.deadline).getTime() < Date.now();
+          {filteredPeriods.map(({ period, stats, is100Percent, isCompleted, isClosed }) => {
+            const isOverdue = !isCompleted && new Date(period.deadline).getTime() < Date.now();
             const diffMs = new Date(period.deadline).getTime() - Date.now();
             const daysRemaining = Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
             
             const isHomeroomPeriod = period.targetAudience === 'homeroom_teachers';
-            const requiredUsers = getRequiredUsersForPeriod(period, allUsers);
+            const requiredUsers = stats.requiredUsers;
             const periodSubmissions = submissions.filter(s => s.periodId === period.id && s.status !== 'draft');
-            const submittedCount = requiredUsers.filter(user => hasSubmittedForPeriod(submissions, period.id, user)).length;
+            const submittedCount = stats.submittedCount;
 
             return (
               <div
                 key={period.id}
                 className={`bg-white rounded-2xl p-5 border shadow-2xs hover:shadow-xs transition flex flex-col justify-between ${
-                  isHomeroomPeriod 
+                  isCompleted
+                    ? 'border-emerald-200 hover:border-emerald-400 bg-gradient-to-b from-emerald-50/15 to-white'
+                    : isHomeroomPeriod 
                     ? 'border-amber-200 hover:border-amber-400 ring-1 ring-amber-100' 
                     : 'border-slate-200 hover:border-emerald-300'
                 }`}
@@ -305,13 +442,20 @@ export const PeriodManagement: React.FC<PeriodManagementProps> = ({
                 <div className="space-y-3">
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-1.5 flex-wrap">
-                      <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${
-                        isOverdue 
-                          ? 'bg-rose-50 text-rose-700 border-rose-200' 
-                          : 'bg-emerald-50 text-emerald-800 border-emerald-300'
-                      }`}>
-                        {isOverdue ? '⚠️ Đã kết thúc hạn nộp' : `Đang mở (Còn ${daysRemaining} ngày)`}
-                      </span>
+                      {isCompleted ? (
+                        <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold border bg-emerald-100 text-emerald-800 border-emerald-300 flex items-center gap-1">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                          <span>{is100Percent ? '✅ Đã hoàn thành (100% nộp đủ)' : '🔒 Đã kết thúc đợt'}</span>
+                        </span>
+                      ) : (
+                        <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${
+                          isOverdue 
+                            ? 'bg-rose-50 text-rose-700 border-rose-200' 
+                            : 'bg-emerald-50 text-emerald-800 border-emerald-300'
+                        }`}>
+                          {isOverdue ? '⚠️ Đã kết thúc hạn nộp' : `Đang mở (Còn ${daysRemaining} ngày)`}
+                        </span>
+                      )}
 
                       {isHomeroomPeriod ? (
                         <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-50 text-amber-800 border border-amber-300 flex items-center gap-1">
@@ -372,27 +516,37 @@ export const PeriodManagement: React.FC<PeriodManagementProps> = ({
 
                     <div className="flex items-center justify-between">
                       <span>Tiến độ đã nộp:</span>
-                      <span className="font-bold text-emerald-700">
-                        {submittedCount} / {requiredUsers.length} người
+                      <span className={`font-bold ${isCompleted ? 'text-emerald-700 font-black' : 'text-emerald-700'}`}>
+                        {submittedCount} / {requiredUsers.length} người ({stats.completionRate}%)
                       </span>
                     </div>
 
-                    <div className="flex items-center justify-between">
-                      <span className="text-amber-800 font-medium">Chưa nộp (cần nhắc):</span>
-                      {onOpenUnsubmittedUsers ? (
-                        <button
-                          type="button"
-                          onClick={() => onOpenUnsubmittedUsers(period.id)}
-                          className="font-bold text-amber-800 hover:underline inline-flex items-center gap-1 cursor-pointer"
-                        >
-                          <span>{Math.max(0, requiredUsers.length - submittedCount)} người (Xem DS)</span>
-                        </button>
-                      ) : (
-                        <span className="font-bold text-amber-700">
-                          {Math.max(0, requiredUsers.length - submittedCount)} người
+                    {isCompleted ? (
+                      <div className="flex items-center justify-between">
+                        <span className="text-emerald-800 font-medium">Tình trạng thực hiện:</span>
+                        <span className="font-bold text-emerald-700 flex items-center gap-1">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                          <span>100% Thầy/Cô đã hoàn tất nộp đủ</span>
                         </span>
-                      )}
-                    </div>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-between">
+                        <span className="text-amber-800 font-medium">Chưa nộp (cần nhắc):</span>
+                        {onOpenUnsubmittedUsers ? (
+                          <button
+                            type="button"
+                            onClick={() => onOpenUnsubmittedUsers(period.id)}
+                            className="font-bold text-amber-800 hover:underline inline-flex items-center gap-1 cursor-pointer"
+                          >
+                            <span>{stats.pendingCount} người (Xem DS)</span>
+                          </button>
+                        ) : (
+                          <span className="font-bold text-amber-700">
+                            {stats.pendingCount} người
+                          </span>
+                        )}
+                      </div>
+                    )}
 
                     <div className="flex items-center justify-between">
                       <span>Định dạng yêu cầu:</span>
@@ -405,11 +559,16 @@ export const PeriodManagement: React.FC<PeriodManagementProps> = ({
 
                 {/* Actions Footer */}
                 <div className="mt-4 pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center flex-wrap gap-2">
                     {submissions.some(s => s.periodId === period.id && s.authorId === currentUser.id && s.status !== 'draft') ? (
                       <div className="px-3 py-1.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold flex items-center gap-1.5">
                         <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
                         <span>Bạn đã nộp</span>
+                      </div>
+                    ) : isCompleted ? (
+                      <div className="px-3 py-1.5 rounded-lg bg-slate-100 border border-slate-200 text-slate-700 text-xs font-bold flex items-center gap-1.5">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                        <span>Đã hoàn thành</span>
                       </div>
                     ) : (
                       <button
@@ -419,6 +578,31 @@ export const PeriodManagement: React.FC<PeriodManagementProps> = ({
                         <Send className="w-3.5 h-3.5" />
                         <span>Nộp báo cáo</span>
                       </button>
+                    )}
+
+                    {/* Admin / Principal: Button to End Period (Kết thúc đợt) or Reopen (Mở lại) */}
+                    {canManagePeriods && (
+                      !isClosed ? (
+                        <button
+                          type="button"
+                          onClick={() => handleClosePeriod(period.id, period.title)}
+                          className="px-2.5 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold flex items-center gap-1 cursor-pointer transition shadow-xs"
+                          title="Kết thúc và chốt số liệu cho đợt báo cáo này"
+                        >
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                          <span>Kết thúc đợt</span>
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => handleReopenPeriod(period.id, period.title)}
+                          className="px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 text-xs font-semibold flex items-center gap-1 cursor-pointer transition"
+                          title="Mở lại đợt báo cáo này nếu cần nhận thêm báo cáo"
+                        >
+                          <RefreshCw className="w-3.5 h-3.5 text-slate-600" />
+                          <span>Mở lại đợt</span>
+                        </button>
+                      )
                     )}
 
                     {onOpenConsolidation && (isAdmin || isPrincipal) && (
@@ -433,7 +617,7 @@ export const PeriodManagement: React.FC<PeriodManagementProps> = ({
                       </button>
                     )}
 
-                    {onOpenUnsubmittedUsers && (isAdmin || isPrincipal || isDeptHead) && (
+                    {onOpenUnsubmittedUsers && (isAdmin || isPrincipal || isDeptHead) && !isCompleted && (
                       <button
                         type="button"
                         onClick={() => onOpenUnsubmittedUsers(period.id)}
@@ -441,7 +625,7 @@ export const PeriodManagement: React.FC<PeriodManagementProps> = ({
                         title="Xem danh sách chi tiết những người chưa nộp báo cáo đợt này và gửi nhắc nhở"
                       >
                         <Clock className="w-3.5 h-3.5 text-amber-700" />
-                        <span>DS Chưa Nộp ({Math.max(0, requiredUsers.length - periodSubmissions.length)})</span>
+                        <span>DS Chưa Nộp ({stats.pendingCount})</span>
                       </button>
                     )}
 
@@ -459,7 +643,7 @@ export const PeriodManagement: React.FC<PeriodManagementProps> = ({
                   </div>
 
                   <div className="flex items-center gap-1.5">
-                    {(isAdmin || isPrincipal || isDeptHead) && (
+                    {(isAdmin || isPrincipal || isDeptHead) && !isCompleted && stats.pendingCount > 0 && (
                       <button
                         onClick={() => handleSendReminder(period)}
                         title={isHomeroomPeriod ? "Gửi email nhắc hạn cho các GVCN chưa nộp" : "Gửi email nhắc hạn cho giáo viên"}

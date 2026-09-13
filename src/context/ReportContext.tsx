@@ -10,7 +10,7 @@ import {
   ReviewHistory,
   SubmissionStatus
 } from '../types';
-import { StorageService, setLocal, VALID_DEPT_IDS, cleanFirestorePayload } from '../services/storage';
+import { StorageService, setLocal, VALID_DEPT_IDS, cleanFirestorePayload, pushSingleSubmissionToFirestore } from '../services/storage';
 import { 
   getStoredFirebaseConfig, 
   saveStoredFirebaseConfig, 
@@ -20,7 +20,7 @@ import {
   isFirestoreWriteQuotaExceeded,
   clearFirestoreWriteQuotaStatus
 } from '../services/firebase';
-import { collection, doc, onSnapshot, getDocs, getDoc, setDoc, deleteDoc } from 'firebase/firestore';
+import { collection, doc, onSnapshot, getDocs, getDoc } from 'firebase/firestore';
 import { OFFICIAL_DEPARTMENTS, OFFICIAL_USERS } from '../data/staffRoster';
 import { INITIAL_SUBMISSIONS, INITIAL_PERIODS } from '../data/initialData';
 import { EmailService } from '../services/emailService';
@@ -76,6 +76,8 @@ interface ReportContextType {
   // Actions for Periods (Campaigns)
   createPeriod: (periodData: Omit<ReportPeriod, 'id' | 'createdAt'>) => ReportPeriod;
   updatePeriod: (id: string, periodData: Partial<ReportPeriod>) => ReportPeriod;
+  closePeriod: (id: string) => ReportPeriod;
+  reopenPeriod: (id: string) => ReportPeriod;
   deletePeriod: (id: string) => Promise<void>;
   clearAllPeriods: () => Promise<{ count: number }>;
 
@@ -90,6 +92,7 @@ interface ReportContextType {
   // Firebase
   updateFirebaseConfig: (config: Partial<FirebaseConfig>) => void;
   syncToFirebase: () => Promise<{ success: boolean; count: number; message: string }>;
+  syncPeriodsToFirebase: () => Promise<{ success: boolean; count: number; message: string }>;
   syncFromFirebase: () => Promise<{ success: boolean; count: number; message: string }>;
   testFirebase: () => Promise<{ success: boolean; message: string }>;
 
@@ -467,6 +470,16 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     // Persist to Server API immediately (Central Express store)
     ApiService.saveSubmission(cleanSub).catch(e => console.warn('ApiService save error:', e));
 
+    // CHỈ ĐẨY LÊN FIRESTORE KHI NỘP BÁO CÁO CHÍNH THỨC (!isDraft)
+    // Lưu nháp (isDraft: true) TUYỆT ĐỐI KHÔNG ghi lên Firestore để triệt để tránh vượt hạn ngạch 20.000 lượt/ngày
+    if (!isDraft) {
+      try {
+        await pushSingleSubmissionToFirestore(cleanSub);
+      } catch (fsErr) {
+        console.warn('[ReportContext] Firestore single push notice:', fsErr);
+      }
+    }
+
     // Notify Department Head if submitted
     if (!isDraft) {
       const dept = departments.find(d => d.id === currentUser.departmentId);
@@ -804,6 +817,14 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     return updatedPeriod;
   };
 
+  const closePeriod = (id: string): ReportPeriod => {
+    return updatePeriod(id, { status: 'closed' });
+  };
+
+  const reopenPeriod = (id: string): ReportPeriod => {
+    return updatePeriod(id, { status: 'active' });
+  };
+
   const deletePeriod = async (id: string) => {
     const updated = StorageService.deletePeriod(id);
     setPeriods(updated);
@@ -844,6 +865,10 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   const syncToFirebase = async () => {
     return await StorageService.syncAllToFirebase();
+  };
+
+  const syncPeriodsToFirebase = async () => {
+    return await StorageService.syncPeriodsToFirebase();
   };
 
   const syncFromFirebase = async () => {
@@ -922,6 +947,8 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         waiveAllLateStatus,
         createPeriod,
         updatePeriod,
+        closePeriod,
+        reopenPeriod,
         deletePeriod,
         clearAllPeriods,
         saveDepartment,
@@ -930,6 +957,7 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         unreadCount,
         updateFirebaseConfig,
         syncToFirebase,
+        syncPeriodsToFirebase,
         syncFromFirebase,
         testFirebase,
         sendDeadlineReminderToUser,

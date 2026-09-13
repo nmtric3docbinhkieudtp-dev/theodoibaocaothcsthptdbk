@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User, UserRole } from '../types';
-import { StorageService, ADMIN_MASTER_PASSWORD_DEFAULT } from '../services/storage';
+import { StorageService, ADMIN_MASTER_PASSWORD_DEFAULT, setLocal } from '../services/storage';
 import { getFirebaseInstance } from '../services/firebase';
 import { collection, doc, getDoc, getDocs } from 'firebase/firestore';
 
@@ -91,7 +91,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               }
             });
             if (hasChanges) {
-              StorageService.saveUserCredential('staff-2', localCreds['staff-2'] || {});
+              setLocal('dbk_user_credentials', localCreds);
               setUsers(StorageService.getUsers());
             }
           }

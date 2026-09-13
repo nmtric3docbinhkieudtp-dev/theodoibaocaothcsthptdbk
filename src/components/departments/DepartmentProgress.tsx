@@ -24,7 +24,7 @@ import {
   ExternalLink
 } from 'lucide-react';
 import { Department, ReportPeriod, ReportSubmission, User } from '../../types';
-import { getRequiredUsersForPeriod, hasSubmittedForPeriod } from '../../utils/reportFilters';
+import { getRequiredUsersForPeriod, hasSubmittedForPeriod, isPeriodFullySubmitted } from '../../utils/reportFilters';
 import { ExportService } from '../../services/exportService';
 
 interface DepartmentProgressProps {
@@ -66,8 +66,11 @@ export const DepartmentProgress: React.FC<DepartmentProgressProps> = ({
   // Late submissions list
   const lateSubmissions = submissions.filter((s: ReportSubmission) => s.isLate);
 
-  // Active periods list
-  const activePeriods = periods.filter((p: ReportPeriod) => p.status === 'active');
+  // Active periods list (excluding completed ones with 100% submission or closed)
+  const activePeriods = useMemo(() => {
+    return periods.filter((p: ReportPeriod) => p.status === 'active' && !isPeriodFullySubmitted(p, submissions, allUsers));
+  }, [periods, submissions, allUsers]);
+
   const selectedPeriod = periods.find(p => p.id === unsubmittedPeriodId);
 
   // Compute unsubmitted records
@@ -80,8 +83,8 @@ export const DepartmentProgress: React.FC<DepartmentProgressProps> = ({
     }> = [];
 
     const targetPeriods = unsubmittedPeriodId === 'all'
-      ? (activePeriods.length > 0 ? activePeriods : periods.slice(0, 3))
-      : (selectedPeriod ? [selectedPeriod] : []);
+      ? activePeriods
+      : (selectedPeriod && !isPeriodFullySubmitted(selectedPeriod, submissions, allUsers) ? [selectedPeriod] : []);
 
     const now = Date.now();
 
@@ -104,7 +107,7 @@ export const DepartmentProgress: React.FC<DepartmentProgressProps> = ({
     }
 
     return list;
-  }, [unsubmittedPeriodId, activePeriods, periods, selectedPeriod, allUsers, submissions]);
+  }, [unsubmittedPeriodId, activePeriods, selectedPeriod, allUsers, submissions]);
 
   // Filter unsubmitted list
   const filteredUnsubmitted = useMemo(() => {
@@ -453,11 +456,15 @@ export const DepartmentProgress: React.FC<DepartmentProgressProps> = ({
                   className="px-3 py-1.5 rounded-xl border border-slate-300 text-xs font-semibold bg-white text-slate-800 shadow-2xs focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
                 >
                   <option value="all">Tất cả các đợt đang mở ({activePeriods.length} đợt)</option>
-                  {periods.map(p => (
-                    <option key={p.id} value={p.id}>
-                      {p.title} {p.status === 'active' ? '(Đang mở)' : '(Đã đóng)'}
-                    </option>
-                  ))}
+                  {periods.map(p => {
+                    const isDone = isPeriodFullySubmitted(p, submissions, allUsers);
+                    const statusText = isDone ? '(Đã hoàn thành 100%)' : p.status === 'active' ? '(Đang mở)' : '(Đã đóng)';
+                    return (
+                      <option key={p.id} value={p.id}>
+                        {p.title} {statusText}
+                      </option>
+                    );
+                  })}
                 </select>
               </div>
 

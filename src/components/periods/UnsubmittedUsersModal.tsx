@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useReports } from '../../context/ReportContext';
 import { ExportService } from '../../services/exportService';
-import { getRequiredUsersForPeriod, getAudienceLabel, hasSubmittedForPeriod } from '../../utils/reportFilters';
+import { getRequiredUsersForPeriod, getAudienceLabel, hasSubmittedForPeriod, isPeriodFullySubmitted } from '../../utils/reportFilters';
 import { ReportPeriod, User, ReportSubmission } from '../../types';
 import { 
   X, 
@@ -86,40 +86,6 @@ export const UnsubmittedUsersModal: React.FC<UnsubmittedUsersModalProps> = ({
     return periods.find(p => p.id === selectedPeriodId) || periods[0] || null;
   }, [periods, selectedPeriodId]);
 
-  // Deadline calculations
-  const deadlineInfo = useMemo(() => {
-    if (!currentPeriod) return { isOverdue: false, remainingText: '', diffHours: 0 };
-    const diffMs = new Date(currentPeriod.deadline).getTime() - Date.now();
-    const isOverdue = diffMs < 0;
-
-    if (isOverdue) {
-      const pastHours = Math.floor(Math.abs(diffMs) / (1000 * 60 * 60));
-      const pastDays = Math.floor(pastHours / 24);
-      return {
-        isOverdue: true,
-        remainingText: `Đã quá hạn ${pastDays > 0 ? `${pastDays} ngày` : `${pastHours} giờ`}`,
-        diffHours: -pastHours
-      };
-    }
-
-    const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-    const hours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-
-    if (days === 0) {
-      return {
-        isOverdue: false,
-        remainingText: `Hạn chót hôm nay (còn ${hours} giờ)`,
-        diffHours: hours
-      };
-    }
-
-    return {
-      isOverdue: false,
-      remainingText: `Còn ${days} ngày ${hours} giờ`,
-      diffHours: days * 24 + hours
-    };
-  }, [currentPeriod]);
-
   // All required users for this period
   const requiredUsers = useMemo(() => {
     if (!currentPeriod) return [];
@@ -136,6 +102,8 @@ export const UnsubmittedUsersModal: React.FC<UnsubmittedUsersModalProps> = ({
   const { unsubmittedList, submittedList } = useMemo(() => {
     const unsubmitted: Array<User & { submissionStatus: string; submittedAt: string | null; submission?: ReportSubmission }> = [];
     const submitted: Array<User & { submissionStatus: string; submittedAt: string | null; submission?: ReportSubmission }> = [];
+
+    if (!currentPeriod) return { unsubmittedList: unsubmitted, submittedList: submitted };
 
     for (const user of requiredUsers) {
       const sub = periodSubmissions.find(candidate => hasSubmittedForPeriod([candidate], currentPeriod.id, user));
@@ -157,6 +125,56 @@ export const UnsubmittedUsersModal: React.FC<UnsubmittedUsersModalProps> = ({
 
     return { unsubmittedList: unsubmitted, submittedList: submitted };
   }, [requiredUsers, periodSubmissions, currentPeriod]);
+
+  // Deadline calculations - Stop counting down and show completed when 100% submitted or closed
+  const deadlineInfo = useMemo(() => {
+    if (!currentPeriod) return { isOverdue: false, remainingText: '', diffHours: 0, isCompleted: false };
+
+    // Check if period is 100% completed or closed
+    const isCompleted = unsubmittedList.length === 0 || isPeriodFullySubmitted(currentPeriod, submissions, allUsers);
+
+    if (isCompleted) {
+      return {
+        isOverdue: false,
+        remainingText: unsubmittedList.length === 0 ? '✅ Đã hoàn thành (100% nộp đủ)' : '🔒 Đã kết thúc đợt',
+        diffHours: 0,
+        isCompleted: true
+      };
+    }
+
+    const diffMs = new Date(currentPeriod.deadline).getTime() - Date.now();
+    const isOverdue = diffMs < 0;
+
+    if (isOverdue) {
+      const pastHours = Math.floor(Math.abs(diffMs) / (1000 * 60 * 60));
+      const pastDays = Math.floor(pastHours / 24);
+      return {
+        isOverdue: true,
+        remainingText: `Đã quá hạn ${pastDays > 0 ? `${pastDays} ngày` : `${pastHours} giờ`}`,
+        diffHours: -pastHours,
+        isCompleted: false
+      };
+    }
+
+    const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+
+    if (days === 0) {
+      return {
+        isOverdue: false,
+        remainingText: `Hạn chót hôm nay (còn ${hours} giờ)`,
+        diffHours: hours,
+        isCompleted: false
+      };
+    }
+
+    return {
+      isOverdue: false,
+      remainingText: `Còn ${days} ngày ${hours} giờ`,
+      diffHours: days * 24 + hours,
+      isCompleted: false
+    };
+  }, [currentPeriod, unsubmittedList.length, submissions, allUsers]);
 
   // Filtered roster for table display
   const displayedUsers = useMemo(() => {
@@ -284,7 +302,9 @@ Trân trọng cảm ơn quý Thầy/Cô!`;
                 </span>
                 {currentPeriod && (
                   <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${
-                    deadlineInfo.isOverdue 
+                    deadlineInfo.isCompleted
+                      ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                      : deadlineInfo.isOverdue 
                       ? 'bg-rose-50 text-rose-700 border-rose-200' 
                       : 'bg-emerald-50 text-emerald-800 border-emerald-300'
                   }`}>
@@ -323,8 +343,9 @@ Trân trọng cảm ơn quý Thầy/Cô!`;
                   className="w-full text-xs font-bold text-slate-800 bg-white border border-slate-300 rounded-xl px-3 py-2 pr-8 focus:ring-2 focus:ring-amber-500 focus:outline-hidden shadow-2xs"
                 >
                   {periods.map(p => {
-                    const isOver = new Date(p.deadline).getTime() < Date.now();
-                    const statusText = isOver ? 'Đã hết hạn' : 'Đang mở';
+                    const isDone = isPeriodFullySubmitted(p, submissions, allUsers);
+                    const isOver = !isDone && new Date(p.deadline).getTime() < Date.now();
+                    const statusText = isDone ? 'Đã hoàn thành 100%' : isOver ? 'Đã hết hạn' : 'Đang mở';
                     return (
                       <option key={p.id} value={p.id}>
                         [{statusText}] {p.title} (Hạn: {new Date(p.deadline).toLocaleDateString('vi-VN')})

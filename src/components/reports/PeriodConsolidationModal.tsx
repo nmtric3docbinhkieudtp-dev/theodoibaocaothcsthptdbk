@@ -37,6 +37,7 @@ import {
   UserCheck
 } from 'lucide-react';
 import { ReportPeriod } from '../../types';
+import { isPeriodFullySubmitted } from '../../utils/reportFilters';
 
 interface PeriodConsolidationModalProps {
   isOpen: boolean;
@@ -295,9 +296,14 @@ export const PeriodConsolidationModal: React.FC<PeriodConsolidationModalProps> =
                 className="text-xs bg-transparent text-white font-medium focus:outline-hidden cursor-pointer max-w-[200px] sm:max-w-xs truncate"
               >
                 <option value="all" className="bg-slate-800 text-white">-- Toàn bộ các đợt nộp --</option>
-                {periods.map(p => (
-                  <option key={p.id} value={p.id} className="bg-slate-800 text-white">{p.title}</option>
-                ))}
+                {periods.map(p => {
+                  const isDone = isPeriodFullySubmitted(p, submissions, allUsers);
+                  return (
+                    <option key={p.id} value={p.id} className="bg-slate-800 text-white">
+                      {isDone ? `[✅ Đã xong] ${p.title}` : p.title}
+                    </option>
+                  );
+                })}
               </select>
             </div>
 

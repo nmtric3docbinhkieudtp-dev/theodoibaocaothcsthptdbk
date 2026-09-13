@@ -16,7 +16,7 @@ import {
   INITIAL_NOTIFICATIONS 
 } from '../data/initialData';
 import { getFirebaseInstance, safeFirestoreWrite, isFirestoreWriteQuotaExceeded, markFirestoreWriteQuotaExceeded } from './firebase';
-import { collection, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, setDoc } from 'firebase/firestore';
 
 const STORAGE_KEYS = {
   USERS: 'dbk_users_data',
@@ -71,65 +71,6 @@ export function setLocal<T>(key: string, value: T): void {
     console.error(`Error writing ${key} to localStorage`, e);
   }
 }
-
-async function writeFirestoreDocIfChanged(
-  operationName: string,
-  reference: any,
-  payload: Record<string, any>,
-  options?: { merge?: boolean }
-): Promise<void> {
-  const writeKey = `write:${reference.path}`;
-  const inFlight = firestoreWriteInFlight.get(writeKey);
-  if (inFlight) return inFlight;
-
-  const operation = (async () => {
-  try {
-    const existing = await getDoc(reference);
-    const cleanPayload = cleanFirestorePayload(payload);
-    if (existing.exists()) {
-      const current = cleanFirestorePayload(existing.data());
-      const matches = options?.merge
-        ? Object.entries(cleanPayload).every(([key, value]) => JSON.stringify(current[key]) === JSON.stringify(value))
-        : JSON.stringify(current) === JSON.stringify(cleanPayload);
-      if (matches) return;
-    }
-    await safeFirestoreWrite(operationName, () => setDoc(reference, cleanPayload, options));
-  } catch (error) {
-    console.warn(`[Firestore Safe-Write] Could not compare before "${operationName}":`, error);
-  }
-  })();
-  firestoreWriteInFlight.set(writeKey, operation);
-  try {
-    await operation;
-  } finally {
-    firestoreWriteInFlight.delete(writeKey);
-  }
-}
-
-async function deleteFirestoreDocIfExists(operationName: string, reference: any): Promise<void> {
-  const writeKey = `delete:${reference.path}`;
-  const inFlight = firestoreWriteInFlight.get(writeKey);
-  if (inFlight) return inFlight;
-
-  const operation = (async () => {
-  try {
-    const existing = await getDoc(reference);
-    if (existing.exists()) {
-      await safeFirestoreWrite(operationName, () => deleteDoc(reference));
-    }
-  } catch (error) {
-    console.warn(`[Firestore Safe-Delete] Could not verify before "${operationName}":`, error);
-  }
-  })();
-  firestoreWriteInFlight.set(writeKey, operation);
-  try {
-    await operation;
-  } finally {
-    firestoreWriteInFlight.delete(writeKey);
-  }
-}
-
-const firestoreWriteInFlight = new Map<string, Promise<void>>();
 
 export interface UserCredentialData {
   userId: string;
@@ -186,19 +127,12 @@ export function saveUserCredential(userId: string, data: Partial<UserCredentialD
       localStorage.setItem(`dbk_user_pass_${userId}`, data.password);
     } catch {}
   }
-
-  // Background sync to Firestore user_credentials
-  const { db, isReady } = getFirebaseInstance();
-  if (isReady && db && !isFirestoreWriteQuotaExceeded()) {
-    const payload = cleanFirestorePayload(all[userId]);
-    writeFirestoreDocIfChanged('user_credentials', doc(db, 'user_credentials', userId), payload);
-  }
 }
 
 export function resetUserPasswordToDefault(userId: string): { success: boolean; message: string } {
   const defaultPass = '123456';
   
-  // 1. Update user credential
+  // 1. Update user credential locally
   const creds = getUserCredentials();
   creds[userId] = {
     userId,
@@ -231,16 +165,6 @@ export function resetUserPasswordToDefault(userId: string): { success: boolean; 
       mustChangePassword: true
     };
     setLocal(STORAGE_KEYS.USERS, allUsers);
-  }
-
-  // 4. Background sync to Firestore if enabled
-  const { db, isReady } = getFirebaseInstance();
-  if (isReady && db && !isFirestoreWriteQuotaExceeded()) {
-    const payload = cleanFirestorePayload(creds[userId]);
-    writeFirestoreDocIfChanged('reset_credential', doc(db, 'user_credentials', userId), payload);
-    if (userIdx >= 0) {
-      writeFirestoreDocIfChanged('reset_user', doc(db, 'users', userId), cleanFirestorePayload(allUsers[userIdx]));
-    }
   }
 
   return {
@@ -446,37 +370,18 @@ export const StorageService = {
       return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
     });
     setLocal(STORAGE_KEYS.PERIODS, updated);
-
-    const { db, isReady } = getFirebaseInstance();
-    if (isReady && db && !isFirestoreWriteQuotaExceeded()) {
-      const sanitized = cleanFirestorePayload(period);
-      writeFirestoreDocIfChanged('save_period', doc(db, 'periods', period.id), sanitized);
-    }
     return updated;
   },
 
   deletePeriod(periodId: string): ReportPeriod[] {
     const periods = this.getPeriods().filter(p => p.id !== periodId);
     setLocal(STORAGE_KEYS.PERIODS, periods);
-
-    const { db, isReady } = getFirebaseInstance();
-    if (isReady && db && !isFirestoreWriteQuotaExceeded()) {
-      deleteFirestoreDocIfExists('delete_period', doc(db, 'periods', periodId));
-    }
     return periods;
   },
 
   clearAllPeriods(): ReportPeriod[] {
     setLocal(STORAGE_KEYS.PERIODS, []);
     localStorage.setItem('dbk_periods_cleared_by_user', 'true');
-    const { db, isReady } = getFirebaseInstance();
-    if (isReady && db && !isFirestoreWriteQuotaExceeded()) {
-      getDocs(collection(db, 'periods')).then(snap => {
-        snap.forEach(d => {
-          deleteFirestoreDocIfExists('clear_period_doc', doc(db, 'periods', d.id));
-        });
-      }).catch(err => console.warn('Firestore clear periods err:', err));
-    }
     return [];
   },
 
@@ -522,38 +427,18 @@ export const StorageService = {
       updated = [submission, ...subs];
     }
     setLocal(STORAGE_KEYS.SUBMISSIONS, updated);
-
-    const { db, isReady } = getFirebaseInstance();
-    if (isReady && db && !isFirestoreWriteQuotaExceeded()) {
-      const targetSub = index >= 0 ? updated[index] : submission;
-      const sanitized = cleanFirestorePayload(targetSub);
-      writeFirestoreDocIfChanged('save_submission', doc(db, 'submissions', targetSub.id), sanitized);
-    }
     return updated;
   },
 
   deleteSubmission(submissionId: string): ReportSubmission[] {
     const subs = this.getSubmissions().filter(s => s.id !== submissionId);
     setLocal(STORAGE_KEYS.SUBMISSIONS, subs);
-
-    const { db, isReady } = getFirebaseInstance();
-    if (isReady && db && !isFirestoreWriteQuotaExceeded()) {
-      deleteFirestoreDocIfExists('delete_submission', doc(db, 'submissions', submissionId));
-    }
     return subs;
   },
 
   clearAllSubmissions(): ReportSubmission[] {
     setLocal(STORAGE_KEYS.SUBMISSIONS, []);
     localStorage.setItem('dbk_submissions_cleared_by_user', 'true');
-    const { db, isReady } = getFirebaseInstance();
-    if (isReady && db && !isFirestoreWriteQuotaExceeded()) {
-      getDocs(collection(db, 'submissions')).then(snap => {
-        snap.forEach(d => {
-          deleteFirestoreDocIfExists('clear_submission_doc', doc(db, 'submissions', d.id));
-        });
-      }).catch(err => console.warn('Firestore clear submissions err:', err));
-    }
     return [];
   },
 
@@ -622,14 +507,6 @@ export const StorageService = {
       } catch {}
     }
     setLocal(STORAGE_KEYS.SCHOOL_INFO, info);
-
-    // Sync to Firestore metadata/schoolInfo immediately
-    const { db, isReady } = getFirebaseInstance();
-    if (isReady && db && !isFirestoreWriteQuotaExceeded()) {
-      const payload = cleanFirestorePayload(info);
-      writeFirestoreDocIfChanged('save_school_info', doc(db, 'metadata', 'schoolInfo'), payload, { merge: true });
-    }
-
     return info;
   },
 
@@ -646,7 +523,50 @@ export const StorageService = {
     return this.saveSchoolInfo(updated);
   },
 
-  // --- CLOUD FIRESTORE SYNC ALL ---
+  // --- THAO TÁC ĐẨY ĐỢT BÁO CÁO LÊN CLOUD FIRESTORE THỦ CÔNG KHI ADMIN YÊU CẦU ---
+  async syncPeriodsToFirebase(): Promise<{ success: boolean; count: number; message: string }> {
+    const { db, isReady } = getFirebaseInstance();
+    if (!isReady || !db) {
+      return { success: false, count: 0, message: 'Firebase chưa được kích hoạt.' };
+    }
+    if (isFirestoreWriteQuotaExceeded()) {
+      return { 
+        success: false, 
+        count: 0, 
+        message: 'Hạn ngạch ghi Firestore hôm nay đã đạt mức 20.000 lượt. Đợt báo cáo đang lưu an toàn trong máy.' 
+      };
+    }
+
+    try {
+      const periods = this.getPeriods();
+      let written = 0;
+      const remotePeriodsSnap = await getDocs(collection(db, 'periods'));
+      const remotePeriods = new Map(
+        remotePeriodsSnap.docs.map(item => [item.id, JSON.stringify(cleanFirestorePayload(item.data()))])
+      );
+
+      for (const p of periods) {
+        const payload = cleanFirestorePayload(p);
+        if (remotePeriods.get(p.id) === JSON.stringify(payload)) continue;
+        const res = await safeFirestoreWrite('sync_period', () => setDoc(doc(db, 'periods', p.id), payload));
+        if (res.quotaExceeded) break;
+        written++;
+      }
+
+      return {
+        success: true,
+        count: written,
+        message: written > 0
+          ? `Đã đẩy thành công ${written} đợt báo cáo lên Firebase Firestore!`
+          : 'Toàn bộ đợt báo cáo trên Firebase đã đồng bộ mới nhất (0 lượt ghi phát sinh).'
+      };
+    } catch (e: any) {
+      console.error('syncPeriodsToFirebase error:', e);
+      return { success: false, count: 0, message: `Lỗi đồng bộ đợt báo cáo: ${e.message || e}` };
+    }
+  },
+
+  // --- CLOUD FIRESTORE SYNC ALL (CHỦ ĐỘNG THỦ CÔNG) ---
   async syncAllToFirebase(): Promise<{ success: boolean; count: number; message: string }> {
     const { db, isReady } = getFirebaseInstance();
     if (!isReady || !db) {
@@ -782,3 +702,30 @@ export const StorageService = {
     initializeDatabaseIfNeeded();
   }
 };
+
+/**
+ * Đẩy DUY NHẤT 1 bài nộp chính thức lên Firebase Firestore.
+ * CHỈ được gọi khi giáo viên/nhân viên nhấn nút "Gửi báo cáo" (Không lưu nháp hay tự động đẩy).
+ * Nhờ cơ chế này, cả trường nộp báo cáo chỉ tiêu tốn đúng ~53 đến 100 lượt ghi / ngày (thay vì 20.000 lượt).
+ */
+export async function pushSingleSubmissionToFirestore(
+  submission: ReportSubmission
+): Promise<{ success: boolean; error?: any; quotaExceeded?: boolean }> {
+  const { db, isReady } = getFirebaseInstance();
+  if (!isReady || !db) {
+    return { success: false, error: 'Firebase chưa được kích hoạt hoặc chưa sẵn sàng.' };
+  }
+  if (isFirestoreWriteQuotaExceeded()) {
+    return { 
+      success: false, 
+      quotaExceeded: true, 
+      error: 'Hạn ngạch ghi Firestore hôm nay đã đạt giới hạn 20.000 lượt. Bài nộp đã lưu an toàn trong máy.' 
+    };
+  }
+
+  const cleanPayload = cleanFirestorePayload(submission);
+  return await safeFirestoreWrite('submit_single_report', () =>
+    setDoc(doc(db, 'submissions', submission.id), cleanPayload)
+  );
+}
+
