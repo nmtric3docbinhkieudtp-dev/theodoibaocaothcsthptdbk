@@ -13,7 +13,9 @@ import {
   Eye,
   Plus,
   ArrowRight,
-  HelpCircle
+  HelpCircle,
+  Trash2,
+  Lightbulb
 } from 'lucide-react';
 import { extractTextFromFile, parseFormContent, parseTemplateFile, ParsedTemplateResult } from '../../utils/formFileParser';
 import { CustomFormField, CustomDynamicTable, ReportPeriod, TargetAudienceType } from '../../types';
@@ -121,6 +123,32 @@ export const ImportFormFromDocModal: React.FC<ImportFormFromDocModalProps> = ({
     setFileSize(null);
     setManualText('');
     setErrorMsg(null);
+  };
+
+  const handleDeleteField = (index: number) => {
+    if (!parsedResult) return;
+    const newFields = parsedResult.fields.filter((_, i) => i !== index);
+    setParsedResult({
+      ...parsedResult,
+      fields: newFields
+    });
+  };
+
+  const handleDeleteTable = (index: number) => {
+    if (!parsedResult) return;
+    const newTables = parsedResult.tables.filter((_, i) => i !== index);
+    setParsedResult({
+      ...parsedResult,
+      tables: newTables
+    });
+  };
+
+  const handleClearAllTables = () => {
+    if (!parsedResult) return;
+    setParsedResult({
+      ...parsedResult,
+      tables: []
+    });
   };
 
   return (
@@ -357,24 +385,47 @@ export const ImportFormFromDocModal: React.FC<ImportFormFromDocModalProps> = ({
               </div>
             )}
 
+            {/* Tip banner for direct deletion */}
+            <div className="p-2.5 rounded-xl bg-amber-50/90 border border-amber-200 text-xs text-amber-900 flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <Lightbulb className="w-4 h-4 text-amber-600 shrink-0" />
+                <span>
+                  <strong>Xóa mục thừa:</strong> Thầy/Cô có thể bấm nút <strong>"Xóa"</strong> màu đỏ cạnh các câu hỏi hoặc bảng không cần thiết để loại bỏ ngay trước khi áp dụng.
+                </span>
+              </div>
+            </div>
+
             {/* Visual Preview of Fields and Tables */}
             <div className="max-h-72 overflow-y-auto space-y-3 p-1">
               
               {/* Fields List */}
               {parsedResult.fields.length > 0 && (
                 <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 space-y-2">
-                  <h6 className="text-xs font-bold text-slate-800">
-                    Danh sách các trường nhập liệu tự động ({parsedResult.fields.length}):
+                  <h6 className="text-xs font-bold text-slate-800 flex items-center justify-between">
+                    <span>Danh sách các trường nhập liệu ({parsedResult.fields.length}):</span>
                   </h6>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <div className="space-y-1.5">
                     {parsedResult.fields.map((f, idx) => (
-                      <div key={f.id || idx} className="bg-white p-2.5 rounded-xl border border-slate-200 text-xs flex items-center justify-between gap-2">
-                        <div className="truncate">
-                          <span className="font-bold text-slate-800 block truncate">{f.label}</span>
-                          <span className="text-[10px] text-slate-400">
-                            Loại: {f.type === 'textarea' ? 'Văn bản dài' : f.type === 'number' ? 'Số liệu' : f.type === 'checkbox' ? 'Hộp kiểm' : 'Văn bản ngắn'}
+                      <div key={f.id || idx} className="bg-white p-2.5 rounded-xl border border-slate-200 text-xs flex items-center justify-between gap-2 hover:border-slate-300 transition">
+                        <div className="flex items-center gap-2 min-w-0 flex-1">
+                          <span className="w-5 h-5 rounded-full bg-emerald-600 text-white font-black text-[10px] flex items-center justify-center shrink-0">
+                            {idx + 1}
+                          </span>
+                          <span className="font-bold text-slate-800 truncate">{f.label}</span>
+                          <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-slate-100 text-slate-600 shrink-0">
+                            {f.type === 'textarea' ? 'Nhiều dòng' : f.type === 'number' ? 'Số liệu' : f.type === 'checkbox' ? 'Hộp kiểm' : 'Một dòng'}
                           </span>
                         </div>
+
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteField(idx)}
+                          title="Xóa mục này khỏi biểu mẫu"
+                          className="px-2 py-1 rounded-lg text-rose-600 hover:text-white hover:bg-rose-600 border border-rose-200 transition text-[11px] font-bold flex items-center gap-1 cursor-pointer shrink-0 active:scale-95"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                          <span>Xóa</span>
+                        </button>
                       </div>
                     ))}
                   </div>
@@ -384,22 +435,47 @@ export const ImportFormFromDocModal: React.FC<ImportFormFromDocModalProps> = ({
               {/* Tables List */}
               {parsedResult.tables.length > 0 && (
                 <div className="bg-blue-50/50 p-3.5 rounded-2xl border border-blue-200 space-y-2">
-                  <h6 className="text-xs font-bold text-blue-900">
-                    Bảng số liệu cấu trúc ({parsedResult.tables.length}):
-                  </h6>
+                  <div className="flex items-center justify-between">
+                    <h6 className="text-xs font-bold text-blue-900 flex items-center gap-1.5">
+                      <TableIcon className="w-3.5 h-3.5 text-blue-600" />
+                      <span>Bảng số liệu cấu trúc ({parsedResult.tables.length}):</span>
+                    </h6>
+
+                    <button
+                      type="button"
+                      onClick={handleClearAllTables}
+                      className="px-2 py-0.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 text-[11px] font-bold transition flex items-center gap-1 border border-rose-200 cursor-pointer"
+                    >
+                      <Trash2 className="w-3 h-3 text-rose-600" />
+                      <span>Bỏ tất cả bảng</span>
+                    </button>
+                  </div>
+
                   {parsedResult.tables.map((t, idx) => (
-                    <div key={t.id || idx} className="bg-white p-3 rounded-xl border border-blue-100 text-xs space-y-1.5">
-                      <div className="font-bold text-slate-900 flex items-center gap-1.5">
-                        <TableIcon className="w-3.5 h-3.5 text-blue-600" />
-                        <span>{t.title}</span>
+                    <div key={t.id || idx} className="bg-white p-3 rounded-xl border border-blue-100 text-xs flex items-center justify-between gap-2">
+                      <div className="space-y-1 min-w-0 flex-1">
+                        <div className="font-bold text-slate-900 flex items-center gap-1.5 truncate">
+                          <TableIcon className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                          <span className="truncate">{t.title}</span>
+                        </div>
+                        <div className="flex flex-wrap gap-1">
+                          {t.headers.map((h, hIdx) => (
+                            <span key={hIdx} className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 text-[10px] font-semibold">
+                              {h}
+                            </span>
+                          ))}
+                        </div>
                       </div>
-                      <div className="flex flex-wrap gap-1">
-                        {t.headers.map((h, hIdx) => (
-                          <span key={hIdx} className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 text-[10px] font-semibold">
-                            {h}
-                          </span>
-                        ))}
-                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteTable(idx)}
+                        title="Xóa bảng này khỏi biểu mẫu"
+                        className="px-2.5 py-1 rounded-lg text-rose-600 hover:text-white hover:bg-rose-600 border border-rose-200 transition text-[11px] font-bold flex items-center gap-1 cursor-pointer shrink-0 active:scale-95"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                        <span>Xóa bảng</span>
+                      </button>
                     </div>
                   ))}
                 </div>

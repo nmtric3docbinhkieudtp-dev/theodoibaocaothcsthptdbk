@@ -60,7 +60,9 @@ export const PeriodManagement: React.FC<PeriodManagementProps> = ({
     sendBulkReminders, 
     submissions = [],
     waiveAllLateStatus,
-    syncPeriodsToFirebase
+    syncPeriodsToFirebase,
+    hasUnsyncedChanges,
+    unsyncedChangesCount
   } = useReports();
 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -277,15 +279,35 @@ export const PeriodManagement: React.FC<PeriodManagementProps> = ({
                 type="button"
                 onClick={handleSyncPeriodsToFirebase}
                 disabled={isSyncingPeriods}
-                className="px-3.5 py-2 rounded-xl bg-sky-600 hover:bg-sky-700 disabled:bg-sky-300 text-white font-bold text-xs flex items-center gap-1.5 shadow-xs transition active:scale-98 cursor-pointer"
-                title="Đẩy các đợt báo cáo đã tạo/sửa lên Cloud Firestore (Chỉ tiêu tốn 1 lượt ghi cho đợt mới, không vượt hạn ngạch 20.000)"
+                className={`relative px-4 py-2 rounded-xl font-bold text-xs flex items-center gap-2 transition active:scale-98 cursor-pointer ${
+                  hasUnsyncedChanges
+                    ? 'bg-gradient-to-r from-amber-500 via-rose-500 to-amber-600 text-white shadow-lg shadow-amber-500/30 animate-pulse ring-4 ring-amber-300 ring-offset-2 hover:from-amber-600 hover:to-rose-700'
+                    : 'bg-sky-600 hover:bg-sky-700 disabled:bg-sky-300 text-white shadow-xs'
+                }`}
+                title={
+                  hasUnsyncedChanges
+                    ? `⚠️ CÓ ${unsyncedChangesCount} DỮ LIỆU MỚI! Nhấn để đẩy lên Firebase Firestore ngay để tránh quên!`
+                    : "Đẩy các đợt báo cáo đã tạo/sửa lên Cloud Firestore (Chỉ tiêu tốn 1 lượt ghi cho đợt mới)"
+                }
               >
+                {hasUnsyncedChanges && (
+                  <span className="absolute -top-1.5 -right-1.5 flex h-3.5 w-3.5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-90"></span>
+                    <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-rose-600 border-2 border-white"></span>
+                  </span>
+                )}
                 {isSyncingPeriods ? (
                   <RefreshCw className="w-4 h-4 animate-spin text-white" />
                 ) : (
-                  <Cloud className="w-4 h-4 text-sky-200" />
+                  <Cloud className={`w-4 h-4 ${hasUnsyncedChanges ? 'text-amber-100 animate-bounce' : 'text-sky-200'}`} />
                 )}
-                <span>{isSyncingPeriods ? 'Đang đẩy lên Cloud...' : 'Đẩy Đợt Báo Cáo Lên Firebase'}</span>
+                <span>
+                  {isSyncingPeriods 
+                    ? 'Đang đẩy lên Cloud...' 
+                    : hasUnsyncedChanges 
+                      ? `Đẩy Lên Firebase Ngay! (${unsyncedChangesCount} mới)` 
+                      : 'Đẩy Đợt Báo Cáo Lên Firebase'}
+                </span>
               </button>
             )}
 
@@ -303,11 +325,23 @@ export const PeriodManagement: React.FC<PeriodManagementProps> = ({
 
       {/* Info notice for Admin about manual Firestore push */}
       {(isAdmin || isPrincipal) && (
-        <div className="p-3 px-4 rounded-xl bg-sky-50/80 border border-sky-200/80 text-xs text-sky-900 flex items-center justify-between gap-3 shadow-2xs">
+        <div className={`p-3 px-4 rounded-xl border text-xs flex items-center justify-between gap-3 shadow-2xs transition-all ${
+          hasUnsyncedChanges 
+            ? 'bg-gradient-to-r from-amber-50 to-rose-50 border-amber-300 text-amber-950 ring-1 ring-amber-300/60'
+            : 'bg-sky-50/80 border-sky-200/80 text-sky-900'
+        }`}>
           <div className="flex items-center gap-2.5">
-            <span className="w-2 h-2 rounded-full bg-sky-500 animate-pulse shrink-0"></span>
+            <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${hasUnsyncedChanges ? 'bg-rose-500 animate-ping' : 'bg-sky-500 animate-pulse'}`}></span>
             <span>
-              <strong>Kiểm soát ghi Firebase:</strong> Các đợt báo cáo tạo mới hoặc sửa đổi được lưu an toàn trên máy. Khi hoàn tất, Thầy nhấn nút <strong>"Đẩy Đợt Báo Cáo Lên Firebase"</strong> ở trên để cập nhật lên Cloud (chỉ tốn đúng 1 lượt ghi/đợt mới, hoàn toàn không phát sinh lượt ghi tự động).
+              {hasUnsyncedChanges ? (
+                <>
+                  <strong className="text-rose-700">⚠️ NHẮC NHỞ QUAN TRỌNG:</strong> Có <strong>{unsyncedChangesCount} dữ liệu mới/thay đổi</strong> chưa được đẩy lên Firebase Firestore! Thầy vui lòng bấm nút nhấp nháy <strong>"Đẩy Lên Firebase Ngay!"</strong> màu cam-đỏ ở trên để tránh quên dữ liệu.
+                </>
+              ) : (
+                <>
+                  <strong>Kiểm soát ghi Firebase:</strong> Toàn bộ đợt báo cáo đã đồng bộ an toàn với Cloud Firestore. Khi có bất kỳ thay đổi nào mới, nút đồng bộ sẽ tự động nhấp nháy cảnh báo ngay lập tức.
+                </>
+              )}
             </span>
           </div>
         </div>

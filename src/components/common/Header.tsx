@@ -15,7 +15,9 @@ import {
   ShieldCheck,
   Plus,
   Pencil,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Cloud,
+  RefreshCw
 } from 'lucide-react';
 import { UserRole } from '../../types';
 
@@ -46,12 +48,30 @@ export const Header: React.FC<HeaderProps> = ({
     unreadCount, 
     notifications, 
     markNotificationRead, 
-    markAllNotificationsRead
+    markAllNotificationsRead,
+    hasUnsyncedChanges,
+    unsyncedChangesCount,
+    syncToFirebase,
+    syncPeriodsToFirebase
   } = useReports();
   
   const [showRoleMenu, setShowRoleMenu] = useState(false);
   const [showNotifMenu, setShowNotifMenu] = useState(false);
   const [userSearch, setUserSearch] = useState('');
+  const [isHeaderSyncing, setIsHeaderSyncing] = useState(false);
+
+  const handleHeaderQuickSync = async () => {
+    setIsHeaderSyncing(true);
+    try {
+      const pRes = await syncPeriodsToFirebase();
+      const sRes = await syncToFirebase();
+      alert(`Đã đồng bộ thành công lên Firebase Firestore! (${pRes.count + sRes.count} mục)`);
+    } catch (e) {
+      alert('Đồng bộ lên Firebase thất bại: ' + String(e));
+    } finally {
+      setIsHeaderSyncing(false);
+    }
+  };
 
   const filteredSwitcherUsers = allUsers.filter(u => {
     if (!userSearch.trim()) return true;
@@ -154,6 +174,30 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Right: Actions, Firebase Status, Notifications, Role Switcher */}
         <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
           
+          {/* Pulsing Sync reminder button for Admin / Principal when unsynced changes exist */}
+          {(isAdmin || isPrincipal) && hasUnsyncedChanges && (
+            <button
+              id="btn-header-sync-reminder"
+              type="button"
+              disabled={isHeaderSyncing}
+              onClick={handleHeaderQuickSync}
+              className="relative inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black text-white bg-gradient-to-r from-amber-500 via-rose-500 to-amber-500 hover:from-amber-600 hover:to-rose-600 active:scale-98 transition shadow-md animate-pulse ring-2 ring-amber-300 ring-offset-1 cursor-pointer"
+              title={`Có ${unsyncedChangesCount} thay đổi mới chưa đẩy lên Firebase! Nhấn để đồng bộ ngay.`}
+            >
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-90"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
+              </span>
+              <Cloud className={`w-3.5 h-3.5 ${isHeaderSyncing ? 'animate-spin' : 'animate-bounce text-white'}`} />
+              <span className="hidden md:inline">
+                {isHeaderSyncing ? 'Đang đẩy lên Firebase...' : `Đồng Bộ Firebase (${unsyncedChangesCount})`}
+              </span>
+              <span className="md:hidden">
+                {isHeaderSyncing ? 'Đang gửi...' : `Đồng Bộ (${unsyncedChangesCount})`}
+              </span>
+            </button>
+          )}
+
           {/* Quick Submit Button */}
           {/* Role-based action button: Admin creates requirement & sets deadline, Staff submits */}
           {isAdmin || isPrincipal ? (
