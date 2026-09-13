@@ -718,10 +718,11 @@ export const SubmitReportModal: React.FC<SubmitReportModalProps> = ({
                   id="btn-submit-report-modal"
                   disabled={isSubmitting}
                   onClick={() => handleSubmit(false)}
-                  className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-2 shadow-xs transition active:scale-98 cursor-pointer"
+                  className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-xs sm:text-sm font-bold flex items-center gap-2 shadow-sm hover:shadow-md transition active:scale-98 cursor-pointer"
+                  title="Nhấn để gửi toàn bộ dữ liệu báo cáo về Ban Giám Hiệu"
                 >
                   <Send className="w-4 h-4" />
-                  <span>{isSubmitting ? 'Đang gửi...' : 'Gửi Báo Cáo'}</span>
+                  <span>{isSubmitting ? 'Đang gửi dữ liệu...' : 'Gửi Báo Cáo Về BGH'}</span>
                 </button>
               </>
             )}

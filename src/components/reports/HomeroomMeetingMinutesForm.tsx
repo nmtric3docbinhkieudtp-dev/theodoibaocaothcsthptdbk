@@ -17,7 +17,8 @@ import {
   AlertCircle,
   Phone,
   BookOpen,
-  Info
+  Info,
+  Layers
 } from 'lucide-react';
 import { 
   HomeroomMeetingMinutesData, 
@@ -70,8 +71,8 @@ export const HomeroomMeetingMinutesForm: React.FC<HomeroomMeetingMinutesFormProp
   initialData,
   onChange
 }) => {
-  // Active sub-tab
-  const [activeSection, setActiveSection] = useState<'info' | 'talents' | 'cadres' | 'absent' | 'preview'>('info');
+  // Active sub-tab ('all' renders all sections continuously in 1 scrollable page)
+  const [activeSection, setActiveSection] = useState<'all' | 'info' | 'talents' | 'cadres' | 'absent' | 'preview'>('all');
 
   // Form State
   const [formData, setFormData] = useState<HomeroomMeetingMinutesData>(() => {
@@ -337,6 +338,20 @@ export const HomeroomMeetingMinutesForm: React.FC<HomeroomMeetingMinutesFormProp
       <div className="flex border-b border-slate-200 overflow-x-auto gap-1 text-xs">
         <button
           type="button"
+          onClick={() => setActiveSection('all')}
+          className={`px-3 py-2 font-bold border-b-2 whitespace-nowrap transition cursor-pointer flex items-center gap-1.5 ${
+            activeSection === 'all'
+              ? 'border-emerald-600 text-emerald-800 bg-emerald-50'
+              : 'border-transparent text-slate-600 hover:text-slate-900'
+          }`}
+          title="Hiển thị toàn bộ các mục trên 1 trang cuộn từ trên xuống dưới"
+        >
+          <Layers className="w-4 h-4 text-emerald-600" />
+          <span>Toàn Bộ Biểu Mẫu (1 Trang Cuộn)</span>
+        </button>
+
+        <button
+          type="button"
           onClick={() => setActiveSection('info')}
           className={`px-3 py-2 font-bold border-b-2 whitespace-nowrap transition cursor-pointer flex items-center gap-1.5 ${
             activeSection === 'info'
@@ -345,7 +360,7 @@ export const HomeroomMeetingMinutesForm: React.FC<HomeroomMeetingMinutesFormProp
           }`}
         >
           <Clock className="w-4 h-4 text-emerald-600" />
-          <span>I. Thông Tin Buổi Tập Trung</span>
+          <span>I. Thông Tin Chung</span>
         </button>
 
         <button
@@ -358,7 +373,7 @@ export const HomeroomMeetingMinutesForm: React.FC<HomeroomMeetingMinutesFormProp
           }`}
         >
           <Trophy className="w-4 h-4 text-amber-600" />
-          <span>II. Năng Khiếu & Thành Tích ({formData.talents.filter(t => t.studentName).length})</span>
+          <span>II. Năng Khiếu ({formData.talents.filter(t => t.studentName).length})</span>
         </button>
 
         <button
@@ -371,7 +386,7 @@ export const HomeroomMeetingMinutesForm: React.FC<HomeroomMeetingMinutesFormProp
           }`}
         >
           <UserCheck className="w-4 h-4 text-blue-600" />
-          <span>III. Ban Cán Sự Lớp ({formData.cadres.filter(c => c.studentName).length})</span>
+          <span>III. Ban Cán Sự ({formData.cadres.filter(c => c.studentName).length})</span>
         </button>
 
         <button
@@ -384,7 +399,7 @@ export const HomeroomMeetingMinutesForm: React.FC<HomeroomMeetingMinutesFormProp
           }`}
         >
           <UserX className="w-4 h-4 text-rose-600" />
-          <span>IV. DS Học Sinh Vắng ({formData.absentStudents.length})</span>
+          <span>IV. DS Vắng ({formData.absentStudents.length})</span>
           {formData.absentStudents.length > 0 && (
             <span className="px-1.5 py-0.2 rounded-full bg-rose-600 text-white text-[10px] font-bold">
               {formData.absentStudents.length}
@@ -402,12 +417,12 @@ export const HomeroomMeetingMinutesForm: React.FC<HomeroomMeetingMinutesFormProp
           }`}
         >
           <BookOpen className="w-4 h-4 text-slate-600" />
-          <span>Xem Trước Biên Bản</span>
+          <span>Xem Trước Bản In</span>
         </button>
       </div>
 
       {/* SECTION I: THÔNG TIN BUỔI TẬP TRUNG */}
-      {activeSection === 'info' && (
+      {(activeSection === 'all' || activeSection === 'info') && (
         <div className="p-4 bg-white border border-slate-200 rounded-2xl space-y-4 shadow-2xs">
           <div className="border-b border-slate-100 pb-2 flex items-center justify-between">
             <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
@@ -581,7 +596,7 @@ export const HomeroomMeetingMinutesForm: React.FC<HomeroomMeetingMinutesFormProp
       )}
 
       {/* SECTION II: NĂNG KHIẾU & THÀNH TÍCH */}
-      {activeSection === 'talents' && (
+      {(activeSection === 'all' || activeSection === 'talents') && (
         <div className="p-4 bg-white border border-slate-200 rounded-2xl space-y-3 shadow-2xs">
           <div className="flex items-center justify-between border-b border-slate-100 pb-2">
             <div>
@@ -666,7 +681,7 @@ export const HomeroomMeetingMinutesForm: React.FC<HomeroomMeetingMinutesFormProp
       )}
 
       {/* SECTION III: BAN CÁN SỰ LỚP */}
-      {activeSection === 'cadres' && (
+      {(activeSection === 'all' || activeSection === 'cadres') && (
         <div className="p-4 bg-white border border-slate-200 rounded-2xl space-y-3 shadow-2xs">
           <div className="flex items-center justify-between border-b border-slate-100 pb-2">
             <div>
@@ -776,7 +791,7 @@ export const HomeroomMeetingMinutesForm: React.FC<HomeroomMeetingMinutesFormProp
       )}
 
       {/* SECTION IV: DANH SÁCH HỌC SINH VẮNG */}
-      {activeSection === 'absent' && (
+      {(activeSection === 'all' || activeSection === 'absent') && (
         <div className="p-4 bg-white border border-slate-200 rounded-2xl space-y-3 shadow-2xs">
           <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-2">
             <div>

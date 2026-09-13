@@ -26,7 +26,11 @@ import {
   Check,
   RotateCcw,
   Building2,
-  MapPin
+  MapPin,
+  HelpCircle,
+  Lightbulb,
+  Copy,
+  Edit3
 } from 'lucide-react';
 import { 
   ReportPeriod, 
@@ -138,11 +142,14 @@ export const CreatePeriodModal: React.FC<CreatePeriodModalProps> = ({
   // Deadline & Time Setting (Ấn định thời gian)
   const [deadline, setDeadline] = useState('');
 
-  // Form template from file upload
+  // Form template from file upload or paste text
   const [importedTemplate, setImportedTemplate] = useState<PeriodFormTemplate | null>(null);
   const [isParsingFile, setIsParsingFile] = useState(false);
   const [parseFileName, setParseFileName] = useState<string | null>(null);
   const [previewFormOpen, setPreviewFormOpen] = useState(false);
+  const [templateInputMode, setTemplateInputMode] = useState<'upload' | 'paste'>('upload');
+  const [pasteText, setPasteText] = useState('');
+  const [showTemplateGuide, setShowTemplateGuide] = useState(false);
 
   // Helper for quick deadline presets
   const applyDeadlinePreset = (preset: 'today_17' | 'today_23' | 'sunday_23' | 'plus_3' | 'plus_7' | 'plus_15' | 'end_month') => {
@@ -274,6 +281,64 @@ export const CreatePeriodModal: React.FC<CreatePeriodModalProps> = ({
       setIsParsingFile(false);
       e.target.value = '';
     }
+  };
+
+  // Parse text pasted or typed directly by user
+  const handleParsePasteText = () => {
+    if (!pasteText.trim()) {
+      alert('Vui lòng nhập hoặc dán nội dung văn bản báo cáo!');
+      return;
+    }
+
+    try {
+      const parsed: ParsedTemplateResult = parseFormContent(pasteText, 'bieu_mau_soan_thao.txt');
+
+      if (!title.trim() && parsed.title) {
+        setTitle(parsed.title);
+      }
+
+      if (!description.trim()) {
+        setDescription(`Yêu cầu nộp báo cáo theo mẫu trực tuyến gồm ${parsed.fields.length} mục thông tin và ${parsed.tables.length} bảng số liệu. Thầy/Cô điền trực tiếp từ trên xuống dưới.`);
+      }
+
+      if (parsed.recommendedAudience && targetAudience === 'all') {
+        setTargetAudience(parsed.recommendedAudience);
+      }
+
+      setImportedTemplate({
+        fields: parsed.fields,
+        tables: parsed.tables,
+        defaultTemplateContent: parsed.fullRawText
+      });
+
+      setPreviewFormOpen(true);
+    } catch (err: any) {
+      console.error('Parse paste text error:', err);
+      alert('Lỗi bóc tách nội dung: ' + err.message);
+    }
+  };
+
+  // Preset sample 1: Only basic questions, NO table, NO recommendations
+  const handleLoadSampleBasic = () => {
+    const sample = `BÁO CÁO THÔNG TIN CƠ BẢN ĐẦU NĂM
+1. Tổng số học sinh hiện diện:
+2. Số lượng học sinh vắng có phép:
+3. Số lượng học sinh vắng không phép:
+4. Tình hình nền nếp và trật tự chung của lớp:
+5. Các khoản thu BHYT đã vận động được:`;
+    setPasteText(sample);
+  };
+
+  // Preset sample 2: With statistics table
+  const handleLoadSampleWithTable = () => {
+    const sample = `BÁO CÁO THEO DÕI HỌC SINH ĐẦU NĂM HỌC
+1. Sĩ số học sinh theo danh sách:
+2. Số lượng học sinh đã đến trường:
+
+Bảng danh sách học sinh chưa ra lớp
+| STT | Họ và tên học sinh | Nơi ở hiện nay | SĐT Phụ huynh | Lý do chưa ra lớp |
+| 1 | | | | |`;
+    setPasteText(sample);
   };
 
   // Calculate remaining or late duration preview
@@ -420,35 +485,198 @@ export const CreatePeriodModal: React.FC<CreatePeriodModalProps> = ({
           />
         </div>
 
-        {/* 2. SMART FILE UPLOAD TO AUTO-CREATE FORM */}
-        <div className="p-4 rounded-2xl bg-slate-50 border-2 border-dashed border-emerald-300/80 hover:border-emerald-500 transition space-y-3">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+        {/* 2. SMART FILE UPLOAD & DIRECT PASTE TO AUTO-CREATE FORM */}
+        <div className="p-4 rounded-2xl bg-slate-50 border-2 border-dashed border-emerald-300/80 hover:border-emerald-500 transition space-y-3.5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200 pb-2.5">
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-xs">
                 <UploadCloud className="w-4 h-4" />
               </div>
               <div>
-                <div className="text-xs font-bold text-slate-900">
-                  Tự Động Tạo Form Trực Tuyến Từ Tệp Mẫu (.docx / .md / .txt)
+                <div className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                  <span>Tự Động Tạo Form Trực Tuyến Từ Nội Dung Mẫu</span>
                 </div>
                 <div className="text-[11px] text-slate-500">
-                  Hệ thống tự động bóc tách các trường câu hỏi và các bảng số liệu để giáo viên điền
+                  Tự động chuyển đổi văn bản câu hỏi và bảng số liệu thành form chuẩn cho giáo viên điền
                 </div>
               </div>
             </div>
 
-            <label className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition shadow-xs cursor-pointer shrink-0 active:scale-98">
-              <UploadCloud className="w-3.5 h-3.5" />
-              <span>{isParsingFile ? 'Đang đọc tệp...' : 'Tải Lên Tệp Mẫu (.docx / .md)'}</span>
-              <input
-                type="file"
-                accept=".docx,.doc,.txt,.md,.json"
-                onChange={handleFileUpload}
-                disabled={isParsingFile}
-                className="hidden"
-              />
-            </label>
+            {/* Toggle Guide Button */}
+            <button
+              type="button"
+              onClick={() => setShowTemplateGuide(!showTemplateGuide)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 text-xs font-bold transition cursor-pointer self-start sm:self-auto"
+            >
+              <Lightbulb className="w-3.5 h-3.5 text-amber-600" />
+              <span>{showTemplateGuide ? 'Đóng Hướng Dẫn' : '💡 Nguyên Lý & Cách Thiết Kế'}</span>
+            </button>
           </div>
+
+          {/* GUIDE PANEL (CLEAR EXPLANATION FOR THE USER) */}
+          {showTemplateGuide && (
+            <div className="p-3.5 rounded-xl bg-amber-50/90 border border-amber-300 text-amber-950 space-y-2.5 text-xs">
+              <div className="font-bold flex items-center gap-1.5 text-amber-900 text-sm">
+                <HelpCircle className="w-4 h-4 text-amber-700" />
+                <span>Nguyên Lý Bóc Tách Tự Động & Cách Tạo Biểu Mẫu Theo Ý Muốn</span>
+              </div>
+
+              <div className="space-y-2 leading-relaxed">
+                <div className="p-2.5 bg-white/90 rounded-lg border border-amber-200 space-y-1">
+                  <div className="font-bold text-slate-900">
+                    1️⃣ Nếu Thầy/Cô CHỈ CẦN THÔNG TIN CƠ BẢN (Không cần bảng biểu, không cần kiến nghị):
+                  </div>
+                  <p className="text-slate-700 text-[11px]">
+                    👉 Chỉ cần viết các câu hỏi theo số thứ tự (ví dụ: <code className="bg-amber-100 px-1 py-0.5 rounded text-slate-900">1. Số lượng học sinh vắng:</code>) và <strong>KHÔNG chèn bảng, KHÔNG gõ mục kiến nghị</strong>.
+                    Hệ thống sẽ chỉ tạo đúng các ô câu hỏi đó. Biểu mẫu của giáo viên khi mở ra sẽ hiển thị <strong>duy nhất 1 trang cuộn từ trên xuống dưới</strong>, điền xong bấm <strong>"Gửi Báo Cáo"</strong> là hoàn tất!
+                  </p>
+                </div>
+
+                <div className="p-2.5 bg-white/90 rounded-lg border border-amber-200 space-y-1">
+                  <div className="font-bold text-slate-900">
+                    2️⃣ Quy ước nhận diện câu hỏi (Tự động chọn kiểu ô nhập):
+                  </div>
+                  <ul className="list-disc pl-4 text-[11px] text-slate-700 space-y-0.5">
+                    <li>Dòng có chữ <em>"số lượng", "sĩ số", "tổng số", "kinh phí"</em> ➔ Biến thành <strong>ô nhập số</strong>.</li>
+                    <li>Dòng có chữ <em>"nội dung", "tình hình", "đánh giá", "chi tiết"</em> ➔ Biến thành <strong>ô nhập văn bản nhiều dòng</strong>.</li>
+                    <li>Các dòng câu hỏi ngắn thông thường ➔ Biến thành <strong>ô nhập văn bản 1 dòng</strong>.</li>
+                  </ul>
+                </div>
+
+                <div className="p-2.5 bg-white/90 rounded-lg border border-amber-200 space-y-1">
+                  <div className="font-bold text-slate-900">
+                    3️⃣ Tạo bảng số liệu (Nếu cần):
+                  </div>
+                  <p className="text-slate-700 text-[11px]">
+                    Chèn bảng trong file Word, hoặc khi dán chữ thì gõ các cột cách nhau bằng dấu gạch đứng <code className="bg-amber-100 px-1 py-0.5 rounded text-slate-900">| Cột 1 | Cột 2 | Cột 3 |</code>.
+                  </p>
+                </div>
+              </div>
+
+              {/* Sample loader buttons */}
+              <div className="pt-2 border-t border-amber-200 flex flex-wrap items-center gap-2">
+                <span className="text-[11px] font-bold text-amber-900">Bấm thử mẫu ngay:</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setTemplateInputMode('paste');
+                    handleLoadSampleBasic();
+                  }}
+                  className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] transition cursor-pointer flex items-center gap-1 shadow-2xs"
+                >
+                  <Copy className="w-3 h-3" />
+                  <span>Nạp Mẫu Báo Cáo Cơ Bản (Không bảng)</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setTemplateInputMode('paste');
+                    handleLoadSampleWithTable();
+                  }}
+                  className="px-2.5 py-1 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold text-[11px] transition cursor-pointer flex items-center gap-1 shadow-2xs"
+                >
+                  <Copy className="w-3 h-3" />
+                  <span>Nạp Mẫu Có Bảng Biểu Thống Kê</span>
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Tab Switcher: Upload File vs Paste Text */}
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setTemplateInputMode('upload')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
+                templateInputMode === 'upload'
+                  ? 'bg-emerald-600 text-white shadow-2xs'
+                  : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-100'
+              }`}
+            >
+              <UploadCloud className="w-3.5 h-3.5" />
+              <span>📁 Tải Lên Tệp (.docx / .doc / .md / .txt)</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setTemplateInputMode('paste')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
+                templateInputMode === 'paste'
+                  ? 'bg-emerald-600 text-white shadow-2xs'
+                  : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-100'
+              }`}
+            >
+              <Edit3 className="w-3.5 h-3.5" />
+              <span>✍️ Dán Trực Tiếp Nội Dung Văn Bản</span>
+            </button>
+          </div>
+
+          {/* Mode 1: File Upload */}
+          {templateInputMode === 'upload' && (
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-3 bg-white rounded-xl border border-slate-200">
+              <div className="text-xs text-slate-600">
+                Chọn tệp văn bản từ máy tính để hệ thống tự động bóc tách:
+              </div>
+              <label className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition shadow-xs cursor-pointer shrink-0 active:scale-98">
+                <UploadCloud className="w-4 h-4" />
+                <span>{isParsingFile ? 'Đang đọc tệp...' : (parseFileName ? `Đã chọn: ${parseFileName}` : 'Chọn Tệp (.docx / .md)')}</span>
+                <input
+                  type="file"
+                  accept=".docx,.doc,.txt,.md,.json"
+                  onChange={handleFileUpload}
+                  disabled={isParsingFile}
+                  className="hidden"
+                />
+              </label>
+            </div>
+          )}
+
+          {/* Mode 2: Direct Paste Text */}
+          {templateInputMode === 'paste' && (
+            <div className="space-y-2 p-3 bg-white rounded-xl border border-slate-200">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-slate-800">
+                  Dán hoặc gõ nội dung câu hỏi yêu cầu báo cáo tại đây:
+                </label>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={handleLoadSampleBasic}
+                    className="text-[11px] text-emerald-700 hover:text-emerald-900 font-bold underline cursor-pointer"
+                  >
+                    Mẫu cơ bản
+                  </button>
+                  <span className="text-slate-300">•</span>
+                  <button
+                    type="button"
+                    onClick={handleLoadSampleWithTable}
+                    className="text-[11px] text-blue-700 hover:text-blue-900 font-bold underline cursor-pointer"
+                  >
+                    Mẫu có bảng
+                  </button>
+                </div>
+              </div>
+
+              <textarea
+                rows={5}
+                value={pasteText}
+                onChange={(e) => setPasteText(e.target.value)}
+                placeholder="Ví dụ:&#10;1. Tổng số học sinh hiện diện:&#10;2. Số học sinh vắng trong tuần:&#10;3. Tình hình nền nếp và kỷ luật chung:&#10;4. Các lưu ý quan trọng:"
+                className="w-full text-xs p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 font-mono text-slate-900 bg-slate-50/50"
+              />
+
+              <div className="flex items-center justify-end">
+                <button
+                  type="button"
+                  onClick={handleParsePasteText}
+                  className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-2xs cursor-pointer"
+                >
+                  <Sparkles className="w-4 h-4" />
+                  <span>Bóc Tách Thành Biểu Mẫu Trực Tuyến Ngay</span>
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* If a template is already loaded */}
           {importedTemplate && (
@@ -457,7 +685,7 @@ export const CreatePeriodModal: React.FC<CreatePeriodModalProps> = ({
                 <div className="flex items-center gap-2 text-xs text-emerald-900 font-bold">
                   <CheckCircle2 className="w-4 h-4 text-emerald-600" />
                   <span>
-                    Đã bóc tách thành công: <strong>{importedTemplate.fields?.length || 0} trường thông tin</strong> và <strong>{importedTemplate.tables?.length || 0} bảng dữ liệu</strong>
+                    Đã bóc tách thành công: <strong>{importedTemplate.fields?.length || 0} câu hỏi / trường nhập liệu</strong> {importedTemplate.tables?.length ? `và ${importedTemplate.tables.length} bảng dữ liệu` : '(Không có bảng - rất gọn gàng)'}
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
@@ -474,6 +702,7 @@ export const CreatePeriodModal: React.FC<CreatePeriodModalProps> = ({
                     onClick={() => {
                       setImportedTemplate(null);
                       setParseFileName(null);
+                      setPasteText('');
                     }}
                     className="text-[11px] font-bold text-rose-600 hover:text-rose-800 underline cursor-pointer ml-2"
                   >
@@ -1134,38 +1363,7 @@ export const CreatePeriodModal: React.FC<CreatePeriodModalProps> = ({
           )}
         </div>
 
-        {/* 5. Description & Instructions */}
-        <div className="space-y-3">
-          <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">
-              Mô Tả & Hướng Dẫn Thực Hiện Của Ban Giám Hiệu
-            </label>
-            <textarea
-              rows={2}
-              placeholder="Nêu rõ yêu cầu nội dung cần báo cáo, các quy định lưu ý cho Thầy/Cô khi điền..."
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              className="w-full text-xs p-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-emerald-500"
-            />
-          </div>
-
-          {/* Optional Starter Outline / Template Content for Teachers */}
-          <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center justify-between">
-              <span>Khung Sườn / Mẫu Soạn Sẵn Gợi Ý Cho Giáo Viên (Tùy chọn)</span>
-              <span className="text-[10px] text-slate-400 font-normal">Sẽ tự động hiển thị trong khung soạn thảo khi giáo viên mở nộp</span>
-            </label>
-            <textarea
-              rows={3}
-              placeholder="Ví dụ:&#10;1. Thuận lợi, khó khăn trong tuần/tháng:&#10;2. Danh sách học sinh cần quan tâm:&#10;3. Kiến nghị, đề xuất với Ban Giám Hiệu:"
-              value={defaultTemplateContent}
-              onChange={(e) => setDefaultTemplateContent(e.target.value)}
-              className="w-full text-xs p-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-emerald-500 font-mono text-[11px]"
-            />
-          </div>
-        </div>
-
-        {/* 6. Academic Year & Semester */}
+        {/* 5. Academic Year & Semester */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <label className="block text-xs font-bold text-slate-700 mb-1">
