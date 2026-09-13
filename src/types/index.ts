@@ -69,7 +69,10 @@ export interface ReportAttachment {
 
 export type TargetAudienceType = 
   | 'all'                 // Tất cả 120 cán bộ, GV, NV
-  | 'homeroom_teachers'   // Chỉ 53 Giáo viên chủ nhiệm (GVCN)
+  | 'homeroom_teachers'   // Tất cả 53 Giáo viên chủ nhiệm (cả 3 điểm trường)
+  | 'gvcn_diem_chinh'     // GVCN Điểm chính (14 lớp THPT: 10CB, 11CB, 12CB)
+  | 'gvcn_doc_binh_kieu'  // GVCN Điểm Đốc Binh Kiều (24 lớp THCS: K6 - K9)
+  | 'gvcn_tan_kieu'       // GVCN Điểm Tân Kiều (15 lớp THCS: K6 - K9)
   | 'dept_heads_only'     // Chỉ 19 Tổ trưởng & Tổ phó chuyên môn
   | 'teachers_only'       // Chỉ Giáo viên bộ môn (không tính NV VP)
   | 'staff_only'          // Chỉ Nhân viên văn phòng

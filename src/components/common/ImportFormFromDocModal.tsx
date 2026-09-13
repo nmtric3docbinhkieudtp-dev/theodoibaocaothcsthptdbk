@@ -330,7 +330,10 @@ export const ImportFormFromDocModal: React.FC<ImportFormFromDocModalProps> = ({
                       className="w-full text-xs px-2.5 py-1.5 rounded-xl border border-slate-300 bg-white font-semibold"
                     >
                       <option value="all">Toàn trường (120 Cán bộ - GV - NV)</option>
-                      <option value="homeroom_teachers">Chỉ 53 GV Chủ Nhiệm</option>
+                      <option value="homeroom_teachers">Chỉ 53 GV Chủ Nhiệm (Cả 3 điểm)</option>
+                      <option value="gvcn_diem_chinh">GVCN Điểm chính (14 lớp THPT)</option>
+                      <option value="gvcn_doc_binh_kieu">GVCN Điểm Đốc Binh Kiều (24 lớp THCS)</option>
+                      <option value="gvcn_tan_kieu">GVCN Điểm Tân Kiều (15 lớp THCS)</option>
                       <option value="dept_heads_only">Chỉ Tổ trưởng & Tổ phó</option>
                       <option value="teachers_only">Giáo viên giảng dạy</option>
                     </select>

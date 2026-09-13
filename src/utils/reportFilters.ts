@@ -31,6 +31,21 @@ export function isUserEligibleForPeriod(user: User, period: ReportPeriod): boole
     return Boolean(user.isHomeroomTeacher);
   }
 
+  // 1a. GVCN Điểm chính (14 lớp THPT: 10CB1-10CB5, 11CB1-11CB4, 12CB1-12CB5)
+  if (period.targetAudience === 'gvcn_diem_chinh') {
+    return Boolean(user.isHomeroomTeacher && (user.homeroomCampus === 'THPT' || user.homeroomCampus === 'DiemChinh'));
+  }
+
+  // 1b. GVCN Điểm Đốc Binh Kiều (24 lớp THCS: 6A1-6A6, 7A1-7A6, 8A1-8A6, 9A1-9A6)
+  if (period.targetAudience === 'gvcn_doc_binh_kieu') {
+    return Boolean(user.isHomeroomTeacher && (user.homeroomCampus === 'DBK' || user.homeroomCampus === 'DocBinhKieu'));
+  }
+
+  // 1c. GVCN Điểm Tân Kiều (15 lớp THCS: 6A7-6A10, 7A7-7A9, 8A7-8A10, 9A7-9A10)
+  if (period.targetAudience === 'gvcn_tan_kieu') {
+    return Boolean(user.isHomeroomTeacher && (user.homeroomCampus === 'TK' || user.homeroomCampus === 'TanKieu'));
+  }
+
   // 2. Department heads only (Chỉ Tổ trưởng & Tổ phó chuyên môn - 19 Thầy/Cô)
   if (period.targetAudience === 'dept_heads_only') {
     if (user.departmentId === 'van_phong' && (!period.targetDepartmentIds || !period.targetDepartmentIds.includes('van_phong'))) {
@@ -93,7 +108,13 @@ export function getRequiredUsersForPeriod(period: ReportPeriod, allUsers: User[]
 export function getAudienceLabel(audience?: TargetAudienceType, depts?: string[], targetUserIds?: string[]): string {
   switch (audience) {
     case 'homeroom_teachers':
-      return 'Chỉ 53 Giáo viên chủ nhiệm (GVCN)';
+      return 'Chỉ 53 Giáo viên chủ nhiệm (Cả 3 điểm trường)';
+    case 'gvcn_diem_chinh':
+      return 'GVCN Điểm chính (14 lớp THPT)';
+    case 'gvcn_doc_binh_kieu':
+      return 'GVCN Điểm Đốc Binh Kiều (24 lớp THCS)';
+    case 'gvcn_tan_kieu':
+      return 'GVCN Điểm Tân Kiều (15 lớp THCS)';
     case 'dept_heads_only':
       return 'Chỉ Tổ trưởng & Tổ phó chuyên môn (19 Thầy/Cô)';
     case 'teachers_only':

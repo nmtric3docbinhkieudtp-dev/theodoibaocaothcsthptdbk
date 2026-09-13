@@ -24,7 +24,9 @@ import {
   Square,
   UserPlus,
   Check,
-  RotateCcw
+  RotateCcw,
+  Building2,
+  MapPin
 } from 'lucide-react';
 import { 
   ReportPeriod, 
@@ -34,6 +36,7 @@ import {
   CustomFormField, 
   CustomDynamicTable 
 } from '../../types';
+import { HOMEROOM_ROSTER_53 } from '../../data/staffRoster';
 import { extractTextFromFile, parseFormContent, parseTemplateFile, ParsedTemplateResult } from '../../utils/formFileParser';
 
 interface CreatePeriodModalProps {
@@ -69,6 +72,14 @@ export const CreatePeriodModal: React.FC<CreatePeriodModalProps> = ({
   const [userSearchQuery, setUserSearchQuery] = useState('');
   const [userCampusFilter, setUserCampusFilter] = useState<'all' | 'THPT' | 'THCS_DBK' | 'THCS_TK'>('all');
   const [userDeptFilter, setUserDeptFilter] = useState<string>('all');
+
+  // Campus roster preview state
+  const [showCampusRoster, setShowCampusRoster] = useState<boolean>(false);
+
+  // Campus specific rosters
+  const diemChinhRoster = useMemo(() => HOMEROOM_ROSTER_53.filter(h => h.campus === 'THPT'), []);
+  const dbkRoster = useMemo(() => HOMEROOM_ROSTER_53.filter(h => h.campus === 'DBK'), []);
+  const tanKieuRoster = useMemo(() => HOMEROOM_ROSTER_53.filter(h => h.campus === 'TK'), []);
 
   // Filtered staff list for specific_users picker
   const selectableStaff = useMemo(() => {
@@ -642,85 +653,265 @@ export const CreatePeriodModal: React.FC<CreatePeriodModalProps> = ({
             </span>
           </label>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            <button
-              type="button"
-              onClick={() => setTargetAudience('homeroom_teachers')}
-              className={`p-3 rounded-xl border text-left flex items-start gap-2.5 transition cursor-pointer ${
-                targetAudience === 'homeroom_teachers'
-                  ? 'bg-amber-500 text-white border-amber-600 shadow-xs'
-                  : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
-              }`}
-            >
-              <GraduationCap className={`w-5 h-5 shrink-0 mt-0.5 ${targetAudience === 'homeroom_teachers' ? 'text-white' : 'text-amber-600'}`} />
-              <div>
-                <div className="font-bold text-xs">Chỉ Giáo Viên Chủ Nhiệm (53 GVCN)</div>
-                <div className={`text-[11px] ${targetAudience === 'homeroom_teachers' ? 'text-amber-100' : 'text-slate-500'}`}>
-                  53 lớp (14 THPT + 24 ĐBK + 15 Tân Kiều). Giáo viên bộ môn khác không thấy.
-                </div>
+          <div className="space-y-3">
+            {/* GVCN Group Selection */}
+            <div>
+              <div className="text-[11px] font-bold text-amber-900 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                <GraduationCap className="w-4 h-4 text-amber-600" />
+                <span>Nhóm Giáo Viên Chủ Nhiệm (Theo điểm trường hoặc Toàn trường)</span>
               </div>
-            </button>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+                {/* 1. Tất cả 53 GVCN */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setTargetAudience('homeroom_teachers');
+                    setShowCampusRoster(false);
+                  }}
+                  className={`p-2.5 rounded-xl border text-left flex flex-col justify-between transition cursor-pointer ${
+                    targetAudience === 'homeroom_teachers'
+                      ? 'bg-amber-500 text-white border-amber-600 shadow-xs ring-2 ring-amber-300'
+                      : 'bg-white text-slate-700 border-slate-200 hover:bg-amber-50/50'
+                  }`}
+                >
+                  <div className="flex items-start gap-2">
+                    <GraduationCap className={`w-4 h-4 shrink-0 mt-0.5 ${targetAudience === 'homeroom_teachers' ? 'text-white' : 'text-amber-600'}`} />
+                    <div className="min-w-0">
+                      <div className="font-bold text-xs leading-snug">Tất Cả 53 GVCN</div>
+                      <div className={`text-[10px] mt-0.5 ${targetAudience === 'homeroom_teachers' ? 'text-amber-100' : 'text-slate-500'}`}>
+                        Cả 3 điểm trường (53 lớp)
+                      </div>
+                    </div>
+                  </div>
+                  <div className={`text-[10px] font-semibold mt-2 pt-1 border-t ${targetAudience === 'homeroom_teachers' ? 'border-amber-400 text-amber-100' : 'border-slate-100 text-amber-700'}`}>
+                    14 THPT + 24 ĐBK + 15 TK
+                  </div>
+                </button>
 
-            <button
-              type="button"
-              onClick={() => setTargetAudience('all')}
-              className={`p-3 rounded-xl border text-left flex items-start gap-2.5 transition cursor-pointer ${
-                targetAudience === 'all'
-                  ? 'bg-emerald-600 text-white border-emerald-700 shadow-xs'
-                  : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
-              }`}
-            >
-              <School className={`w-5 h-5 shrink-0 mt-0.5 ${targetAudience === 'all' ? 'text-white' : 'text-emerald-600'}`} />
-              <div>
-                <div className="font-bold text-xs">Toàn Trường (120 Cán Bộ - GV - NV)</div>
-                <div className={`text-[11px] ${targetAudience === 'all' ? 'text-emerald-100' : 'text-slate-500'}`}>
-                  Tất cả cán bộ giáo viên và nhân viên thuộc 7 tổ trong trường.
-                </div>
+                {/* 2. GVCN Điểm chính */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setTargetAudience('gvcn_diem_chinh');
+                    setShowCampusRoster(false);
+                  }}
+                  className={`p-2.5 rounded-xl border text-left flex flex-col justify-between transition cursor-pointer ${
+                    targetAudience === 'gvcn_diem_chinh'
+                      ? 'bg-emerald-600 text-white border-emerald-700 shadow-xs ring-2 ring-emerald-300'
+                      : 'bg-white text-slate-700 border-slate-200 hover:bg-emerald-50/50'
+                  }`}
+                >
+                  <div className="flex items-start gap-2">
+                    <Building2 className={`w-4 h-4 shrink-0 mt-0.5 ${targetAudience === 'gvcn_diem_chinh' ? 'text-white' : 'text-emerald-600'}`} />
+                    <div className="min-w-0">
+                      <div className="font-bold text-xs leading-snug">GVCN Điểm chính</div>
+                      <div className={`text-[10px] mt-0.5 ${targetAudience === 'gvcn_diem_chinh' ? 'text-emerald-100' : 'text-slate-500'}`}>
+                        14 lớp THPT (Khối 10, 11, 12)
+                      </div>
+                    </div>
+                  </div>
+                  <div className={`text-[10px] font-semibold mt-2 pt-1 border-t ${targetAudience === 'gvcn_diem_chinh' ? 'border-emerald-500 text-emerald-100' : 'border-slate-100 text-emerald-700'}`}>
+                    14 Thầy/Cô • 430 Học sinh
+                  </div>
+                </button>
+
+                {/* 3. GVCN Điểm Đốc Binh Kiều */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setTargetAudience('gvcn_doc_binh_kieu');
+                    setShowCampusRoster(false);
+                  }}
+                  className={`p-2.5 rounded-xl border text-left flex flex-col justify-between transition cursor-pointer ${
+                    targetAudience === 'gvcn_doc_binh_kieu'
+                      ? 'bg-sky-600 text-white border-sky-700 shadow-xs ring-2 ring-sky-300'
+                      : 'bg-white text-slate-700 border-slate-200 hover:bg-sky-50/50'
+                  }`}
+                >
+                  <div className="flex items-start gap-2">
+                    <MapPin className={`w-4 h-4 shrink-0 mt-0.5 ${targetAudience === 'gvcn_doc_binh_kieu' ? 'text-white' : 'text-sky-600'}`} />
+                    <div className="min-w-0">
+                      <div className="font-bold text-xs leading-snug">GVCN Đốc Binh Kiều</div>
+                      <div className={`text-[10px] mt-0.5 ${targetAudience === 'gvcn_doc_binh_kieu' ? 'text-sky-100' : 'text-slate-500'}`}>
+                        24 lớp THCS (Khối 6, 7, 8, 9)
+                      </div>
+                    </div>
+                  </div>
+                  <div className={`text-[10px] font-semibold mt-2 pt-1 border-t ${targetAudience === 'gvcn_doc_binh_kieu' ? 'border-sky-500 text-sky-100' : 'border-slate-100 text-sky-700'}`}>
+                    24 Thầy/Cô • 974 Học sinh
+                  </div>
+                </button>
+
+                {/* 4. GVCN Điểm Tân Kiều */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setTargetAudience('gvcn_tan_kieu');
+                    setShowCampusRoster(false);
+                  }}
+                  className={`p-2.5 rounded-xl border text-left flex flex-col justify-between transition cursor-pointer ${
+                    targetAudience === 'gvcn_tan_kieu'
+                      ? 'bg-teal-600 text-white border-teal-700 shadow-xs ring-2 ring-teal-300'
+                      : 'bg-white text-slate-700 border-slate-200 hover:bg-teal-50/50'
+                  }`}
+                >
+                  <div className="flex items-start gap-2">
+                    <MapPin className={`w-4 h-4 shrink-0 mt-0.5 ${targetAudience === 'gvcn_tan_kieu' ? 'text-white' : 'text-teal-600'}`} />
+                    <div className="min-w-0">
+                      <div className="font-bold text-xs leading-snug">GVCN Điểm Tân Kiều</div>
+                      <div className={`text-[10px] mt-0.5 ${targetAudience === 'gvcn_tan_kieu' ? 'text-teal-100' : 'text-slate-500'}`}>
+                        15 lớp THCS (Khối 6, 7, 8, 9)
+                      </div>
+                    </div>
+                  </div>
+                  <div className={`text-[10px] font-semibold mt-2 pt-1 border-t ${targetAudience === 'gvcn_tan_kieu' ? 'border-teal-500 text-teal-100' : 'border-slate-100 text-teal-700'}`}>
+                    15 Thầy/Cô • 593 Học sinh
+                  </div>
+                </button>
               </div>
-            </button>
 
-            <button
-              type="button"
-              onClick={() => setTargetAudience('dept_heads_only')}
-              className={`p-2.5 rounded-xl border text-left flex items-start gap-2 transition cursor-pointer ${
-                targetAudience === 'dept_heads_only'
-                  ? 'bg-blue-600 text-white border-blue-700 shadow-xs'
-                  : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
-              }`}
-            >
-              <Users className={`w-4 h-4 shrink-0 mt-0.5 ${targetAudience === 'dept_heads_only' ? 'text-white' : 'text-blue-600'}`} />
-              <div>
-                <div className="font-bold text-xs">Chỉ Tổ Trưởng & Tổ Phó Chuyên Môn (19 Thầy/Cô)</div>
-                <div className={`text-[11px] ${targetAudience === 'dept_heads_only' ? 'text-blue-100' : 'text-slate-500'}`}>
-                  Báo cáo hoạt động tổ, sinh hoạt chuyên môn, kiểm tra hồ sơ giáo án (6 tổ CM).
+              {/* Collapsible Campus Roster Viewer for Homeroom Targets */}
+              {(targetAudience === 'homeroom_teachers' || targetAudience === 'gvcn_diem_chinh' || targetAudience === 'gvcn_doc_binh_kieu' || targetAudience === 'gvcn_tan_kieu') && (
+                <div className="mt-2 p-2.5 rounded-xl bg-amber-50/50 border border-amber-200/80">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5 text-xs text-amber-900 font-semibold">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                      <span>
+                        Đã chọn:{' '}
+                        <strong>
+                          {targetAudience === 'homeroom_teachers' && 'Tất cả 53 GVCN (Cả 3 điểm trường)'}
+                          {targetAudience === 'gvcn_diem_chinh' && '14 GVCN Điểm chính (Lớp 10CB, 11CB, 12CB)'}
+                          {targetAudience === 'gvcn_doc_binh_kieu' && '24 GVCN Điểm Đốc Binh Kiều (Lớp 6A1-6, 7A1-6, 8A1-6, 9A1-6)'}
+                          {targetAudience === 'gvcn_tan_kieu' && '15 GVCN Điểm Tân Kiều (Lớp 6A7-10, 7A7-9, 8A7-10, 9A7-10)'}
+                        </strong>
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setShowCampusRoster(!showCampusRoster)}
+                      className="text-xs font-bold text-amber-700 hover:text-amber-900 underline flex items-center gap-1 cursor-pointer"
+                    >
+                      <Eye className="w-3.5 h-3.5" />
+                      {showCampusRoster ? 'Thu gọn danh sách' : 'Xem danh sách lớp & GVCN'}
+                    </button>
+                  </div>
+
+                  {/* Expanded Roster List */}
+                  {showCampusRoster && (
+                    <div className="mt-2.5 pt-2.5 border-t border-amber-200/60 max-h-56 overflow-y-auto pr-1">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1.5">
+                        {(targetAudience === 'gvcn_diem_chinh'
+                          ? diemChinhRoster
+                          : targetAudience === 'gvcn_doc_binh_kieu'
+                          ? dbkRoster
+                          : targetAudience === 'gvcn_tan_kieu'
+                          ? tanKieuRoster
+                          : HOMEROOM_ROSTER_53
+                        ).map((item) => (
+                          <div
+                            key={item.className}
+                            className="bg-white p-2 rounded-lg border border-amber-100 text-[11px] flex items-center justify-between shadow-2xs"
+                          >
+                            <div className="flex items-center gap-2 min-w-0">
+                              <span className="px-1.5 py-0.5 rounded font-black text-amber-800 bg-amber-100 text-[10px]">
+                                {item.className}
+                              </span>
+                              <span className="font-semibold text-slate-800 truncate">{item.teacherName}</span>
+                            </div>
+                            <span className="text-[10px] text-slate-400 font-medium shrink-0 ml-1">
+                              {item.studentCount} HS
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
-              </div>
-            </button>
+              )}
+            </div>
 
+            {/* Other Audience Groups Selection */}
+            <div>
+              <div className="text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                <School className="w-4 h-4 text-slate-500" />
+                <span>Các Nhóm Đối Tượng Khác</span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setTargetAudience('all');
+                    setShowCampusRoster(false);
+                  }}
+                  className={`p-2.5 rounded-xl border text-left flex items-start gap-2 transition cursor-pointer ${
+                    targetAudience === 'all'
+                      ? 'bg-emerald-600 text-white border-emerald-700 shadow-xs ring-2 ring-emerald-300'
+                      : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+                  }`}
+                >
+                  <School className={`w-4 h-4 shrink-0 mt-0.5 ${targetAudience === 'all' ? 'text-white' : 'text-emerald-600'}`} />
+                  <div>
+                    <div className="font-bold text-xs">Toàn Trường (120 Người)</div>
+                    <div className={`text-[10px] ${targetAudience === 'all' ? 'text-emerald-100' : 'text-slate-500'}`}>
+                      Tất cả cán bộ, GV, NV 7 tổ
+                    </div>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setTargetAudience('dept_heads_only');
+                    setShowCampusRoster(false);
+                  }}
+                  className={`p-2.5 rounded-xl border text-left flex items-start gap-2 transition cursor-pointer ${
+                    targetAudience === 'dept_heads_only'
+                      ? 'bg-blue-600 text-white border-blue-700 shadow-xs ring-2 ring-blue-300'
+                      : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+                  }`}
+                >
+                  <Users className={`w-4 h-4 shrink-0 mt-0.5 ${targetAudience === 'dept_heads_only' ? 'text-white' : 'text-blue-600'}`} />
+                  <div>
+                    <div className="font-bold text-xs">Tổ Trưởng & Phó (19 Người)</div>
+                    <div className={`text-[10px] ${targetAudience === 'dept_heads_only' ? 'text-blue-100' : 'text-slate-500'}`}>
+                      Chỉ lãnh đạo 6 tổ chuyên môn
+                    </div>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setTargetAudience('teachers_only');
+                    setShowCampusRoster(false);
+                  }}
+                  className={`p-2.5 rounded-xl border text-left flex items-start gap-2 transition cursor-pointer ${
+                    targetAudience === 'teachers_only'
+                      ? 'bg-purple-600 text-white border-purple-700 shadow-xs ring-2 ring-purple-300'
+                      : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+                  }`}
+                >
+                  <Users className={`w-4 h-4 shrink-0 mt-0.5 ${targetAudience === 'teachers_only' ? 'text-white' : 'text-purple-600'}`} />
+                  <div>
+                    <div className="font-bold text-xs">GV Giảng Dạy (106 GV)</div>
+                    <div className={`text-[10px] ${targetAudience === 'teachers_only' ? 'text-purple-100' : 'text-slate-500'}`}>
+                      6 tổ chuyên môn (trừ VP)
+                    </div>
+                  </div>
+                </button>
+              </div>
+            </div>
+
+            {/* Specific Individual Users Target */}
             <button
               type="button"
-              onClick={() => setTargetAudience('teachers_only')}
-              className={`p-2.5 rounded-xl border text-left flex items-start gap-2 transition cursor-pointer ${
-                targetAudience === 'teachers_only'
-                  ? 'bg-purple-600 text-white border-purple-700 shadow-xs'
-                  : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
-              }`}
-            >
-              <Users className={`w-4 h-4 shrink-0 mt-0.5 ${targetAudience === 'teachers_only' ? 'text-white' : 'text-purple-600'}`} />
-              <div>
-                <div className="font-bold text-xs">Giáo Viên Giảng Dạy (106 GV)</div>
-                <div className={`text-[11px] ${targetAudience === 'teachers_only' ? 'text-purple-100' : 'text-slate-500'}`}>
-                  6 tổ chuyên môn (không bao gồm tổ Văn phòng).
-                </div>
-              </div>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setTargetAudience('specific_users')}
-              className={`col-span-1 sm:col-span-2 p-3 rounded-xl border text-left flex items-start gap-2.5 transition cursor-pointer ${
+              onClick={() => {
+                setTargetAudience('specific_users');
+                setShowCampusRoster(false);
+              }}
+              className={`w-full p-2.5 rounded-xl border text-left flex items-start gap-2.5 transition cursor-pointer ${
                 targetAudience === 'specific_users'
-                  ? 'bg-indigo-600 text-white border-indigo-700 shadow-sm'
+                  ? 'bg-indigo-600 text-white border-indigo-700 shadow-sm ring-2 ring-indigo-300'
                   : 'bg-indigo-50/50 text-indigo-950 border-indigo-200 hover:bg-indigo-50'
               }`}
             >

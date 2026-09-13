@@ -389,7 +389,11 @@ export const ExportService = {
     fileNamePrefix = 'Bao_Cao_Tong_Hop'
   ) {
     const wb = XLSX.utils.book_new();
-    const isHomeroom = data.period?.targetAudience === 'homeroom_teachers' || (!data.period?.targetAudience && (data.periodTitle.toLowerCase().includes('chủ nhiệm') || data.periodTitle.toLowerCase().includes('53 lớp')));
+    const isHomeroom = data.period?.targetAudience === 'homeroom_teachers' ||
+      data.period?.targetAudience === 'gvcn_diem_chinh' ||
+      data.period?.targetAudience === 'gvcn_doc_binh_kieu' ||
+      data.period?.targetAudience === 'gvcn_tan_kieu' ||
+      (!data.period?.targetAudience && (data.periodTitle.toLowerCase().includes('chủ nhiệm') || data.periodTitle.toLowerCase().includes('53 lớp')));
     const isDeptHead = data.isDeptHeadAudience;
     const isSpecific = data.isSpecificUsersAudience;
 
@@ -644,7 +648,11 @@ export const ExportService = {
     const month = parts[1] || '08';
     const year = parts[2] || '2026';
 
-    const isHomeroom = data.period?.targetAudience === 'homeroom_teachers' || (!data.period?.targetAudience && (data.periodTitle.toLowerCase().includes('chủ nhiệm') || data.periodTitle.toLowerCase().includes('53 lớp')));
+    const isHomeroom = data.period?.targetAudience === 'homeroom_teachers' ||
+      data.period?.targetAudience === 'gvcn_diem_chinh' ||
+      data.period?.targetAudience === 'gvcn_doc_binh_kieu' ||
+      data.period?.targetAudience === 'gvcn_tan_kieu' ||
+      (!data.period?.targetAudience && (data.periodTitle.toLowerCase().includes('chủ nhiệm') || data.periodTitle.toLowerCase().includes('53 lớp')));
     const isDeptHead = data.isDeptHeadAudience;
     const isSpecific = data.isSpecificUsersAudience;
 

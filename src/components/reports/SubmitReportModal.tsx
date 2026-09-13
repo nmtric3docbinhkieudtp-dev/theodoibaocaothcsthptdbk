@@ -390,6 +390,24 @@ export const SubmitReportModal: React.FC<SubmitReportModalProps> = ({
                     Dành Cho 53 GVCN
                   </span>
                 )}
+                {currentPeriod.targetAudience === 'gvcn_diem_chinh' && (
+                  <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100 border border-emerald-300 px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                    <GraduationCap className="w-3.5 h-3.5 text-emerald-700" />
+                    GVCN Điểm chính (14 lớp)
+                  </span>
+                )}
+                {currentPeriod.targetAudience === 'gvcn_doc_binh_kieu' && (
+                  <span className="text-[10px] font-bold text-sky-800 bg-sky-100 border border-sky-300 px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                    <GraduationCap className="w-3.5 h-3.5 text-sky-700" />
+                    GVCN Điểm Đốc Binh Kiều (24 lớp)
+                  </span>
+                )}
+                {currentPeriod.targetAudience === 'gvcn_tan_kieu' && (
+                  <span className="text-[10px] font-bold text-teal-800 bg-teal-100 border border-teal-300 px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                    <GraduationCap className="w-3.5 h-3.5 text-teal-700" />
+                    GVCN Điểm Tân Kiều (15 lớp)
+                  </span>
+                )}
                 {currentPeriod.targetAudience === 'dept_heads_only' && (
                   <span className="text-[10px] font-bold text-blue-800 bg-blue-100 border border-blue-300 px-2.5 py-0.5 rounded-full flex items-center gap-1">
                     19 Tổ trưởng & Tổ phó CM

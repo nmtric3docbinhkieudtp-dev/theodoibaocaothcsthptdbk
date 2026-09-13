@@ -462,6 +462,21 @@ export const Dashboard: React.FC<DashboardProps> = ({
                               <GraduationCap className="w-3.5 h-3.5 text-amber-700" />
                               <span>Dành riêng cho 53 GVCN</span>
                             </span>
+                          ) : period.targetAudience === 'gvcn_diem_chinh' ? (
+                            <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-900 border border-emerald-300 text-[11px] font-bold flex items-center gap-1">
+                              <GraduationCap className="w-3.5 h-3.5 text-emerald-700" />
+                              <span>GVCN Điểm chính (14 lớp THPT)</span>
+                            </span>
+                          ) : period.targetAudience === 'gvcn_doc_binh_kieu' ? (
+                            <span className="px-2.5 py-0.5 rounded-full bg-sky-50 text-sky-900 border border-sky-300 text-[11px] font-bold flex items-center gap-1">
+                              <GraduationCap className="w-3.5 h-3.5 text-sky-700" />
+                              <span>GVCN Đốc Binh Kiều (24 lớp)</span>
+                            </span>
+                          ) : period.targetAudience === 'gvcn_tan_kieu' ? (
+                            <span className="px-2.5 py-0.5 rounded-full bg-teal-50 text-teal-900 border border-teal-300 text-[11px] font-bold flex items-center gap-1">
+                              <GraduationCap className="w-3.5 h-3.5 text-teal-700" />
+                              <span>GVCN Tân Kiều (15 lớp)</span>
+                            </span>
                           ) : period.targetAudience === 'specific_users' ? (
                             <span className="px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-900 border border-indigo-300 text-[11px] font-bold flex items-center gap-1">
                               <UserCheck className="w-3.5 h-3.5 text-indigo-700" />

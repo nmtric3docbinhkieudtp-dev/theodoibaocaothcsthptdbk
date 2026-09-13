@@ -432,7 +432,13 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       authorRoleTitle: currentUser.roleTitle,
       departmentId: currentUser.departmentId,
       departmentName: currentUser.departmentName,
-      isHomeroomReport: data.isHomeroomReport ?? (period?.targetAudience === 'homeroom_teachers' || currentUser.isHomeroomTeacher),
+      isHomeroomReport: data.isHomeroomReport ?? (
+        period?.targetAudience === 'homeroom_teachers' || 
+        period?.targetAudience === 'gvcn_diem_chinh' ||
+        period?.targetAudience === 'gvcn_doc_binh_kieu' ||
+        period?.targetAudience === 'gvcn_tan_kieu' ||
+        currentUser.isHomeroomTeacher
+      ),
       homeroomClass: data.homeroomClass || currentUser.homeroomClass || undefined,
       homeroomStudentCount: data.homeroomStudentCount || currentUser.homeroomStudentCount || undefined,
       homeroomCampus: data.homeroomCampus || currentUser.homeroomCampus || undefined,
@@ -542,7 +548,13 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       authorRoleTitle: teacher.roleTitle,
       departmentId: teacher.departmentId,
       departmentName: teacher.departmentName,
-      isHomeroomReport: Boolean(teacher.isHomeroomTeacher || period.targetAudience === 'homeroom_teachers'),
+      isHomeroomReport: Boolean(
+        teacher.isHomeroomTeacher || 
+        period.targetAudience === 'homeroom_teachers' ||
+        period.targetAudience === 'gvcn_diem_chinh' ||
+        period.targetAudience === 'gvcn_doc_binh_kieu' ||
+        period.targetAudience === 'gvcn_tan_kieu'
+      ),
       homeroomClass: teacher.homeroomClass,
       homeroomStudentCount: teacher.homeroomStudentCount,
       homeroomCampus: teacher.homeroomCampus,

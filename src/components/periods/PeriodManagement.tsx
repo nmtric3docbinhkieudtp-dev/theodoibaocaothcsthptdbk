@@ -423,7 +423,11 @@ export const PeriodManagement: React.FC<PeriodManagementProps> = ({
             const diffMs = new Date(period.deadline).getTime() - Date.now();
             const daysRemaining = Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
             
-            const isHomeroomPeriod = period.targetAudience === 'homeroom_teachers';
+            const isAllHomeroom = period.targetAudience === 'homeroom_teachers';
+            const isMainCampusHomeroom = period.targetAudience === 'gvcn_diem_chinh';
+            const isDbkHomeroom = period.targetAudience === 'gvcn_doc_binh_kieu';
+            const isTkHomeroom = period.targetAudience === 'gvcn_tan_kieu';
+            const isHomeroomPeriod = isAllHomeroom || isMainCampusHomeroom || isDbkHomeroom || isTkHomeroom;
             const requiredUsers = stats.requiredUsers;
             const periodSubmissions = submissions.filter(s => s.periodId === period.id && s.status !== 'draft');
             const submittedCount = stats.submittedCount;
@@ -457,10 +461,25 @@ export const PeriodManagement: React.FC<PeriodManagementProps> = ({
                         </span>
                       )}
 
-                      {isHomeroomPeriod ? (
+                      {isAllHomeroom ? (
                         <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-50 text-amber-800 border border-amber-300 flex items-center gap-1">
                           <GraduationCap className="w-3 h-3 text-amber-600" />
                           Chỉ 53 GVCN
+                        </span>
+                      ) : isMainCampusHomeroom ? (
+                        <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-300 flex items-center gap-1">
+                          <GraduationCap className="w-3 h-3 text-emerald-600" />
+                          GVCN Điểm chính (14 lớp)
+                        </span>
+                      ) : isDbkHomeroom ? (
+                        <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-sky-50 text-sky-800 border border-sky-300 flex items-center gap-1">
+                          <GraduationCap className="w-3 h-3 text-sky-600" />
+                          GVCN Điểm ĐBK (24 lớp)
+                        </span>
+                      ) : isTkHomeroom ? (
+                        <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-teal-50 text-teal-800 border border-teal-300 flex items-center gap-1">
+                          <GraduationCap className="w-3 h-3 text-teal-600" />
+                          GVCN Điểm Tân Kiều (15 lớp)
                         </span>
                       ) : period.targetAudience === 'specific_users' ? (
                         <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-indigo-50 text-indigo-900 border border-indigo-300 flex items-center gap-1">
@@ -504,8 +523,14 @@ export const PeriodManagement: React.FC<PeriodManagementProps> = ({
                     <div className="flex items-center justify-between">
                       <span className="font-semibold text-slate-700">Đối tượng báo cáo:</span>
                       <span className="font-bold text-amber-700">
-                        {isHomeroomPeriod 
-                          ? '53 Thầy/Cô Giáo viên chủ nhiệm' 
+                        {isAllHomeroom 
+                          ? '53 Thầy/Cô GVCN (Cả 3 điểm)' 
+                          : isMainCampusHomeroom
+                          ? '14 Thầy/Cô GVCN Điểm chính (THPT)'
+                          : isDbkHomeroom
+                          ? '24 Thầy/Cô GVCN Điểm Đốc Binh Kiều'
+                          : isTkHomeroom
+                          ? '15 Thầy/Cô GVCN Điểm Tân Kiều'
                           : period.targetAudience === 'specific_users'
                           ? `Chỉ định đích danh ${period.targetUserIds?.length || requiredUsers.length} Thầy/Cô`
                           : period.targetAudience === 'dept_heads_only'
