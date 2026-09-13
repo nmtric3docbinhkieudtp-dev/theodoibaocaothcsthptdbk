@@ -61,6 +61,7 @@ export const PeriodManagement: React.FC<PeriodManagementProps> = ({
     submissions = [],
     waiveAllLateStatus,
     syncPeriodsToFirebase,
+    syncToFirebase,
     hasUnsyncedChanges,
     unsyncedChangesCount
   } = useReports();
@@ -86,10 +87,10 @@ export const PeriodManagement: React.FC<PeriodManagementProps> = ({
   const handleSyncPeriodsToFirebase = async () => {
     setIsSyncingPeriods(true);
     try {
-      const res = await syncPeriodsToFirebase();
+      const res = await syncToFirebase();
       showToast(res.message);
     } catch (e: any) {
-      showToast('Lỗi đẩy đợt báo cáo lên Firebase: ' + (e.message || e));
+      showToast('Lỗi đẩy dữ liệu lên Firebase: ' + (e.message || e));
     } finally {
       setIsSyncingPeriods(false);
     }

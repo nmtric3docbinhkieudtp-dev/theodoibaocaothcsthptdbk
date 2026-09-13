@@ -70,27 +70,38 @@ if (typeof window !== 'undefined') {
       .join(' ')
       .toLowerCase();
 
+    // Only actual quota exhaustion errors should mark quota
     if (
       messageStr.includes('resource-exhausted') ||
       messageStr.includes('quota limit exceeded') ||
-      messageStr.includes('free daily write units') ||
+      messageStr.includes('free daily write units')
+    ) {
+      markFirestoreWriteQuotaExceeded('Daily Firestore free write quota reached (20,000 writes/day). Local Storage handling active.');
+      console.info('[Firestore Handled Quota] Free daily quota reached. Local Storage handling active.');
+      return;
+    }
+    // Benign internal assertion warnings or backoff notices should not break network
+    if (
+      messageStr.includes('internal assertion failed') || 
+      messageStr.includes('unexpected state') || 
+      messageStr.includes('da08') ||
       messageStr.includes('using maximum backoff delay') ||
       messageStr.includes('overloading the backend')
     ) {
-      markFirestoreWriteQuotaExceeded('Daily Firestore free write quota reached (20,000 writes/day). Local Storage handling active.');
-      if (firestoreDb) {
-        disableNetwork(firestoreDb).catch(() => {});
-      }
-      console.info('[Firestore Handled Quota/State] Notice detected. Gracefully preserved all data in Local Storage.');
-      return;
-    }
-    // Benign internal assertion warnings should be caught without disabling network
-    if (messageStr.includes('internal assertion failed') || messageStr.includes('unexpected state') || messageStr.includes('da08')) {
-      console.warn('[Firestore] Handled non-fatal assertion notice:', messageStr);
+      console.warn('[Firestore Notice]:', messageStr);
       return;
     }
     originalConsoleError.apply(console, args);
   };
+}
+
+export function withTimeout<T>(promise: Promise<T>, timeoutMs = 12000, opName = 'Thao tác Firestore'): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) =>
+      setTimeout(() => reject(new Error(`${opName} đã quá thời gian phản hồi (${Math.round(timeoutMs / 1000)}s). Vui lòng thử lại.`)), timeoutMs)
+    )
+  ]);
 }
 
 export function getFirestoreQuotaStatus(): FirestoreQuotaStatus {
@@ -163,7 +174,7 @@ export async function safeFirestoreWrite<T>(
   writeFn: () => Promise<T>
 ): Promise<{ success: boolean; data?: T; error?: any; quotaExceeded?: boolean }> {
   try {
-    const res = await writeFn();
+    const res = await withTimeout(writeFn(), 12000, operationName);
     clearFirestoreWriteQuotaStatus();
     return { success: true, data: res };
   } catch (err: any) {
@@ -210,6 +221,8 @@ export function getStoredFirebaseConfig(): FirebaseConfig {
       return {
         ...defaultProvisioned,
         ...parsed,
+        // Always prioritize provisioned firestoreDatabaseId if configured
+        firestoreDatabaseId: (appletConfig as any).firestoreDatabaseId || parsed.firestoreDatabaseId || defaultProvisioned.firestoreDatabaseId,
         isConfigured: Boolean((parsed.apiKey || defaultProvisioned.apiKey) && (parsed.projectId || defaultProvisioned.projectId))
       };
     }

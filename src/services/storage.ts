@@ -15,8 +15,8 @@ import {
   INITIAL_SUBMISSIONS, 
   INITIAL_NOTIFICATIONS 
 } from '../data/initialData';
-import { getFirebaseInstance, safeFirestoreWrite, isFirestoreWriteQuotaExceeded, markFirestoreWriteQuotaExceeded } from './firebase';
-import { collection, doc, getDoc, getDocs, setDoc } from 'firebase/firestore';
+import { getFirebaseInstance, safeFirestoreWrite, isFirestoreWriteQuotaExceeded, markFirestoreWriteQuotaExceeded, withTimeout } from './firebase';
+import { collection, doc, getDoc, getDocs, setDoc, writeBatch } from 'firebase/firestore';
 
 const STORAGE_KEYS = {
   USERS: 'dbk_users_data',
@@ -539,25 +539,34 @@ export const StorageService = {
 
     try {
       const periods = this.getPeriods();
-      let written = 0;
-      const remotePeriodsSnap = await getDocs(collection(db, 'periods'));
+      const remotePeriodsSnap = await withTimeout(
+        getDocs(collection(db, 'periods')),
+        10000,
+        'Tải danh sách đợt báo cáo từ Firebase'
+      );
       const remotePeriods = new Map(
         remotePeriodsSnap.docs.map(item => [item.id, JSON.stringify(cleanFirestorePayload(item.data()))])
       );
 
+      const batch = writeBatch(db);
+      let stagedCount = 0;
+
       for (const p of periods) {
         const payload = cleanFirestorePayload(p);
         if (remotePeriods.get(p.id) === JSON.stringify(payload)) continue;
-        const res = await safeFirestoreWrite('sync_period', () => setDoc(doc(db, 'periods', p.id), payload));
-        if (res.quotaExceeded) break;
-        written++;
+        batch.set(doc(db, 'periods', p.id), payload);
+        stagedCount++;
+      }
+
+      if (stagedCount > 0) {
+        await withTimeout(batch.commit(), 12000, 'Đẩy đợt báo cáo lên Firebase');
       }
 
       return {
         success: true,
-        count: written,
-        message: written > 0
-          ? `Đã đẩy thành công ${written} đợt báo cáo lên Firebase Firestore!`
+        count: stagedCount,
+        message: stagedCount > 0
+          ? `Đã đẩy thành công ${stagedCount} đợt báo cáo lên Firebase Firestore!`
           : 'Toàn bộ đợt báo cáo trên Firebase đã đồng bộ mới nhất (0 lượt ghi phát sinh).'
       };
     } catch (e: any) {
@@ -577,7 +586,7 @@ export const StorageService = {
       return { 
         success: false, 
         count: 0, 
-        message: 'Hạn ngạch ghi miễn phí hàng ngày của Cloud Firestore (20.000 lượt/ngày) đã đạt giới hạn hôm nay. Hệ thống đang bảo lưu toàn bộ dữ liệu an toàn trong Local Storage của trình duyệt. Bạn có thể tiếp tục làm việc bình thường và đồng bộ lại vào ngày mai.' 
+        message: 'Hạn ngạch ghi miễn phí hàng ngày của Cloud Firestore (20.000 lượt/ngày) đã đạt giới hạn hôm nay. Hệ thống đang bảo lưu toàn bộ dữ liệu an toàn trong Local Storage của trình duyệt.' 
       };
     }
 
@@ -586,43 +595,52 @@ export const StorageService = {
       const submissions = this.getSubmissions();
       const schoolInfo = this.getSchoolInfo();
 
-      let written = 0;
+      const [remotePeriodsSnap, remoteSubmissionsSnap, remoteSchoolSnap] = await withTimeout(
+        Promise.all([
+          getDocs(collection(db, 'periods')),
+          getDocs(collection(db, 'submissions')),
+          getDoc(doc(db, 'metadata', 'schoolInfo'))
+        ]),
+        12000,
+        'Đọc dữ liệu hiện tại từ Firebase'
+      );
 
-      const [remotePeriodsSnap, remoteSubmissionsSnap, remoteSchoolSnap] = await Promise.all([
-        getDocs(collection(db, 'periods')),
-        getDocs(collection(db, 'submissions')),
-        getDoc(doc(db, 'metadata', 'schoolInfo'))
-      ]);
       const remotePeriods = new Map(remotePeriodsSnap.docs.map(item => [item.id, JSON.stringify(cleanFirestorePayload(item.data()))]));
       const remoteSubmissions = new Map(remoteSubmissionsSnap.docs.map(item => [item.id, JSON.stringify(cleanFirestorePayload(item.data()))]));
+
+      const batch = writeBatch(db);
+      let stagedCount = 0;
 
       for (const p of periods) {
         const payload = cleanFirestorePayload(p);
         if (remotePeriods.get(p.id) === JSON.stringify(payload)) continue;
-        const res = await safeFirestoreWrite('sync_period', () => setDoc(doc(db, 'periods', p.id), payload));
-        if (res.quotaExceeded) break;
-        written++;
+        batch.set(doc(db, 'periods', p.id), payload);
+        stagedCount++;
       }
+
       for (const s of submissions) {
         const payload = cleanFirestorePayload(s);
         if (remoteSubmissions.get(s.id) === JSON.stringify(payload)) continue;
-        const res = await safeFirestoreWrite('sync_sub', () => setDoc(doc(db, 'submissions', s.id), payload));
-        if (res.quotaExceeded) break;
-        written++;
-      }
-      const schoolPayload = cleanFirestorePayload(schoolInfo);
-      if (!remoteSchoolSnap.exists() || JSON.stringify(cleanFirestorePayload(remoteSchoolSnap.data())) !== JSON.stringify(schoolPayload)) {
-        await safeFirestoreWrite('sync_school', () => setDoc(doc(db, 'metadata', 'schoolInfo'), schoolPayload));
-        written++;
+        batch.set(doc(db, 'submissions', s.id), payload);
+        stagedCount++;
       }
 
-      const totalItems = periods.length + submissions.length + 1;
+      const schoolPayload = cleanFirestorePayload(schoolInfo);
+      if (!remoteSchoolSnap.exists() || JSON.stringify(cleanFirestorePayload(remoteSchoolSnap.data())) !== JSON.stringify(schoolPayload)) {
+        batch.set(doc(db, 'metadata', 'schoolInfo'), schoolPayload);
+        stagedCount++;
+      }
+
+      if (stagedCount > 0) {
+        await withTimeout(batch.commit(), 15000, 'Đẩy toàn bộ dữ liệu lên Firebase');
+      }
+
       return { 
         success: true, 
-        count: written,
-        message: written > 0
-          ? `Đã đồng bộ ${written} mục thay đổi lên Firebase Firestore.`
-          : 'Dữ liệu Firebase đã mới nhất, không phát sinh lượt ghi.'
+        count: stagedCount,
+        message: stagedCount > 0
+          ? `Đã đồng bộ nhanh ${stagedCount} mục thay đổi lên Firebase Firestore thành công!`
+          : 'Dữ liệu trên Firebase Firestore đã hoàn toàn trùng khớp với hệ thống.'
       };
     } catch (e: any) {
       console.error('Sync to Firebase error:', e);

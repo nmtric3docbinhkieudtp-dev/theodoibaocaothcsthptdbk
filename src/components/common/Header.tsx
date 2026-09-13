@@ -59,15 +59,17 @@ export const Header: React.FC<HeaderProps> = ({
   const [showNotifMenu, setShowNotifMenu] = useState(false);
   const [userSearch, setUserSearch] = useState('');
   const [isHeaderSyncing, setIsHeaderSyncing] = useState(false);
+  const [syncToast, setSyncToast] = useState<{ message: string; isError?: boolean } | null>(null);
 
   const handleHeaderQuickSync = async () => {
     setIsHeaderSyncing(true);
     try {
-      const pRes = await syncPeriodsToFirebase();
-      const sRes = await syncToFirebase();
-      alert(`Đã đồng bộ thành công lên Firebase Firestore! (${pRes.count + sRes.count} mục)`);
-    } catch (e) {
-      alert('Đồng bộ lên Firebase thất bại: ' + String(e));
+      const res = await syncToFirebase();
+      setSyncToast({ message: res.message || 'Đã đồng bộ lên Firebase thành công!', isError: !res.success });
+      setTimeout(() => setSyncToast(null), 4500);
+    } catch (e: any) {
+      setSyncToast({ message: 'Đồng bộ lên Firebase thất bại: ' + (e.message || String(e)), isError: true });
+      setTimeout(() => setSyncToast(null), 5000);
     } finally {
       setIsHeaderSyncing(false);
     }
@@ -488,6 +490,35 @@ export const Header: React.FC<HeaderProps> = ({
 
         </div>
       </div>
+
+      {/* Floating Sync Toast Notification */}
+      {syncToast && (
+        <div 
+          id="header-sync-toast"
+          className={`fixed top-16 right-4 sm:right-8 z-50 max-w-md p-3.5 rounded-xl shadow-xl border backdrop-blur-md flex items-start gap-3 transition-all animate-in fade-in slide-in-from-top-2 ${
+            syncToast.isError 
+              ? 'bg-rose-50/95 border-rose-200 text-rose-900' 
+              : 'bg-emerald-50/95 border-emerald-200 text-emerald-900'
+          }`}
+        >
+          {syncToast.isError ? (
+            <span className="text-base shrink-0">⚠️</span>
+          ) : (
+            <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+          )}
+          <div className="text-xs font-medium leading-relaxed">
+            <p className="font-bold mb-0.5">{syncToast.isError ? 'Lỗi đồng bộ' : 'Thông báo đồng bộ'}</p>
+            {syncToast.message}
+          </div>
+          <button 
+            type="button" 
+            onClick={() => setSyncToast(null)}
+            className="ml-auto text-xs text-gray-400 hover:text-gray-600 font-bold p-1 cursor-pointer"
+          >
+            ✕
+          </button>
+        </div>
+      )}
     </header>
   );
 };
