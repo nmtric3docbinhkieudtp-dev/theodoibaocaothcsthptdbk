@@ -18,7 +18,11 @@ import {
   School,
   CheckCircle2,
   HelpCircle,
-  X
+  X,
+  CornerDownRight,
+  ArrowUp,
+  ArrowDown,
+  Check
 } from 'lucide-react';
 import { CustomFormField, CustomDynamicTable } from '../../types';
 import { ImportFormFromDocModal } from '../common/ImportFormFromDocModal';
@@ -96,6 +100,85 @@ export const CustomReportFormBuilder: React.FC<CustomReportFormBuilderProps> = (
 
   const handleRemoveField = (id: string) => {
     onFieldsChange(fields.filter(f => f.id !== id));
+    if (editingFieldId === id) setEditingFieldId(null);
+  };
+
+  // Editing existing field inline
+  const [editingFieldId, setEditingFieldId] = useState<string | null>(null);
+
+  // Inserting field at specific index (e.g. in the middle between rows)
+  const handleInsertFieldAt = (index: number) => {
+    const newFieldId = 'field-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6);
+    const newField: CustomFormField = {
+      id: newFieldId,
+      label: `Câu hỏi ${index + 1}: `,
+      type: 'textarea',
+      required: false
+    };
+    const nextFields = [...fields];
+    nextFields.splice(index, 0, newField);
+    onFieldsChange(nextFields);
+    setEditingFieldId(newFieldId);
+  };
+
+  const handleUpdateField = (fieldId: string, updates: Partial<CustomFormField>) => {
+    const nextFields = fields.map(f => f.id === fieldId ? { ...f, ...updates } : f);
+    onFieldsChange(nextFields);
+  };
+
+  const handleMoveField = (index: number, direction: 'up' | 'down') => {
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= fields.length) return;
+    const nextFields = [...fields];
+    const temp = nextFields[index];
+    nextFields[index] = nextFields[targetIndex];
+    nextFields[targetIndex] = temp;
+    onFieldsChange(nextFields);
+  };
+
+  // Editing existing table columns & title
+  const [editingTableId, setEditingTableId] = useState<string | null>(null);
+  const [editTableTitle, setEditTableTitle] = useState('');
+  const [editTableColumns, setEditTableColumns] = useState('');
+
+  const handleStartEditTable = (t: CustomDynamicTable) => {
+    setEditingTableId(t.id);
+    setEditTableTitle(t.title);
+    setEditTableColumns(t.headers.join(', '));
+  };
+
+  const handleSaveEditTable = (tableId: string) => {
+    if (!editTableTitle.trim()) {
+      alert('Vui lòng nhập tiêu đề bảng!');
+      return;
+    }
+    const headers = editTableColumns.split(',').map(c => c.trim()).filter(Boolean);
+    if (headers.length === 0) {
+      alert('Bảng phải có ít nhất 1 cột!');
+      return;
+    }
+
+    const nextTables = tables.map(t => {
+      if (t.id === tableId) {
+        const updatedRows = t.rows.map(r => {
+          const newRow: Record<string, string> = {};
+          headers.forEach(h => {
+            newRow[h] = r[h] !== undefined ? r[h] : '';
+          });
+          return newRow;
+        });
+        return {
+          ...t,
+          title: editTableTitle.trim(),
+          headers,
+          rows: updatedRows
+        };
+      }
+      return t;
+    });
+
+    onTablesChange(nextTables);
+    setEditingTableId(null);
   };
 
   // Add Table
@@ -416,21 +499,99 @@ export const CustomReportFormBuilder: React.FC<CustomReportFormBuilderProps> = (
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-            {fields.map((field) => (
-              <div key={field.id} className="bg-slate-50/80 p-3.5 rounded-xl border border-slate-200 transition-all hover:border-slate-300">
-                <div className="flex items-center justify-between gap-2 mb-1.5">
-                  <label className="block text-xs font-bold text-slate-800">
-                    {field.label} {field.required && <span className="text-rose-500">*</span>}
-                  </label>
-                  {!readOnlyStructure && isDesigning && (
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveField(field.id)}
-                      className="text-slate-400 hover:text-rose-600 p-0.5 rounded transition"
-                      title="Xóa trường này"
-                    >
-                      <Trash2 className="w-3 h-3" />
-                    </button>
+            {fields.map((field, fIdx) => (
+              <div key={field.id} className="bg-slate-50/80 p-3.5 rounded-xl border border-slate-200 transition-all hover:border-slate-300 space-y-2">
+                {/* Field Header & Editing Controls */}
+                <div className="flex items-start justify-between gap-2 mb-1.5">
+                  {editingFieldId === field.id ? (
+                    <div className="flex-1 space-y-2">
+                      <input
+                        type="text"
+                        value={field.label}
+                        onChange={(e) => handleUpdateField(field.id, { label: e.target.value })}
+                        placeholder="Nội dung câu hỏi..."
+                        className="w-full text-xs font-bold p-1.5 rounded border border-emerald-400 bg-white"
+                        autoFocus
+                      />
+                      <div className="flex items-center gap-2">
+                        <select
+                          value={field.type}
+                          onChange={(e) => handleUpdateField(field.id, { type: e.target.value as any })}
+                          className="text-[11px] p-1 rounded border border-slate-300 bg-white"
+                        >
+                          <option value="textarea">Văn bản nhiều dòng</option>
+                          <option value="text">Văn bản 1 dòng</option>
+                          <option value="number">Số liệu</option>
+                          <option value="checkbox">Hộp kiểm</option>
+                        </select>
+                        <button
+                          type="button"
+                          onClick={() => setEditingFieldId(null)}
+                          className="px-2 py-0.5 rounded bg-emerald-600 text-white text-[11px] font-bold flex items-center gap-0.5"
+                        >
+                          <Check className="w-3 h-3" />
+                          <span>Xong</span>
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <label className="block text-xs font-bold text-slate-800 flex-1">
+                      {field.label} {field.required && <span className="text-rose-500">*</span>}
+                    </label>
+                  )}
+
+                  {!readOnlyStructure && isDesigning && editingFieldId !== field.id && (
+                    <div className="flex items-center gap-1 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => setEditingFieldId(field.id)}
+                        className="p-1 rounded text-slate-500 hover:text-emerald-700 hover:bg-emerald-50 text-[11px] font-bold flex items-center gap-0.5 transition cursor-pointer"
+                        title="Sửa câu từ dòng này"
+                      >
+                        <Edit3 className="w-3 h-3" />
+                        <span>Sửa</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => handleInsertFieldAt(fIdx + 1)}
+                        className="px-1.5 py-0.5 rounded bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 text-[10px] font-bold flex items-center gap-0.5 transition cursor-pointer"
+                        title="Chèn thêm 1 dòng ở giữa"
+                      >
+                        <CornerDownRight className="w-3 h-3 text-emerald-600" />
+                        <span>+ Chèn</span>
+                      </button>
+
+                      <div className="flex items-center">
+                        <button
+                          type="button"
+                          onClick={() => handleMoveField(fIdx, 'up')}
+                          disabled={fIdx === 0}
+                          className="p-0.5 text-slate-400 hover:text-slate-700 disabled:opacity-20 cursor-pointer"
+                          title="Lên"
+                        >
+                          <ArrowUp className="w-3 h-3" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleMoveField(fIdx, 'down')}
+                          disabled={fIdx === fields.length - 1}
+                          className="p-0.5 text-slate-400 hover:text-slate-700 disabled:opacity-20 cursor-pointer"
+                          title="Xuống"
+                        >
+                          <ArrowDown className="w-3 h-3" />
+                        </button>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveField(field.id)}
+                        className="text-slate-400 hover:text-rose-600 p-0.5 rounded transition cursor-pointer"
+                        title="Xóa trường này"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </button>
+                    </div>
                   )}
                 </div>
 
@@ -508,17 +669,73 @@ export const CustomReportFormBuilder: React.FC<CustomReportFormBuilderProps> = (
                   </button>
 
                   {!readOnlyStructure && isDesigning && (
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveTable(table.id)}
-                      className="p-1.5 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer"
-                      title="Xóa bảng này"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => handleStartEditTable(table)}
+                        className="px-2.5 py-1.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-800 text-xs font-bold flex items-center gap-1 transition cursor-pointer border border-blue-200 shadow-2xs"
+                        title="Sửa tiêu đề & các cột của bảng này"
+                      >
+                        <Edit3 className="w-3.5 h-3.5" />
+                        <span>Sửa Bảng</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveTable(table.id)}
+                        className="p-1.5 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer"
+                        title="Xóa bảng này"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </>
                   )}
                 </div>
               </div>
+
+              {/* Inline Table Editor when active */}
+              {!readOnlyStructure && isDesigning && editingTableId === table.id && (
+                <div className="p-3 bg-blue-50 rounded-xl border border-blue-200 space-y-2.5">
+                  <div className="text-xs font-bold text-blue-900">
+                    Chỉnh sửa Tiêu đề và Các cột của bảng:
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 mb-1">Tiêu đề bảng:</label>
+                    <input
+                      type="text"
+                      value={editTableTitle}
+                      onChange={(e) => setEditTableTitle(e.target.value)}
+                      className="w-full text-xs p-2 rounded-lg border border-blue-300 bg-white font-bold"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 mb-1">Các cột (phân cách bằng dấu phẩy):</label>
+                    <input
+                      type="text"
+                      value={editTableColumns}
+                      onChange={(e) => setEditTableColumns(e.target.value)}
+                      className="w-full text-xs p-2 rounded-lg border border-blue-300 bg-white"
+                    />
+                  </div>
+                  <div className="flex items-center justify-end gap-2 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => setEditingTableId(null)}
+                      className="px-3 py-1 rounded-lg bg-slate-200 text-slate-700 text-xs font-bold cursor-pointer"
+                    >
+                      Hủy
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleSaveEditTable(table.id)}
+                      className="px-3 py-1 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold flex items-center gap-1 cursor-pointer"
+                    >
+                      <Check className="w-3.5 h-3.5" />
+                      <span>Lưu Thay Đổi Bảng</span>
+                    </button>
+                  </div>
+                </div>
+              )}
 
               {/* Table Data Matrix */}
               <div className="overflow-x-auto rounded-xl border border-slate-200">

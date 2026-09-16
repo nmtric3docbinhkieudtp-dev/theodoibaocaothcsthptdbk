@@ -45,6 +45,7 @@ import {
 } from '../../types';
 import { HOMEROOM_ROSTER_53 } from '../../data/staffRoster';
 import { extractTextFromFile, parseFormContent, parseTemplateFile, ParsedTemplateResult } from '../../utils/formFileParser';
+import { PeriodTemplateDesigner } from './PeriodTemplateDesigner';
 
 interface CreatePeriodModalProps {
   isOpen: boolean;
@@ -151,54 +152,9 @@ export const CreatePeriodModal: React.FC<CreatePeriodModalProps> = ({
   const [parseFileName, setParseFileName] = useState<string | null>(null);
   const [previewFormOpen, setPreviewFormOpen] = useState(true);
   const [previewTab, setPreviewTab] = useState<'edit' | 'render'>('edit');
-  const [templateInputMode, setTemplateInputMode] = useState<'upload' | 'paste'>('upload');
+  const [templateInputMode, setTemplateInputMode] = useState<'upload' | 'paste' | 'custom'>('upload');
   const [pasteText, setPasteText] = useState('');
   const [showTemplateGuide, setShowTemplateGuide] = useState(false);
-
-  // Quick deletion and addition handlers for parsed form elements
-  const handleDeleteParsedField = (index: number) => {
-    if (!importedTemplate) return;
-    const updatedFields = importedTemplate.fields.filter((_, i) => i !== index);
-    setImportedTemplate({
-      ...importedTemplate,
-      fields: updatedFields
-    });
-  };
-
-  const handleDeleteParsedTable = (index: number) => {
-    if (!importedTemplate) return;
-    const updatedTables = importedTemplate.tables.filter((_, i) => i !== index);
-    setImportedTemplate({
-      ...importedTemplate,
-      tables: updatedTables
-    });
-  };
-
-  const handleClearAllParsedTables = () => {
-    if (!importedTemplate) return;
-    setImportedTemplate({
-      ...importedTemplate,
-      tables: []
-    });
-  };
-
-  const handleAddQuickField = () => {
-    if (!importedTemplate) return;
-    const promptLabel = window.prompt('Nhập nội dung câu hỏi / trường dữ liệu cần bổ sung:');
-    if (!promptLabel || !promptLabel.trim()) return;
-
-    const newField: CustomFormField = {
-      id: 'field-' + Date.now(),
-      label: promptLabel.trim(),
-      type: 'textarea',
-      required: false
-    };
-
-    setImportedTemplate({
-      ...importedTemplate,
-      fields: [...importedTemplate.fields, newField]
-    });
-  };
 
   // Helper for quick deadline presets
   const applyDeadlinePreset = (preset: 'today_17' | 'today_23' | 'sunday_23' | 'plus_3' | 'plus_7' | 'plus_15' | 'end_month') => {
@@ -631,8 +587,8 @@ Bảng danh sách học sinh chưa ra lớp
             </div>
           )}
 
-          {/* Tab Switcher: Upload File vs Paste Text */}
-          <div className="flex items-center gap-2">
+          {/* Tab Switcher: Upload File vs Paste Text vs Custom Design */}
+          <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
               onClick={() => setTemplateInputMode('upload')}
@@ -657,6 +613,31 @@ Bảng danh sách học sinh chưa ra lớp
             >
               <Edit3 className="w-3.5 h-3.5" />
               <span>✍️ Dán Trực Tiếp Nội Dung Văn Bản</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setTemplateInputMode('custom');
+                if (!importedTemplate) {
+                  setImportedTemplate({
+                    defaultTemplateContent: '',
+                    fields: [
+                      { id: 'field-1', label: '1. Nội dung báo cáo tình hình tuần này:', type: 'textarea', required: false },
+                      { id: 'field-2', label: '2. Các tồn tại, khó khăn và đề xuất kiến nghị:', type: 'textarea', required: false }
+                    ],
+                    tables: []
+                  });
+                }
+              }}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
+                templateInputMode === 'custom'
+                  ? 'bg-emerald-600 text-white shadow-2xs'
+                  : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-100'
+              }`}
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>✨ Tự Soạn Form & Tự Tạo Bảng Trực Tiếp</span>
             </button>
           </div>
 
@@ -727,276 +708,22 @@ Bảng danh sách học sinh chưa ra lớp
             </div>
           )}
 
-          {/* If a template is already loaded */}
+          {/* If a template is already loaded or being edited */}
           {importedTemplate && (
             <div className="p-3.5 bg-white rounded-2xl border-2 border-emerald-300 shadow-sm space-y-3">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <div className="flex items-center gap-2 text-xs text-emerald-950 font-extrabold">
-                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
-                  <span>
-                    Đã nhận diện: <strong className="text-emerald-700">{importedTemplate.fields?.length || 0} câu hỏi</strong> {importedTemplate.tables?.length ? `và ${importedTemplate.tables.length} bảng dữ liệu` : '(Không có bảng - rất gọn)'}
-                  </span>
-                </div>
-
-                <div className="flex items-center gap-1.5">
-                  {/* View Mode Toggle */}
-                  <div className="flex items-center bg-slate-100 p-0.5 rounded-xl text-[11px] font-bold">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setPreviewFormOpen(true);
-                        setPreviewTab('edit');
-                      }}
-                      className={`px-2.5 py-1 rounded-lg transition cursor-pointer flex items-center gap-1 ${
-                        previewTab === 'edit' && previewFormOpen
-                          ? 'bg-white text-emerald-800 shadow-2xs font-extrabold'
-                          : 'text-slate-600 hover:text-slate-900'
-                      }`}
-                    >
-                      <Edit3 className="w-3 h-3" />
-                      <span>Tinh chỉnh & Xóa mục thừa</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setPreviewFormOpen(true);
-                        setPreviewTab('render');
-                      }}
-                      className={`px-2.5 py-1 rounded-lg transition cursor-pointer flex items-center gap-1 ${
-                        previewTab === 'render' && previewFormOpen
-                          ? 'bg-white text-blue-800 shadow-2xs font-extrabold'
-                          : 'text-slate-600 hover:text-slate-900'
-                      }`}
-                    >
-                      <Eye className="w-3 h-3" />
-                      <span>Xem thử giao diện giáo viên</span>
-                    </button>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => setPreviewFormOpen(!previewFormOpen)}
-                    className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 transition cursor-pointer"
-                    title={previewFormOpen ? 'Thu gọn' : 'Mở rộng'}
-                  >
-                    {previewFormOpen ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (window.confirm('Thầy có chắc chắn muốn gỡ bỏ toàn bộ mẫu biểu này để tải lại không?')) {
-                        setImportedTemplate(null);
-                        setParseFileName(null);
-                        setPasteText('');
-                      }
-                    }}
-                    className="text-[11px] font-bold text-rose-600 hover:text-rose-800 underline cursor-pointer ml-1"
-                  >
-                    Gỡ bỏ mẫu
-                  </button>
-                </div>
-              </div>
-
-              {/* Collapsible Preview of Parsed Form */}
-              {previewFormOpen && (
-                <div className="pt-2 border-t border-slate-100 space-y-3">
-                  
-                  {/* TAB 1: EDIT & DELETE UNWANTED ITEMS DIRECTLY */}
-                  {previewTab === 'edit' && (
-                    <div className="space-y-3 animate-in fade-in">
-                      <div className="p-2.5 rounded-xl bg-amber-50/90 border border-amber-200 text-xs text-amber-900 flex items-start gap-2">
-                        <Lightbulb className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-                        <div>
-                          <strong>Thao tác xóa trực tiếp:</strong> Thầy chỉ cần bấm nút <strong>"Xóa"</strong> màu đỏ cạnh câu hỏi hoặc bảng thừa để loại bỏ ngay lập tức mà <em>không cần phải sửa lại file gốc</em>!
-                        </div>
-                      </div>
-
-                      {/* Fields List */}
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <div className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
-                            <Layers className="w-3.5 h-3.5 text-emerald-600" />
-                            <span>Danh sách các câu hỏi ({importedTemplate.fields.length}):</span>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={handleAddQuickField}
-                            className="px-2.5 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-bold transition flex items-center gap-1 border border-emerald-200 cursor-pointer"
-                          >
-                            <PlusCircle className="w-3.5 h-3.5" />
-                            <span>+ Thêm câu hỏi nhanh</span>
-                          </button>
-                        </div>
-
-                        {importedTemplate.fields.length === 0 ? (
-                          <div className="p-3 text-center text-xs text-slate-400 bg-slate-50 rounded-xl border border-dashed border-slate-200">
-                            Chưa có câu hỏi nào. Thầy có thể bấm "+ Thêm câu hỏi nhanh" ở trên.
-                          </div>
-                        ) : (
-                          <div className="space-y-1.5 max-h-56 overflow-y-auto pr-1">
-                            {importedTemplate.fields.map((f, i) => (
-                              <div
-                                key={f.id || i}
-                                className="p-2 rounded-xl bg-slate-50 hover:bg-slate-100/80 border border-slate-200 text-xs flex items-center justify-between gap-2 transition"
-                              >
-                                <div className="flex items-center gap-2 min-w-0 flex-1">
-                                  <span className="w-5 h-5 rounded-full bg-emerald-600 text-white font-black text-[10px] flex items-center justify-center shrink-0">
-                                    {i + 1}
-                                  </span>
-                                  <span className="font-semibold text-slate-800 truncate" title={f.label}>
-                                    {f.label}
-                                  </span>
-                                  <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-slate-200 text-slate-700 shrink-0">
-                                    {f.type === 'number' ? 'Số liệu' : f.type === 'textarea' ? 'Nhiều dòng' : 'Một dòng'}
-                                  </span>
-                                </div>
-
-                                <button
-                                  type="button"
-                                  onClick={() => handleDeleteParsedField(i)}
-                                  title="Xóa câu hỏi này khỏi biểu mẫu"
-                                  className="px-2 py-1 rounded-lg text-rose-600 hover:text-white hover:bg-rose-600 border border-rose-200 transition text-[11px] font-bold flex items-center gap-1 cursor-pointer shrink-0 active:scale-95"
-                                >
-                                  <Trash2 className="w-3 h-3" />
-                                  <span>Xóa</span>
-                                </button>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Tables List */}
-                      {importedTemplate.tables && importedTemplate.tables.length > 0 && (
-                        <div className="space-y-2 pt-2 border-t border-slate-100">
-                          <div className="flex items-center justify-between">
-                            <div className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
-                              <TableIcon className="w-3.5 h-3.5 text-blue-600" />
-                              <span>Danh sách các bảng số liệu ({importedTemplate.tables.length}):</span>
-                            </div>
-
-                            <button
-                              type="button"
-                              onClick={() => {
-                                if (window.confirm('Thầy có chắc chắn muốn bỏ toàn bộ các bảng, chỉ giữ lại các câu hỏi trả lời từ trên xuống dưới không?')) {
-                                  handleClearAllParsedTables();
-                                }
-                              }}
-                              className="px-2.5 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold transition flex items-center gap-1 border border-rose-200 cursor-pointer"
-                            >
-                              <Trash2 className="w-3.5 h-3.5 text-rose-600" />
-                              <span>Bỏ tất cả bảng (Chỉ giữ câu hỏi)</span>
-                            </button>
-                          </div>
-
-                          <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
-                            {importedTemplate.tables.map((tbl, i) => (
-                              <div
-                                key={tbl.id || i}
-                                className="p-2.5 rounded-xl bg-blue-50/50 border border-blue-200 text-xs flex items-center justify-between gap-2"
-                              >
-                                <div className="space-y-0.5 min-w-0 flex-1">
-                                  <div className="font-bold text-blue-950 flex items-center gap-1.5 truncate">
-                                    <TableIcon className="w-3.5 h-3.5 text-blue-700 shrink-0" />
-                                    <span className="truncate">{tbl.title}</span>
-                                  </div>
-                                  <div className="text-[11px] text-slate-600 truncate">
-                                    Các cột: {tbl.headers.join(' • ')}
-                                  </div>
-                                </div>
-
-                                <button
-                                  type="button"
-                                  onClick={() => handleDeleteParsedTable(i)}
-                                  title="Xóa bảng số liệu này khỏi biểu mẫu"
-                                  className="px-2.5 py-1 rounded-lg text-rose-600 hover:text-white hover:bg-rose-600 border border-rose-200 transition text-[11px] font-bold flex items-center gap-1 cursor-pointer shrink-0 active:scale-95"
-                                >
-                                  <Trash2 className="w-3 h-3" />
-                                  <span>Xóa bảng</span>
-                                </button>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {/* TAB 2: RENDER VIEW - WHAT TEACHER ACTUALLY SEES (1 SINGLE TAB, TOP TO BOTTOM) */}
-                  {previewTab === 'render' && (
-                    <div className="space-y-3 p-3 bg-slate-50/80 rounded-xl border border-slate-200 max-h-72 overflow-y-auto pr-1 animate-in fade-in">
-                      <div className="text-xs font-bold text-slate-700 border-b border-slate-200 pb-2">
-                        📄 Giao diện hiển thị thực tế (1 trang duy nhất, giáo viên chỉ cần điền từ trên xuống dưới và nhấn Gửi):
-                      </div>
-
-                      <div className="space-y-3">
-                        {importedTemplate.fields.map((f, i) => (
-                          <div key={f.id || i} className="space-y-1">
-                            <label className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
-                              <span className="w-4 h-4 rounded-full bg-slate-200 text-slate-700 text-[10px] flex items-center justify-center font-bold">
-                                {i + 1}
-                              </span>
-                              <span>{f.label}</span>
-                            </label>
-
-                            {f.type === 'textarea' ? (
-                              <textarea
-                                rows={2}
-                                disabled
-                                placeholder="Giáo viên nhập nội dung chi tiết tại đây..."
-                                className="w-full text-xs p-2 rounded-lg border border-slate-200 bg-white text-slate-400 cursor-not-allowed"
-                              />
-                            ) : f.type === 'number' ? (
-                              <input
-                                type="number"
-                                disabled
-                                placeholder="Nhập số liệu..."
-                                className="w-48 text-xs p-2 rounded-lg border border-slate-200 bg-white text-slate-400 cursor-not-allowed"
-                              />
-                            ) : (
-                              <input
-                                type="text"
-                                disabled
-                                placeholder="Nhập thông tin ngắn gọn..."
-                                className="w-full text-xs p-2 rounded-lg border border-slate-200 bg-white text-slate-400 cursor-not-allowed"
-                              />
-                            )}
-                          </div>
-                        ))}
-
-                        {importedTemplate.tables && importedTemplate.tables.map((tbl, i) => (
-                          <div key={tbl.id || i} className="pt-2 border-t border-slate-200 space-y-1.5">
-                            <div className="text-xs font-bold text-blue-900 flex items-center gap-1.5">
-                              <TableIcon className="w-3.5 h-3.5 text-blue-700" />
-                              <span>{tbl.title}</span>
-                            </div>
-                            <div className="border border-slate-200 rounded-lg overflow-hidden bg-white">
-                              <table className="w-full text-[11px] text-left">
-                                <thead className="bg-slate-100 text-slate-700 font-bold">
-                                  <tr>
-                                    {tbl.headers.map((h, hIdx) => (
-                                      <th key={hIdx} className="p-1.5 border-b border-slate-200">{h}</th>
-                                    ))}
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  <tr className="text-slate-400 italic">
-                                    <td colSpan={tbl.headers.length} className="p-2 text-center">
-                                      (Giáo viên sẽ bấm nút Thêm dòng để nhập dữ liệu vào bảng này)
-                                    </td>
-                                  </tr>
-                                </tbody>
-                              </table>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                </div>
-              )}
+              <PeriodTemplateDesigner
+                template={importedTemplate}
+                onChange={setImportedTemplate}
+                onClear={() => {
+                  if (window.confirm('Thầy/Cô có chắc chắn muốn gỡ bỏ toàn bộ mẫu biểu này để làm lại không?')) {
+                    setImportedTemplate(null);
+                    setParseFileName(null);
+                    setPasteText('');
+                  }
+                }}
+                previewTab={previewTab}
+                onTabChange={setPreviewTab}
+              />
             </div>
           )}
         </div>
