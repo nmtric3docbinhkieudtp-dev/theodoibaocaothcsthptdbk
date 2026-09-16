@@ -78,13 +78,34 @@ export type TargetAudienceType =
   | 'staff_only'          // Chỉ Nhân viên văn phòng
   | 'specific_users';     // Chỉ định danh sách cá nhân / Thầy Cô cụ thể
 
+export type FormFieldType = 
+  | 'text'        // Trả lời ngắn (Short answer)
+  | 'textarea'    // Đoạn văn (Paragraph)
+  | 'radio'       // Trắc nghiệm (Multiple choice - Chọn 1)
+  | 'checkbox'    // Hộp kiểm (Checkboxes - Chọn nhiều)
+  | 'dropdown'    // Menu thả xuống (Dropdown)
+  | 'select'      // Danh sách chọn (Alias)
+  | 'number'      // Số liệu (Number)
+  | 'scale'       // Thang đo tuyến tính (Linear scale 1-5 / 1-10)
+  | 'date'        // Ngày (Date)
+  | 'time'        // Giờ (Time)
+  | 'file'        // Tải tệp lên (File upload)
+  | 'section'     // Phân đoạn / Tiêu đề mục (Section header)
+  | 'table';      // Bảng số liệu
+
 export interface CustomFormField {
   id: string;
   label: string;
-  type: 'text' | 'textarea' | 'number' | 'select' | 'checkbox' | 'table';
+  type: FormFieldType;
   required?: boolean;
   placeholder?: string;
-  options?: string[];
+  description?: string; // Mô tả phụ / hướng dẫn bên dưới câu hỏi (như Google Form)
+  options?: string[]; // Danh sách đáp án cho trắc nghiệm / hộp kiểm / dropdown
+  allowOther?: boolean; // Tùy chọn 'Khác...'
+  scaleMin?: number; // Thang đo tối thiểu (thường là 1)
+  scaleMax?: number; // Thang đo tối đa (ví dụ: 5 hoặc 10)
+  scaleMinLabel?: string; // Nhãn thang đo min (ví dụ: Kém / Chưa đạt)
+  scaleMaxLabel?: string; // Nhãn thang đo max (ví dụ: Xuất sắc / Rất tốt)
   tableColumns?: string[]; // for table type: e.g. ["STT", "Họ và tên", "Nhiệm vụ", "Kết quả"]
   tableRows?: Record<string, string>[];
 }

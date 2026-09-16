@@ -253,23 +253,56 @@ export const ReportDetailModal: React.FC<ReportDetailModalProps> = ({
               <span>Các Chỉ Tiêu & Tiêu Trí Nhập Liệu Điện Tử</span>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {customFields.map((field) => (
-                <div key={field.id} className="bg-white p-3 rounded-xl border border-slate-200 shadow-2xs">
-                  <div className="text-[11px] font-bold text-slate-500 uppercase">{field.label}</div>
-                  <div className="text-xs font-semibold text-slate-900 mt-1">
-                    {field.type === 'checkbox' ? (
-                      <span className="flex items-center gap-1 text-emerald-700">
-                        <CheckSquare className="w-4 h-4" />
-                        <span>{customFieldValues[field.id] ? 'Đã hoàn thành / Đạt chuẩn' : 'Chưa hoàn thành'}</span>
-                      </span>
-                    ) : (
-                      customFieldValues[field.id] !== undefined && customFieldValues[field.id] !== '' 
-                        ? String(customFieldValues[field.id]) 
-                        : <span className="italic text-slate-400">Không có dữ liệu</span>
-                    )}
+              {customFields.map((field) => {
+                const val = customFieldValues[field.id];
+                if (field.type === 'section') {
+                  return (
+                    <div key={field.id} className="col-span-1 sm:col-span-2 p-2.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-950 font-bold text-xs uppercase tracking-wider">
+                      {field.label}
+                    </div>
+                  );
+                }
+
+                return (
+                  <div key={field.id} className="bg-white p-3 rounded-xl border border-slate-200 shadow-2xs">
+                    <div className="text-[11px] font-bold text-slate-500 uppercase">{field.label}</div>
+                    <div className="text-xs font-semibold text-slate-900 mt-1">
+                      {field.type === 'checkbox' ? (
+                        Array.isArray(val) ? (
+                          val.length > 0 ? (
+                            <div className="flex flex-wrap gap-1">
+                              {val.map((item: string, idx: number) => (
+                                <span key={idx} className="px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-200 text-[11px] font-bold">
+                                  ✓ {item}
+                                </span>
+                              ))}
+                            </div>
+                          ) : (
+                            <span className="italic text-slate-400">Chưa chọn mục nào</span>
+                          )
+                        ) : (
+                          <span className="flex items-center gap-1 text-emerald-700">
+                            <CheckSquare className="w-4 h-4" />
+                            <span>{val ? 'Đã hoàn thành / Đạt chuẩn' : 'Chưa hoàn thành'}</span>
+                          </span>
+                        )
+                      ) : field.type === 'scale' ? (
+                        val !== undefined && val !== '' ? (
+                          <span className="px-2.5 py-1 rounded-full bg-blue-50 text-blue-800 border border-blue-200 font-bold text-xs inline-flex items-center gap-1">
+                            ⭐ Mức {val} / {field.scaleMax || 5}
+                          </span>
+                        ) : (
+                          <span className="italic text-slate-400">Chưa đánh giá</span>
+                        )
+                      ) : (
+                        val !== undefined && val !== '' 
+                          ? String(val) 
+                          : <span className="italic text-slate-400">Không có dữ liệu</span>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}

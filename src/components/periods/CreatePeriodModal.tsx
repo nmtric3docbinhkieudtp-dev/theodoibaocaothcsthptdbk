@@ -623,8 +623,10 @@ Bảng danh sách học sinh chưa ra lớp
                   setImportedTemplate({
                     defaultTemplateContent: '',
                     fields: [
-                      { id: 'field-1', label: '1. Nội dung báo cáo tình hình tuần này:', type: 'textarea', required: false },
-                      { id: 'field-2', label: '2. Các tồn tại, khó khăn và đề xuất kiến nghị:', type: 'textarea', required: false }
+                      { id: 'field-1', label: '1. Nội dung báo cáo tình hình tuần này:', type: 'textarea', required: true, description: 'Ghi rõ các hoạt động trọng tâm đã triển khai' },
+                      { id: 'field-2', label: '2. Tình hình chuyên cần và nề nếp:', type: 'radio', required: true, options: ['Tốt (100% đúng giờ)', 'Khá (Có học sinh đi trễ)', 'Cần nhắc nhở'] },
+                      { id: 'field-3', label: '3. Đánh giá mức độ hoàn thành nhiệm vụ:', type: 'scale', scaleMin: 1, scaleMax: 5, scaleMinLabel: 'Chưa đạt', scaleMaxLabel: 'Rất tốt' },
+                      { id: 'field-4', label: '4. Các tồn tại, khó khăn và đề xuất kiến nghị:', type: 'textarea', required: false }
                     ],
                     tables: []
                   });
@@ -632,12 +634,12 @@ Bảng danh sách học sinh chưa ra lớp
               }}
               className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
                 templateInputMode === 'custom'
-                  ? 'bg-emerald-600 text-white shadow-2xs'
+                  ? 'bg-purple-600 text-white shadow-2xs'
                   : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-100'
               }`}
             >
               <Sparkles className="w-3.5 h-3.5" />
-              <span>✨ Tự Soạn Form & Tự Tạo Bảng Trực Tiếp</span>
+              <span>📋 Thiết Kế Biểu Mẫu (Như Google Forms)</span>
             </button>
           </div>
 

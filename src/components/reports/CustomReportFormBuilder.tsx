@@ -22,7 +22,14 @@ import {
   CornerDownRight,
   ArrowUp,
   ArrowDown,
-  Check
+  Check,
+  CircleDot,
+  Calendar,
+  Clock,
+  Sliders,
+  Hash,
+  Bookmark,
+  Type
 } from 'lucide-react';
 import { CustomFormField, CustomDynamicTable } from '../../types';
 import { ImportFormFromDocModal } from '../common/ImportFormFromDocModal';
@@ -519,10 +526,17 @@ export const CustomReportFormBuilder: React.FC<CustomReportFormBuilderProps> = (
                           onChange={(e) => handleUpdateField(field.id, { type: e.target.value as any })}
                           className="text-[11px] p-1 rounded border border-slate-300 bg-white"
                         >
-                          <option value="textarea">Văn bản nhiều dòng</option>
-                          <option value="text">Văn bản 1 dòng</option>
+                          <option value="textarea">Văn bản nhiều dòng (Đoạn)</option>
+                          <option value="text">Văn bản 1 dòng (Ngắn)</option>
+                          <option value="radio">Trắc nghiệm (1 đáp án)</option>
+                          <option value="checkbox">Hộp kiểm (Nhiều đáp án)</option>
+                          <option value="dropdown">Menu thả xuống</option>
+                          <option value="scale">Thang đo 1-5</option>
                           <option value="number">Số liệu</option>
-                          <option value="checkbox">Hộp kiểm</option>
+                          <option value="date">Ngày tháng</option>
+                          <option value="time">Thời gian</option>
+                          <option value="file">Tải tệp lên</option>
+                          <option value="section">Tiêu đề phân đoạn</option>
                         </select>
                         <button
                           type="button"
@@ -595,6 +609,12 @@ export const CustomReportFormBuilder: React.FC<CustomReportFormBuilderProps> = (
                   )}
                 </div>
 
+                {/* Field description if any */}
+                {field.description && (
+                  <p className="text-[11px] text-slate-500 italic">{field.description}</p>
+                )}
+
+                {/* 1. TEXT */}
                 {field.type === 'text' && (
                   <input
                     type="text"
@@ -605,6 +625,7 @@ export const CustomReportFormBuilder: React.FC<CustomReportFormBuilderProps> = (
                   />
                 )}
 
+                {/* 2. NUMBER */}
                 {field.type === 'number' && (
                   <input
                     type="number"
@@ -615,6 +636,7 @@ export const CustomReportFormBuilder: React.FC<CustomReportFormBuilderProps> = (
                   />
                 )}
 
+                {/* 3. TEXTAREA */}
                 {field.type === 'textarea' && (
                   <textarea
                     rows={2}
@@ -625,16 +647,142 @@ export const CustomReportFormBuilder: React.FC<CustomReportFormBuilderProps> = (
                   />
                 )}
 
+                {/* 4. MULTIPLE CHOICE / RADIO */}
+                {field.type === 'radio' && (
+                  <div className="space-y-1.5 pt-1">
+                    {(field.options && field.options.length > 0 ? field.options : ['Đạt yêu cầu', 'Chưa đạt yêu cầu']).map((opt, optIdx) => (
+                      <label key={optIdx} className="flex items-center gap-2 text-xs text-slate-700 cursor-pointer">
+                        <input
+                          type="radio"
+                          name={`radio-${field.id}`}
+                          checked={fieldValues[field.id] === opt}
+                          onChange={() => onFieldValueChange(field.id, opt)}
+                          className="w-3.5 h-3.5 text-emerald-600 focus:ring-emerald-500"
+                        />
+                        <span>{opt}</span>
+                      </label>
+                    ))}
+                  </div>
+                )}
+
+                {/* 5. CHECKBOX */}
                 {field.type === 'checkbox' && (
-                  <label className="flex items-center gap-2.5 text-xs font-bold text-slate-700 cursor-pointer pt-1">
-                    <input
-                      type="checkbox"
-                      checked={Boolean(fieldValues[field.id])}
-                      onChange={(e) => onFieldValueChange(field.id, e.target.checked)}
-                      className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500"
-                    />
-                    <span>Đã hoàn thành / Đạt yêu cầu</span>
-                  </label>
+                  field.options && field.options.length > 0 ? (
+                    <div className="space-y-1.5 pt-1">
+                      {field.options.map((opt, optIdx) => {
+                        const currentArr = Array.isArray(fieldValues[field.id]) ? fieldValues[field.id] : [];
+                        const isChecked = currentArr.includes(opt);
+                        return (
+                          <label key={optIdx} className="flex items-center gap-2 text-xs text-slate-700 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={(e) => {
+                                const nextArr = e.target.checked
+                                  ? [...currentArr, opt]
+                                  : currentArr.filter((x: string) => x !== opt);
+                                onFieldValueChange(field.id, nextArr);
+                              }}
+                              className="w-3.5 h-3.5 rounded text-emerald-600 focus:ring-emerald-500"
+                            />
+                            <span>{opt}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <label className="flex items-center gap-2.5 text-xs font-bold text-slate-700 cursor-pointer pt-1">
+                      <input
+                        type="checkbox"
+                        checked={Boolean(fieldValues[field.id])}
+                        onChange={(e) => onFieldValueChange(field.id, e.target.checked)}
+                        className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500"
+                      />
+                      <span>Đã hoàn thành / Đạt yêu cầu</span>
+                    </label>
+                  )
+                )}
+
+                {/* 6. DROPDOWN / SELECT */}
+                {(field.type === 'dropdown' || field.type === 'select') && (
+                  <select
+                    value={fieldValues[field.id] || ''}
+                    onChange={(e) => onFieldValueChange(field.id, e.target.value)}
+                    className="w-full text-xs px-3 py-2 bg-white rounded-lg border border-slate-300 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                  >
+                    <option value="">-- Vui lòng chọn --</option>
+                    {(field.options || ['Lựa chọn 1', 'Lựa chọn 2']).map((opt, optIdx) => (
+                      <option key={optIdx} value={opt}>{opt}</option>
+                    ))}
+                  </select>
+                )}
+
+                {/* 7. LINEAR SCALE (1-5 OR 1-10) */}
+                {field.type === 'scale' && (
+                  <div className="space-y-1.5 pt-1">
+                    <div className="flex items-center justify-between text-[10px] text-slate-500">
+                      <span>{field.scaleMinLabel || '1 (Chưa đạt)'}</span>
+                      <span>{field.scaleMaxLabel || (field.scaleMax || 5) + ' (Rất tốt)'}</span>
+                    </div>
+                    <div className="flex items-center justify-between gap-1 bg-white p-2 rounded-lg border border-slate-200">
+                      {Array.from({ length: (field.scaleMax || 5) - (field.scaleMin || 1) + 1 }).map((_, sIdx) => {
+                        const val = (field.scaleMin || 1) + sIdx;
+                        const isSelected = fieldValues[field.id] === val;
+                        return (
+                          <button
+                            key={sIdx}
+                            type="button"
+                            onClick={() => onFieldValueChange(field.id, val)}
+                            className={`w-7 h-7 rounded-full text-xs font-bold transition cursor-pointer flex items-center justify-center ${
+                              isSelected
+                                ? 'bg-emerald-600 text-white shadow-2xs scale-105'
+                                : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200'
+                            }`}
+                          >
+                            {val}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* 8. DATE */}
+                {field.type === 'date' && (
+                  <input
+                    type="date"
+                    value={fieldValues[field.id] || ''}
+                    onChange={(e) => onFieldValueChange(field.id, e.target.value)}
+                    className="w-full text-xs px-3 py-2 bg-white rounded-lg border border-slate-300 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                  />
+                )}
+
+                {/* 9. TIME */}
+                {field.type === 'time' && (
+                  <input
+                    type="time"
+                    value={fieldValues[field.id] || ''}
+                    onChange={(e) => onFieldValueChange(field.id, e.target.value)}
+                    className="w-full text-xs px-3 py-2 bg-white rounded-lg border border-slate-300 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                  />
+                )}
+
+                {/* 10. FILE */}
+                {field.type === 'file' && (
+                  <div className="p-2.5 rounded-lg border border-dashed border-slate-300 bg-white flex items-center gap-2 text-xs text-slate-600">
+                    <UploadCloud className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span className="text-[11px] truncate">
+                      {fieldValues[field.id] ? `Đã đính kèm: ${fieldValues[field.id]}` : 'Tải lên minh chứng / biên bản...'}
+                    </span>
+                  </div>
+                )}
+
+                {/* 11. SECTION */}
+                {field.type === 'section' && (
+                  <div className="p-2 rounded bg-amber-50 border border-amber-200 text-amber-900 text-xs font-bold uppercase tracking-wider flex items-center gap-1.5">
+                    <Bookmark className="w-3.5 h-3.5 text-amber-700" />
+                    <span>Phân mục phân nhóm báo cáo</span>
+                  </div>
                 )}
               </div>
             ))}
