@@ -140,6 +140,62 @@ export interface ConsolidatedFieldMatrix {
   numericTotals: Record<string, number>;
 }
 
+export interface FormQuestionRespondent {
+  authorName: string;
+  unit: string;
+  submittedAt?: string;
+  value?: any;
+}
+
+export interface FormQuestionOptionStat {
+  option: string;
+  count: number;
+  percentage: number;
+  respondents: FormQuestionRespondent[];
+}
+
+export interface FormQuestionScaleStats {
+  min: number;
+  max: number;
+  minLabel?: string;
+  maxLabel?: string;
+  average: number;
+  levels: Array<{ level: number; count: number; percentage: number; respondents: FormQuestionRespondent[] }>;
+}
+
+export interface FormQuestionNumberStats {
+  sum: number;
+  average: number;
+  max: number;
+  min: number;
+  entries: Array<{ authorName: string; unit: string; value: number }>;
+}
+
+export interface FormQuestionTextEntry {
+  authorName: string;
+  unit: string;
+  value: string;
+  submittedAt?: string;
+}
+
+export interface FormQuestionBreakdown {
+  field: CustomFormField;
+  questionNumber: number; // 1-based (ignoring sections)
+  totalAnswered: number;
+  totalExpected: number;
+  responseRate: number;
+  optionStats?: FormQuestionOptionStat[];
+  singleCheckboxStat?: {
+    checkedCount: number;
+    percentage: number;
+    respondents: FormQuestionRespondent[];
+  };
+  scaleStats?: FormQuestionScaleStats;
+  numberStats?: FormQuestionNumberStats;
+  textEntries?: FormQuestionTextEntry[];
+  generalEntries?: FormQuestionRespondent[];
+}
+
 export interface PeriodConsolidationResult {
   period: ReportPeriod | null;
   periodTitle: string;
@@ -157,6 +213,9 @@ export interface PeriodConsolidationResult {
 
   // Dynamic field matrix
   fieldMatrix: ConsolidatedFieldMatrix;
+
+  // Question-by-question breakdown structured by form fields/sections
+  questionsBreakdown: FormQuestionBreakdown[];
 
   // Aggregate totals
   totalEnrolledStudents: number;
@@ -875,6 +934,242 @@ export function aggregatePeriodReportData(
 
   const totalDynamicRows = dynamicTables.reduce((sum, t) => sum + t.rows.length, 0);
 
+  // 6. XÂY DỰNG TỔNG HỢP CHI TIẾT TỪNG ĐỀ MỤC VÀ CÂU HỎI (Questions Breakdown)
+  const allFormFields: CustomFormField[] = [];
+  const fieldsMap = new Map<string, CustomFormField>();
+
+  // Thu thập từ template
+  if (period?.formTemplate?.fields) {
+    period.formTemplate.fields.forEach(f => {
+      fieldsMap.set(f.id, f);
+      allFormFields.push(f);
+    });
+  }
+
+  // Thu thập từ submissions nếu có thêm trường tự tạo hoặc template rỗng
+  periodSubs.forEach(sub => {
+    (sub.structuredData?.customFields || []).forEach((f: CustomFormField) => {
+      if (!fieldsMap.has(f.id)) {
+        fieldsMap.set(f.id, f);
+        allFormFields.push(f);
+      }
+    });
+  });
+
+  const validSubs = periodSubs.filter(s => s.status !== 'draft');
+  let qNumber = 0;
+
+  const questionsBreakdown: FormQuestionBreakdown[] = allFormFields.map(field => {
+    if (field.type === 'section') {
+      return {
+        field,
+        questionNumber: 0,
+        totalAnswered: 0,
+        totalExpected: totalTargetCount,
+        responseRate: 0
+      };
+    }
+
+    qNumber++;
+    const currentQNo = qNumber;
+
+    // Lọc các câu trả lời cho trường này
+    const answeredSubs = validSubs.map(s => ({
+      authorName: s.authorName,
+      unit: s.homeroomClass ? `Lớp ${s.homeroomClass}` : (s.departmentName || 'Cá nhân'),
+      submittedAt: s.submittedAt || '',
+      val: s.structuredData?.customFieldValues?.[field.id]
+    })).filter(a => a.val !== undefined && a.val !== null && a.val !== '');
+
+    const totalAnswered = answeredSubs.length;
+    const responseRate = validSubs.length > 0 ? Math.round((totalAnswered / validSubs.length) * 100) : 0;
+
+    // 1. Radio / Dropdown / Select
+    if (field.type === 'radio' || field.type === 'dropdown' || field.type === 'select') {
+      const baseOptions = field.options && field.options.length > 0 ? [...field.options] : [];
+      // Thêm các đáp án khác nếu có
+      answeredSubs.forEach(a => {
+        const strVal = String(a.val).trim();
+        if (strVal && !baseOptions.some(b => b.trim() === strVal)) {
+          baseOptions.push(strVal);
+        }
+      });
+      if (baseOptions.length === 0) {
+        baseOptions.push('Có', 'Không');
+      }
+
+      const optionStats: FormQuestionOptionStat[] = baseOptions.map(opt => {
+        const matching = answeredSubs.filter(a => String(a.val).trim() === opt.trim());
+        const count = matching.length;
+        const percentage = totalAnswered > 0 ? Math.round((count / totalAnswered) * 100) : 0;
+        return {
+          option: opt,
+          count,
+          percentage,
+          respondents: matching.map(m => ({ authorName: m.authorName, unit: m.unit, submittedAt: m.submittedAt }))
+        };
+      });
+
+      return {
+        field,
+        questionNumber: currentQNo,
+        totalAnswered,
+        totalExpected: validSubs.length,
+        responseRate,
+        optionStats
+      };
+    }
+
+    // 2. Checkbox
+    if (field.type === 'checkbox') {
+      if (field.options && field.options.length > 0) {
+        const optionStats: FormQuestionOptionStat[] = field.options.map(opt => {
+          const matching = answeredSubs.filter(a => {
+            if (Array.isArray(a.val)) return a.val.map(String).some(x => x.trim() === opt.trim());
+            return String(a.val).trim() === opt.trim();
+          });
+          const count = matching.length;
+          const percentage = totalAnswered > 0 ? Math.round((count / totalAnswered) * 100) : 0;
+          return {
+            option: opt,
+            count,
+            percentage,
+            respondents: matching.map(m => ({ authorName: m.authorName, unit: m.unit, submittedAt: m.submittedAt }))
+          };
+        });
+
+        return {
+          field,
+          questionNumber: currentQNo,
+          totalAnswered,
+          totalExpected: validSubs.length,
+          responseRate,
+          optionStats
+        };
+      } else {
+        // Single true/false checkbox
+        const trueMatching = answeredSubs.filter(a => Boolean(a.val));
+        const checkedCount = trueMatching.length;
+        const percentage = totalAnswered > 0 ? Math.round((checkedCount / totalAnswered) * 100) : 0;
+
+        return {
+          field,
+          questionNumber: currentQNo,
+          totalAnswered,
+          totalExpected: validSubs.length,
+          responseRate,
+          singleCheckboxStat: {
+            checkedCount,
+            percentage,
+            respondents: trueMatching.map(m => ({ authorName: m.authorName, unit: m.unit, submittedAt: m.submittedAt }))
+          }
+        };
+      }
+    }
+
+    // 3. Linear Scale (1-5)
+    if (field.type === 'scale') {
+      const min = field.scaleMin || 1;
+      const max = field.scaleMax || 5;
+      const numAnswers = answeredSubs.map(a => Number(a.val)).filter(n => !isNaN(n));
+      const avg = numAnswers.length > 0
+        ? Number((numAnswers.reduce((sum, v) => sum + v, 0) / numAnswers.length).toFixed(1))
+        : 0;
+
+      const levels = Array.from({ length: max - min + 1 }).map((_, idx) => {
+        const levelVal = min + idx;
+        const matching = answeredSubs.filter(a => Number(a.val) === levelVal);
+        const count = matching.length;
+        const percentage = numAnswers.length > 0 ? Math.round((count / numAnswers.length) * 100) : 0;
+        return {
+          level: levelVal,
+          count,
+          percentage,
+          respondents: matching.map(m => ({ authorName: m.authorName, unit: m.unit, submittedAt: m.submittedAt }))
+        };
+      });
+
+      return {
+        field,
+        questionNumber: currentQNo,
+        totalAnswered,
+        totalExpected: validSubs.length,
+        responseRate,
+        scaleStats: {
+          min,
+          max,
+          minLabel: field.scaleMinLabel,
+          maxLabel: field.scaleMaxLabel,
+          average: avg,
+          levels
+        }
+      };
+    }
+
+    // 4. Number
+    if (field.type === 'number') {
+      const numVals = answeredSubs.map(a => Number(a.val)).filter(n => !isNaN(n));
+      const sum = numVals.reduce((a, b) => a + b, 0);
+      const avg = numVals.length > 0 ? Number((sum / numVals.length).toFixed(1)) : 0;
+      const max = numVals.length > 0 ? Math.max(...numVals) : 0;
+      const min = numVals.length > 0 ? Math.min(...numVals) : 0;
+      const entries = answeredSubs
+        .filter(a => !isNaN(Number(a.val)))
+        .map(a => ({ authorName: a.authorName, unit: a.unit, value: Number(a.val) }));
+
+      return {
+        field,
+        questionNumber: currentQNo,
+        totalAnswered,
+        totalExpected: validSubs.length,
+        responseRate,
+        numberStats: {
+          sum,
+          average: avg,
+          max,
+          min,
+          entries
+        }
+      };
+    }
+
+    // 5. Text / Textarea
+    if (field.type === 'text' || field.type === 'textarea') {
+      const textEntries = answeredSubs.map(a => ({
+        authorName: a.authorName,
+        unit: a.unit,
+        value: String(a.val),
+        submittedAt: a.submittedAt
+      }));
+
+      return {
+        field,
+        questionNumber: currentQNo,
+        totalAnswered,
+        totalExpected: validSubs.length,
+        responseRate,
+        textEntries
+      };
+    }
+
+    // 6. Date / Time / File / other
+    const generalEntries = answeredSubs.map(a => ({
+      authorName: a.authorName,
+      unit: a.unit,
+      value: a.val,
+      submittedAt: a.submittedAt
+    }));
+
+    return {
+      field,
+      questionNumber: currentQNo,
+      totalAnswered,
+      totalExpected: validSubs.length,
+      responseRate,
+      generalEntries
+    };
+  });
+
   return {
     period,
     periodTitle,
@@ -894,6 +1189,7 @@ export function aggregatePeriodReportData(
     dynamicTables,
     totalDynamicRows,
     fieldMatrix,
+    questionsBreakdown,
     totalEnrolledStudents: totalEnrolled,
     totalMaleStudents: totalMale,
     totalFemaleStudents: totalFemale,
