@@ -321,21 +321,27 @@ export const ExportService = {
           <button onclick="window.print()" style="padding: 8px 16px; background: #059669; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">🖨️ In Báo Cáo / Lưu PDF</button>
         </div>
 
-        <div class="header-grid">
-          <div>
-            <div class="sub-header">${schoolInfo.departmentOfEducation}</div>
-            <div class="bold" style="font-size: 12pt; text-transform: uppercase;">${schoolInfo.formalName}</div>
-            <div style="font-size: 11pt;">Số: ...../BC-ĐBK</div>
+        <div class="header-grid" style="display: grid; grid-template-columns: 45% 55%; margin-bottom: 20px;">
+          <div style="text-align: center;">
+            <div style="font-size: 11pt; text-transform: uppercase;">SỞ GDĐT TỈNH ĐỒNG THÁP</div>
+            <div style="font-size: 11.5pt; font-weight: bold; text-transform: uppercase; margin-top: 2px;">TRƯỜNG THCS VÀ THPT</div>
+            <div style="font-size: 11.5pt; font-weight: bold; text-transform: uppercase; margin-top: 1px;"><span style="text-decoration: underline;">ĐỐC BINH KIỀU</span></div>
+            <div style="font-size: 11pt; margin-top: 10px;">Số: &nbsp; &nbsp; /BC-THCS&amp;THPTĐBK</div>
           </div>
-          <div>
-            <div class="bold" style="font-size: 12pt;">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</div>
-            <div class="bold" style="font-size: 12pt; text-decoration: underline;">Độc lập - Tự do - Hạnh phúc</div>
-            <div style="font-style: italic; margin-top: 5px; font-size: 11pt;">Đốc Binh Kiều, ngày ${todayStr.split('/')[0]} tháng ${todayStr.split('/')[1]} năm ${todayStr.split('/')[2]}</div>
+          <div style="text-align: center;">
+            <div style="font-size: 11pt; font-weight: bold; text-transform: uppercase;">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</div>
+            <div style="font-size: 11.5pt; font-weight: bold; margin-top: 2px;"><span style="text-decoration: underline;">Độc lập – Tự do – Hạnh phúc</span></div>
+            <div style="font-size: 11pt; font-style: italic; margin-top: 10px;">Đồng Tháp, ngày &nbsp; &nbsp; &nbsp; &nbsp; tháng &nbsp; &nbsp; &nbsp; &nbsp; năm ${todayStr.split('/')[2] || '2026'}</div>
           </div>
         </div>
 
-        <div class="title">BÁO CÁO TỔNG HỢP TIẾN ĐỘ VÀ KẾT QUẢ NỘP BÁO CÁO</div>
-        <div class="subtitle">Đợt báo cáo: ${activePeriod ? activePeriod.title : 'Tổng hợp toàn trường'}</div>
+        <div style="text-align: center; margin-top: 18px; margin-bottom: 20px;">
+          <div style="font-size: 14pt; font-weight: bold; text-transform: uppercase; margin: 0 0 4px 0;">BÁO CÁO</div>
+          <div style="font-size: 13.5pt; font-weight: bold; text-transform: uppercase; margin: 0;">TỔNG HỢP ${(activePeriod ? activePeriod.title.replace(/^Báo cáo (tổng hợp:?|:?)/i, '') : 'TIẾN ĐỘ VÀ KẾT QUẢ NỘP BÁO CÁO').toUpperCase()}</div>
+          <div style="text-align: center; margin-top: 5px; margin-bottom: 12px;">
+            <span style="display: inline-block; width: 220px; border-bottom: 1.5px solid #000;"></span>
+          </div>
+        </div>
 
         <p><strong>I. TỔNG QUAN TÌNH HÌNH:</strong></p>
         <ul>

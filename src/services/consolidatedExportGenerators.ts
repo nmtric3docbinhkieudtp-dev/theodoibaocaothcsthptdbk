@@ -340,6 +340,42 @@ export function buildConsolidatedExcelWorkbook(
 }
 
 /**
+ * Chuẩn hóa tiêu đề văn bản hành chính theo đúng chuẩn Nghị định 30/2020/NĐ-CP
+ * Dòng 1: BÁO CÁO
+ * Dòng 2: TỔNG HỢP + TÊN ĐỢT BÁO CÁO (được gạch chân cân đối)
+ */
+export function formatReportTitleHeader(periodTitle: string): { mainType: string; subTitle: string } {
+  let title = (periodTitle || '').trim();
+
+  // Xóa tiền tố "Báo cáo tổng hợp:" hoặc "Báo cáo:" nếu có trong tên đợt
+  if (title.toLowerCase().startsWith('báo cáo tổng hợp:')) {
+    title = title.substring('báo cáo tổng hợp:'.length).trim();
+  } else if (title.toLowerCase().startsWith('báo cáo tổng hợp')) {
+    title = title.substring('báo cáo tổng hợp'.length).trim();
+  } else if (title.toLowerCase().startsWith('báo cáo:')) {
+    title = title.substring('báo cáo:'.length).trim();
+  } else if (title.toLowerCase().startsWith('báo cáo')) {
+    title = title.substring('báo cáo'.length).trim();
+  }
+
+  // Chuẩn hóa tiền tố "TỔNG HỢP"
+  if (title.toLowerCase().startsWith('tổng hợp:')) {
+    title = title.substring('tổng hợp:'.length).trim();
+  } else if (title.toLowerCase().startsWith('tổng hợp')) {
+    title = title.substring('tổng hợp'.length).trim();
+  }
+
+  const subTitle = title 
+    ? `TỔNG HỢP ${title.toUpperCase()}` 
+    : 'TỔNG HỢP NỘI DUNG BÁO CÁO';
+
+  return {
+    mainType: 'BÁO CÁO',
+    subTitle
+  };
+}
+
+/**
  * 2. TẠO TÀI LIỆU WORD TỔNG HỢP CHI TIẾT (SẮP XẾP THEO TỪNG ĐỀ MỤC TRONG BIỂU MẪU)
  */
 export function generateConsolidatedWordHtml(
@@ -347,6 +383,7 @@ export function generateConsolidatedWordHtml(
   schoolInfo: SchoolInfo,
   currentUser: User
 ): string {
+  const reportTitleInfo = formatReportTitleHeader(data.period?.title || data.periodTitle);
   const isHomeroom = data.period?.targetAudience === 'homeroom_teachers' ||
     data.period?.targetAudience === 'gvcn_diem_chinh' ||
     data.period?.targetAudience === 'gvcn_doc_binh_kieu' ||
@@ -687,7 +724,7 @@ export function generateConsolidatedWordHtml(
 
     homeroomSectionHtml = `
       <div style="margin-top: 20px;">
-        <h3 style="font-size: 11.5pt; font-weight: bold; text-transform: uppercase; color: #1e3a8a; border-bottom: 1.5px solid #1e3a8a; padding-bottom: 4px;">
+        <h3 style="font-size: 11.5pt; font-weight: bold; text-transform: uppercase; color: #000; border-bottom: 1.5px solid #000; padding-bottom: 4px;">
           III. TỔNG HỢP SĨ SỐ TOÀN TRƯỜNG & DANH SÁCH HỌC SINH CHƯA RA LỚP
         </h3>
         <p style="font-size: 10.5pt; line-height: 1.6;">
@@ -729,7 +766,7 @@ export function generateConsolidatedWordHtml(
 
     homeroomSectionHtml = `
       <div style="margin-top: 20px;">
-        <h3 style="font-size: 11.5pt; font-weight: bold; text-transform: uppercase; color: #1e3a8a; border-bottom: 1.5px solid #1e3a8a; padding-bottom: 4px;">
+        <h3 style="font-size: 11.5pt; font-weight: bold; text-transform: uppercase; color: #000; border-bottom: 1.5px solid #000; padding-bottom: 4px;">
           III. TIẾN ĐỘ THỰC HIỆN CỦA TỔ TRƯỞNG CHUYÊN MÔN
         </h3>
         <table style="width: 100%; border-collapse: collapse; font-size: 10pt; margin-top: 8px;">
@@ -765,7 +802,7 @@ export function generateConsolidatedWordHtml(
 
     feedbackSectionHtml = `
       <div style="margin-top: 20px;">
-        <h3 style="font-size: 11.5pt; font-weight: bold; text-transform: uppercase; color: #1e3a8a; border-bottom: 1.5px solid #1e3a8a; padding-bottom: 4px;">
+        <h3 style="font-size: 11.5pt; font-weight: bold; text-transform: uppercase; color: #000; border-bottom: 1.5px solid #000; padding-bottom: 4px;">
           IV. TỔNG HỢP Ý KIẾN VÀ ĐỀ XUẤT KIẾN NGHỊ VỚI BAN GIÁM HIỆU
         </h3>
         <table style="width: 100%; border-collapse: collapse; font-size: 10pt; margin-top: 8px;">
@@ -821,35 +858,41 @@ export function generateConsolidatedWordHtml(
     </head>
     <body>
       <div class="WordSection1">
-        <!-- HEADER CỘNG HÒA VÀ TRƯỜNG -->
-        <table style="width: 100%; border: none; margin-bottom: 12px;">
+        <!-- HEADER CỘNG HÒA VÀ TRƯỜNG (CHUẨN NGHỊ ĐỊNH 30/2020/NĐ-CP) -->
+        <table style="width: 100%; border: none; border-collapse: collapse; margin-bottom: 16px;">
           <tr>
-            <td style="width: 45%; text-align: center; vertical-align: top;">
-              <div style="font-size: 10pt; text-transform: uppercase;">SỞ GD&ĐT TỈNH ĐỒNG THÁP</div>
-              <div style="font-size: 10.5pt; font-weight: bold; text-transform: uppercase;">${schoolInfo.formalName}</div>
-              <div style="font-size: 10pt; font-style: italic;">Số: &nbsp; &nbsp; &nbsp; /BC-TH-ĐBK</div>
+            <td style="width: 45%; text-align: center; vertical-align: top; border: none; padding: 0;">
+              <div style="font-size: 11pt; text-transform: uppercase;">SỞ GDĐT TỈNH ĐỒNG THÁP</div>
+              <div style="font-size: 11.5pt; font-weight: bold; text-transform: uppercase; margin-top: 2px;">TRƯỜNG THCS VÀ THPT</div>
+              <div style="font-size: 11.5pt; font-weight: bold; text-transform: uppercase; margin-top: 1px;"><span style="text-decoration: underline;">ĐỐC BINH KIỀU</span></div>
+              <div style="font-size: 11pt; margin-top: 10px;">Số: &nbsp; &nbsp; /BC-THCS&amp;THPTĐBK</div>
             </td>
-            <td style="width: 55%; text-align: center; vertical-align: top;">
-              <div style="font-size: 10.5pt; font-weight: bold; text-transform: uppercase;">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</div>
-              <div style="font-size: 11pt; font-weight: bold;">Độc lập - Tự do - Hạnh phúc</div>
-              <div style="font-size: 10pt; margin-top: 3px; font-style: italic;">Đốc Binh Kiều, ngày ${day} tháng ${month} năm ${year}</div>
+            <td style="width: 55%; text-align: center; vertical-align: top; border: none; padding: 0;">
+              <div style="font-size: 11pt; font-weight: bold; text-transform: uppercase;">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</div>
+              <div style="font-size: 11.5pt; font-weight: bold; margin-top: 2px;"><span style="text-decoration: underline;">Độc lập – Tự do – Hạnh phúc</span></div>
+              <div style="font-size: 11pt; font-style: italic; margin-top: 10px;">Đồng Tháp, ngày &nbsp; &nbsp; &nbsp; &nbsp; tháng &nbsp; &nbsp; &nbsp; &nbsp; năm ${year || '2026'}</div>
             </td>
           </tr>
         </table>
 
         <!-- TIÊU ĐỀ BÁO CÁO -->
-        <div style="text-align: center; margin-top: 15px; margin-bottom: 16px;">
-          <h1 style="font-size: 15pt; font-weight: bold; text-transform: uppercase; margin: 0; color: #1e3a8a;">
-            BÁO CÁO TỔNG HỢP: ${(data.period?.title || data.periodTitle).toUpperCase()}
-          </h1>
-          <div style="font-size: 11pt; font-style: italic; margin-top: 5px; color: #374151;">
-            Đối tượng thực hiện: <b>${data.targetAudienceLabel}</b> • Năm học: <b>${data.period?.academicYear || '2026 - 2027'}</b>
+        <div style="text-align: center; margin-top: 16px; margin-bottom: 22px;">
+          <div style="font-size: 14pt; font-weight: bold; text-transform: uppercase; margin: 0 0 5px 0; color: #000;">
+            ${reportTitleInfo.mainType}
           </div>
+          <div style="font-size: 13.5pt; font-weight: bold; text-transform: uppercase; margin: 0; color: #000; line-height: 1.35;">
+            ${reportTitleInfo.subTitle}
+          </div>
+          <table align="center" style="border: none; border-collapse: collapse; margin: 5px auto 16px auto;">
+            <tr>
+              <td style="width: 220px; border-top: 1.5px solid #000; height: 1px; padding: 0; font-size: 1px; line-height: 1px;">&nbsp;</td>
+            </tr>
+          </table>
         </div>
 
         <!-- PHẦN I: TỔNG QUAN TIẾN ĐỘ -->
         <div style="margin-top: 14px;">
-          <h3 style="font-size: 11.5pt; font-weight: bold; text-transform: uppercase; color: #1e3a8a; border-bottom: 1.5px solid #1e3a8a; padding-bottom: 4px;">
+          <h3 style="font-size: 11.5pt; font-weight: bold; text-transform: uppercase; color: #000; border-bottom: 1.5px solid #000; padding-bottom: 4px;">
             I. TỔNG QUAN TIẾN ĐỘ THỰC HIỆN
           </h3>
           <p style="font-size: 10.5pt; line-height: 1.6; margin-top: 6px;">
@@ -863,8 +906,8 @@ export function generateConsolidatedWordHtml(
 
         <!-- PHẦN II: KẾT QUẢ TỔNG HỢP THEO TỪNG ĐỀ MỤC TRONG BIỂU MẪU -->
         <div style="margin-top: 20px;">
-          <h3 style="font-size: 11.5pt; font-weight: bold; text-transform: uppercase; color: #1e3a8a; border-bottom: 1.5px solid #1e3a8a; padding-bottom: 4px;">
-            II. KẾT QUẢ TỔNG HỢP CHI TIẾT THEO TỪNG ĐỀ MỤC & CÂU HỎI BIỂU MẪU
+          <h3 style="font-size: 11.5pt; font-weight: bold; text-transform: uppercase; color: #000; border-bottom: 1.5px solid #000; padding-bottom: 4px;">
+            II. KẾT QUẢ TỔNG HỢP CHI TIẾT THEO TỪNG ĐỀ MỤC &amp; CÂU HỎI BIỂU MẪU
           </h3>
           ${formBreakdownHtml}
         </div>
@@ -872,7 +915,7 @@ export function generateConsolidatedWordHtml(
         <!-- PHẦN III: CÁC BẢNG SỐ LIỆU ĐỘNG (NẾU CÓ) -->
         ${dynamicTablesHtml ? `
           <div style="margin-top: 20px;">
-            <h3 style="font-size: 11.5pt; font-weight: bold; text-transform: uppercase; color: #1e3a8a; border-bottom: 1.5px solid #1e3a8a; padding-bottom: 4px;">
+            <h3 style="font-size: 11.5pt; font-weight: bold; text-transform: uppercase; color: #000; border-bottom: 1.5px solid #000; padding-bottom: 4px;">
               CÁC BẢNG SỐ LIỆU ĐỘNG TỔNG HỢP
             </h3>
             ${dynamicTablesHtml}
@@ -919,6 +962,7 @@ export function generateConsolidatedPrintHtml(
   schoolInfo: SchoolInfo,
   currentUser: User
 ): string {
+  const reportTitleInfo = formatReportTitleHeader(data.period?.title || data.periodTitle);
   const isHomeroom = data.period?.targetAudience === 'homeroom_teachers' ||
     data.period?.targetAudience === 'gvcn_diem_chinh' ||
     data.period?.targetAudience === 'gvcn_doc_binh_kieu' ||
@@ -1254,35 +1298,39 @@ export function generateConsolidatedPrintHtml(
         <button class="btn-print" onclick="window.print()">🖨️ In Ngay / Lưu PDF (Ctrl+P)</button>
       </div>
 
-      <!-- HEADER QUỐC HIỆU VÀ ĐƠN VỊ -->
-      <table style="border: none; margin-bottom: 10px;">
+      <!-- HEADER QUỐC HIỆU VÀ ĐƠN VỊ (CHUẨN NGHỊ ĐỊNH 30/2020/NĐ-CP) -->
+      <table style="width: 100%; border: none; border-collapse: collapse; margin-bottom: 14px;">
         <tr>
-          <td style="width: 45%; text-align: center; vertical-align: top;">
-            <div style="font-size: 9.5pt; text-transform: uppercase;">SỞ GD&ĐT TỈNH ĐỒNG THÁP</div>
-            <div style="font-size: 10pt; font-weight: bold; text-transform: uppercase;">${schoolInfo.formalName}</div>
-            <div style="font-size: 9pt; font-style: italic;">Số: &nbsp; &nbsp; &nbsp; /BC-TH-ĐBK</div>
+          <td style="width: 45%; text-align: center; vertical-align: top; border: none; padding: 0;">
+            <div style="font-size: 10pt; text-transform: uppercase;">SỞ GDĐT TỈNH ĐỒNG THÁP</div>
+            <div style="font-size: 10.5pt; font-weight: bold; text-transform: uppercase; margin-top: 2px;">TRƯỜNG THCS VÀ THPT</div>
+            <div style="font-size: 10.5pt; font-weight: bold; text-transform: uppercase; margin-top: 1px;"><span style="text-decoration: underline;">ĐỐC BINH KIỀU</span></div>
+            <div style="font-size: 10pt; margin-top: 8px;">Số: &nbsp; &nbsp; /BC-THCS&amp;THPTĐBK</div>
           </td>
-          <td style="width: 55%; text-align: center; vertical-align: top;">
+          <td style="width: 55%; text-align: center; vertical-align: top; border: none; padding: 0;">
             <div style="font-size: 10pt; font-weight: bold; text-transform: uppercase;">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</div>
-            <div style="font-size: 10.5pt; font-weight: bold;">Độc lập - Tự do - Hạnh phúc</div>
-            <div style="font-size: 9.5pt; font-style: italic; margin-top: 2px;">Đốc Binh Kiều, ngày ${day} tháng ${month} năm ${year}</div>
+            <div style="font-size: 10.5pt; font-weight: bold; margin-top: 2px;"><span style="text-decoration: underline;">Độc lập – Tự do – Hạnh phúc</span></div>
+            <div style="font-size: 10pt; font-style: italic; margin-top: 8px;">Đồng Tháp, ngày &nbsp; &nbsp; &nbsp; &nbsp; tháng &nbsp; &nbsp; &nbsp; &nbsp; năm ${year || '2026'}</div>
           </td>
         </tr>
       </table>
 
       <!-- TIÊU ĐỀ BÁO CÁO -->
-      <div style="text-align: center; margin-top: 10px; margin-bottom: 14px;">
-        <h1 style="font-size: 14pt; font-weight: bold; text-transform: uppercase; margin: 0; color: #1e3a8a;">
-          BÁO CÁO TỔNG HỢP: ${(data.period?.title || data.periodTitle).toUpperCase()}
-        </h1>
-        <div style="font-size: 10pt; font-style: italic; margin-top: 4px; color: #444;">
-          Đối tượng: <b>${data.targetAudienceLabel}</b> • Năm học: <b>${data.period?.academicYear || '2026 - 2027'}</b>
+      <div style="text-align: center; margin-top: 14px; margin-bottom: 18px;">
+        <div style="font-size: 13.5pt; font-weight: bold; text-transform: uppercase; margin: 0 0 4px 0; color: #000;">
+          ${reportTitleInfo.mainType}
+        </div>
+        <div style="font-size: 13pt; font-weight: bold; text-transform: uppercase; margin: 0; color: #000; line-height: 1.35;">
+          ${reportTitleInfo.subTitle}
+        </div>
+        <div style="text-align: center; margin-top: 4px; margin-bottom: 12px;">
+          <span style="display: inline-block; width: 220px; border-bottom: 1.5px solid #000;"></span>
         </div>
       </div>
 
       <!-- PHẦN I: TỔNG QUAN TIẾN ĐỘ -->
       <div>
-        <h3 style="font-size: 11pt; font-weight: bold; text-transform: uppercase; color: #1e3a8a; border-bottom: 1px solid #1e3a8a; padding-bottom: 3px; margin: 0 0 6px 0;">
+        <h3 style="font-size: 11pt; font-weight: bold; text-transform: uppercase; color: #000; border-bottom: 1px solid #000; padding-bottom: 3px; margin: 0 0 6px 0;">
           I. TỔNG QUAN TIẾN ĐỘ THỰC HIỆN
         </h3>
         <p style="font-size: 10pt; line-height: 1.5; margin: 0 0 10px 0;">
@@ -1293,7 +1341,7 @@ export function generateConsolidatedPrintHtml(
 
       <!-- PHẦN II: KẾT QUẢ TỔNG HỢP THEO TỪNG ĐỀ MỤC TRONG FORM -->
       <div>
-        <h3 style="font-size: 11pt; font-weight: bold; text-transform: uppercase; color: #1e3a8a; border-bottom: 1px solid #1e3a8a; padding-bottom: 3px; margin: 10px 0 6px 0;">
+        <h3 style="font-size: 11pt; font-weight: bold; text-transform: uppercase; color: #000; border-bottom: 1px solid #000; padding-bottom: 3px; margin: 10px 0 6px 0;">
           II. KẾT QUẢ TỔNG HỢP CHI TIẾT THEO TỪNG ĐỀ MỤC BIỂU MẪU
         </h3>
         ${printBreakdownHtml}

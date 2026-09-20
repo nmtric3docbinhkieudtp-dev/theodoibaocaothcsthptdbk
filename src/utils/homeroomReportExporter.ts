@@ -155,24 +155,28 @@ export function exportHomeroomReportToWord(data: HomeroomMeetingMinutesData, fil
       </style>
     </head>
     <body>
-      <table class="meta-header">
+      <table class="meta-header" style="width: 100%; border: none; border-collapse: collapse; margin-bottom: 16px;">
         <tr>
-          <td style="width: 45%;">
-            <div>SỞ GDĐT TỈNH ĐỒNG THÁP</div>
-            <div style="font-weight: bold;">TRƯỜNG THCS-THPT ĐỐC BINH KIỀU</div>
-            <div style="margin-top: 2px;">***</div>
+          <td style="width: 45%; text-align: center; vertical-align: top; border: none; padding: 0;">
+            <div style="font-size: 11pt; text-transform: uppercase;">SỞ GDĐT TỈNH ĐỒNG THÁP</div>
+            <div style="font-size: 11.5pt; font-weight: bold; text-transform: uppercase; margin-top: 2px;">TRƯỜNG THCS VÀ THPT</div>
+            <div style="font-size: 11.5pt; font-weight: bold; text-transform: uppercase; margin-top: 1px;"><span style="text-decoration: underline;">ĐỐC BINH KIỀU</span></div>
+            <div style="font-size: 11pt; margin-top: 10px;">Số: &nbsp; &nbsp; /BB-THCS&amp;THPTĐBK</div>
           </td>
-          <td style="width: 55%;">
-            <div style="font-weight: bold;">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</div>
-            <div style="font-weight: bold; text-decoration: underline;">Độc lập - Tự do - Hạnh phúc</div>
-            <div style="margin-top: 5px; font-style: italic; font-size: 11pt;">Đốc Binh Kiều, ngày ${data.meetingDate || '28'} tháng ${data.meetingMonth || '8'} năm ${data.meetingYear || '2026'}</div>
+          <td style="width: 55%; text-align: center; vertical-align: top; border: none; padding: 0;">
+            <div style="font-size: 11pt; font-weight: bold; text-transform: uppercase;">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</div>
+            <div style="font-size: 11.5pt; font-weight: bold; margin-top: 2px;"><span style="text-decoration: underline;">Độc lập – Tự do – Hạnh phúc</span></div>
+            <div style="font-size: 11pt; font-style: italic; margin-top: 10px;">Đồng Tháp, ngày ${data.meetingDate || '28'} tháng ${data.meetingMonth || '8'} năm ${data.meetingYear || '2026'}</div>
           </td>
         </tr>
       </table>
 
-      <div class="main-title">
-        BIÊN BẢN<br>
-        <span style="font-size: 14pt;">TẬP TRUNG HỌC SINH ĐẦU NĂM HỌC ${data.academicYear || '2026 – 2027'}</span>
+      <div class="main-title" style="text-align: center; margin-top: 16px; margin-bottom: 20px;">
+        <div style="font-size: 14pt; font-weight: bold; text-transform: uppercase; margin: 0 0 4px 0;">BIÊN BẢN</div>
+        <div style="font-size: 13.5pt; font-weight: bold; text-transform: uppercase; margin: 0;">TẬP TRUNG HỌC SINH ĐẦU NĂM HỌC ${data.academicYear || '2026 – 2027'}</div>
+        <div style="text-align: center; margin-top: 4px; margin-bottom: 12px;">
+          <span style="display: inline-block; width: 220px; border-bottom: 1.5px solid #000;"></span>
+        </div>
       </div>
 
       <div style="margin-bottom: 12px;">
@@ -399,24 +403,29 @@ export function exportCustomReportToWord({
       </style>
     </head>
     <body>
-      <table class="meta-header">
+      <table class="meta-header" style="width: 100%; border: none; border-collapse: collapse; margin-bottom: 16px;">
         <tr>
-          <td style="width: 45%;">
-            <div>SỞ GDĐT TỈNH ĐỒNG THÁP</div>
-            <div style="font-weight: bold;">TRƯỜNG THCS-THPT ĐỐC BINH KIỀU</div>
-            <div style="margin-top: 2px;">***</div>
+          <td style="width: 45%; text-align: center; vertical-align: top; border: none; padding: 0;">
+            <div style="font-size: 11pt; text-transform: uppercase;">SỞ GDĐT TỈNH ĐỒNG THÁP</div>
+            <div style="font-size: 11.5pt; font-weight: bold; text-transform: uppercase; margin-top: 2px;">TRƯỜNG THCS VÀ THPT</div>
+            <div style="font-size: 11.5pt; font-weight: bold; text-transform: uppercase; margin-top: 1px;"><span style="text-decoration: underline;">ĐỐC BINH KIỀU</span></div>
+            <div style="font-size: 11pt; margin-top: 10px;">Số: &nbsp; &nbsp; /BC-THCS&amp;THPTĐBK</div>
           </td>
-          <td style="width: 55%;">
-            <div style="font-weight: bold;">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</div>
-            <div style="font-weight: bold; text-decoration: underline;">Độc lập - Tự do - Hạnh phúc</div>
-            <div style="margin-top: 5px; font-style: italic; font-size: 11pt;">${dateStr}</div>
+          <td style="width: 55%; text-align: center; vertical-align: top; border: none; padding: 0;">
+            <div style="font-size: 11pt; font-weight: bold; text-transform: uppercase;">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</div>
+            <div style="font-size: 11.5pt; font-weight: bold; margin-top: 2px;"><span style="text-decoration: underline;">Độc lập – Tự do – Hạnh phúc</span></div>
+            <div style="font-size: 11pt; font-style: italic; margin-top: 10px;">${dateStr}</div>
           </td>
         </tr>
       </table>
 
-      <div class="main-title">
-        ${title}<br>
-        <span style="font-size: 12pt; font-weight: normal; font-style: italic;">Năm học: ${academicYear}</span>
+      <div class="main-title" style="text-align: center; margin-top: 16px; margin-bottom: 20px;">
+        <div style="font-size: 14pt; font-weight: bold; text-transform: uppercase; margin: 0 0 4px 0;">BÁO CÁO</div>
+        <div style="font-size: 13.5pt; font-weight: bold; text-transform: uppercase; margin: 0;">${title.replace(/^Báo cáo (tổng hợp:?|:?)/i, '')}</div>
+        <div style="text-align: center; margin-top: 4px; margin-bottom: 12px;">
+          <span style="display: inline-block; width: 220px; border-bottom: 1.5px solid #000;"></span>
+        </div>
+        <div style="font-size: 11pt; font-weight: normal; font-style: italic; margin-top: 4px;">Năm học: ${academicYear}</div>
       </div>
 
       <div style="margin-bottom: 14px; font-size: 12.5pt;">
