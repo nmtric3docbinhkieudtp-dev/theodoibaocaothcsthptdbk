@@ -257,6 +257,7 @@ const MainLayout: React.FC = () => {
           {activeView === 'export' && (isAdmin || isPrincipal) && (
             <AdminReportsExport
               onOpenConsolidation={handleOpenConsolidation}
+              onOpenDetail={handleOpenReportDetail}
             />
           )}
 
