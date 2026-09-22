@@ -179,6 +179,7 @@ export interface ReportSubmission {
   content: string; // Rich text / structured markdown / text
   structuredData?: {
     homeroomMinutes?: HomeroomMeetingMinutesData;
+    departmentMeetingMinutes?: DepartmentMeetingMinutesData;
     [key: string]: any;
   };
   attachments: ReportAttachment[];
@@ -302,4 +303,55 @@ export interface HomeroomMeetingMinutesData {
   absentStudents: AbsentStudentItem[];
   additionalNotes?: string;
 }
+
+// ----------------------------------------------------
+// BÁO CÁO TỔ TRƯỞNG CHUYÊN MÔN: BIÊN BẢN SINH HOẠT TỔ CHUYÊN MÔN
+// ----------------------------------------------------
+export interface DepartmentMeetingMinutesData {
+  departmentName: string;        // e.g. "TOÁN - TIN", "NGỮ VĂN", "KHTN"...
+  meetingNumber: string;         // e.g. "lần 1", "lần 2"...
+  academicYear: string;          // e.g. "2026 - 2027"
+  timeHour: string;              // e.g. "08" hoặc "14"
+  timeMinute: string;            // e.g. "00" hoặc "30"
+  meetingDate: string;           // e.g. "18"
+  meetingMonth: string;          // e.g. "9"
+  meetingYear: string;           // e.g. "2026"
+  location: string;              // e.g. "Phòng họp tổ số 1" hoặc "Phòng Hội đồng"
+  totalMembers: number | string; // Tổng số thành viên của tổ
+  presentMembers: number | string; // Tổng số thành viên tham dự
+  absentCount: number | string;  // Vắng
+  absentWithPermission: string;  // Trong đó có phép
+  absentReason: string;          // Lý do
+  absentWithoutPermission: string; // Không phép
+  chairPerson: string;           // Họ tên Chủ trì - Tổ trưởng
+  chairTitle?: string;           // "Tổ trưởng" hoặc chức vụ
+  secretary: string;             // Họ tên Thư ký
+  
+  // 1. Đánh giá hoạt động của tổ trong thời gian qua
+  reviewStrengths: string;       // Ưu điểm
+  reviewWeaknesses: string;      // Hạn chế
+  reviewCauses: string;          // Nguyên nhân của hạn chế
+  reviewSolutions: string;       // Giải pháp khắc phục
+
+  // 2. Triển khai các văn bản
+  documentsDeployed: string;     // Triển khai các văn bản hướng dẫn chỉ đạo
+
+  // 3. Triển khai nội dung công việc trọng tâm của trường/tổ
+  centralTasks: string;          // Nội dung công việc trọng tâm
+  includeGradeTable?: boolean;   // Kèm bảng số cột điểm THCS & THPT quy định
+
+  // 4. Ý kiến của các thành viên trong cuộc họp đối với trường/tổ/cá nhân
+  memberOpinions: string;
+
+  // 5. Kết luận của chủ trì
+  conclusion: string;
+
+  // 6. Đề xuất, kiến nghị với nhà trường
+  recommendations: string;
+
+  // Kết thúc
+  endHour?: string;
+  endMinute?: string;
+}
+
 

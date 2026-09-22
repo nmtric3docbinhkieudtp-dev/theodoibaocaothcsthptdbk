@@ -23,20 +23,37 @@ import {
   Download,
   BookOpen,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Printer,
+  Users
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { 
   ReportAttachment, 
   HomeroomMeetingMinutesData, 
+  DepartmentMeetingMinutesData,
   CustomFormField, 
   CustomDynamicTable 
 } from '../../types';
 import { HomeroomMeetingMinutesForm } from './HomeroomMeetingMinutesForm';
+import { DepartmentMeetingMinutesForm } from './DepartmentMeetingMinutesForm';
 import { CustomReportFormBuilder } from './CustomReportFormBuilder';
 import { ImportFormFromDocModal } from '../common/ImportFormFromDocModal';
 import { ParsedTemplateResult } from '../../utils/formFileParser';
 import { isUserEligibleForPeriod } from '../../utils/reportFilters';
+import { 
+  exportDepartmentMeetingToWord, 
+  exportDepartmentMeetingToPdf, 
+  generateDepartmentMeetingText 
+} from '../../utils/departmentMeetingExporter';
+import { 
+  exportCustomReportToWord, 
+  exportCustomReportToPdf, 
+  exportHomeroomReportToWord, 
+  exportHomeroomReportToPdf, 
+  exportStandardReportToWord, 
+  exportStandardReportToPdf 
+} from '../../utils/homeroomReportExporter';
 
 interface SubmitReportModalProps {
   isOpen: boolean;
@@ -51,7 +68,7 @@ export const SubmitReportModal: React.FC<SubmitReportModalProps> = ({
   defaultPeriodId,
   onOpenCreatePeriod
 }) => {
-  const { periods, submitReport, submissions } = useReports();
+  const { periods, submitReport, submissions, schoolInfo } = useReports();
   const { currentUser } = useAuth();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -62,6 +79,12 @@ export const SubmitReportModal: React.FC<SubmitReportModalProps> = ({
   const [lateExplanation, setLateExplanation] = useState('');
   const [isDragOver, setIsDragOver] = useState(false);
   const [isAttachmentsOpen, setIsAttachmentsOpen] = useState(false);
+
+  // Form mode state: auto, dept_minutes, homeroom_minutes, custom_form, standard
+  const [formMode, setFormMode] = useState<'auto' | 'dept_minutes' | 'homeroom_minutes' | 'custom_form' | 'standard'>('auto');
+
+  // Department meeting minutes specific state
+  const [deptMinutesData, setDeptMinutesData] = useState<DepartmentMeetingMinutesData | null>(null);
 
   // Homeroom minutes specific state
   const [homeroomData, setHomeroomData] = useState<HomeroomMeetingMinutesData | null>(null);
@@ -117,6 +140,20 @@ export const SubmitReportModal: React.FC<SubmitReportModalProps> = ({
     customTables.length > 0
   );
 
+  // Check if current period is related to Department Meeting
+  const isDeptMeetingPeriod = Boolean(
+    currentPeriod?.targetAudience === 'dept_heads_only' ||
+    currentPeriod?.title?.toLowerCase().includes('họp tổ') ||
+    currentPeriod?.title?.toLowerCase().includes('sinh hoạt tổ') ||
+    currentPeriod?.title?.toLowerCase().includes('chuyên môn') ||
+    currentUser.role === 'dept_head' ||
+    currentUser.roleTitle?.toLowerCase().includes('tổ trưởng')
+  );
+
+  const isDeptMinutesActive = formMode === 'dept_minutes' || (formMode === 'auto' && isDeptMeetingPeriod && !hasFormTemplate && !isSpecificLegacyHomeroomMinutes);
+  const isHomeroomActive = formMode === 'homeroom_minutes' || (formMode === 'auto' && isSpecificLegacyHomeroomMinutes);
+  const isCustomFormActive = formMode === 'custom_form' || (formMode === 'auto' && hasFormTemplate && !isDeptMinutesActive && !isHomeroomActive);
+
   // Load period form template or previous user draft/submission if available
   useEffect(() => {
     if (!isOpen || !currentPeriod) return;
@@ -133,7 +170,16 @@ export const SubmitReportModal: React.FC<SubmitReportModalProps> = ({
       setCustomNotes(existingSub.structuredData?.customNotes || '');
       setLateExplanation(existingSub.lateExplanation || '');
       setHomeroomData(existingSub.structuredData?.homeroomMinutes || null);
+      setDeptMinutesData(existingSub.structuredData?.departmentMeetingMinutes || null);
       setAttachments(existingSub.attachments || []);
+
+      if (existingSub.structuredData?.departmentMeetingMinutes) {
+        setFormMode('dept_minutes');
+      } else if (existingSub.structuredData?.homeroomMinutes) {
+        setFormMode('homeroom_minutes');
+      } else if (existingSub.structuredData?.customFields?.length) {
+        setFormMode('custom_form');
+      }
     } else {
       setContent(currentPeriod.defaultTemplateContent || '');
       setCustomFields(currentPeriod.formTemplate?.fields || []);
@@ -142,7 +188,23 @@ export const SubmitReportModal: React.FC<SubmitReportModalProps> = ({
       setCustomNotes('');
       setLateExplanation('');
       setHomeroomData(null);
+      setDeptMinutesData(null);
       setAttachments([]);
+
+      if (
+        currentPeriod?.targetAudience === 'dept_heads_only' ||
+        currentPeriod?.title?.toLowerCase().includes('họp tổ') ||
+        currentPeriod?.title?.toLowerCase().includes('sinh hoạt tổ') ||
+        currentPeriod?.title?.toLowerCase().includes('chuyên môn')
+      ) {
+        setFormMode('dept_minutes');
+      } else if (isSpecificLegacyHomeroomMinutes) {
+        setFormMode('homeroom_minutes');
+      } else if (hasFormTemplate) {
+        setFormMode('custom_form');
+      } else {
+        setFormMode('auto');
+      }
     }
   }, [isOpen, currentPeriod?.id]);
 
@@ -162,6 +224,11 @@ export const SubmitReportModal: React.FC<SubmitReportModalProps> = ({
 
   // Auto-generate title based on user, role, and period
   const getAutoTitle = () => {
+    if (isDeptMinutesActive) {
+      const dept = deptMinutesData?.departmentName || currentUser.departmentName || 'Chuyên Môn';
+      const num = deptMinutesData?.meetingNumber || 'lần 1';
+      return `Biên bản sinh hoạt tổ ${dept} (${num}) - ${currentUser.name}`;
+    }
     if (isSpecificLegacyHomeroomMinutes) {
       return `Biên bản tập trung học sinh đầu năm - Lớp ${currentUser.homeroomClass || ''} - ${currentUser.name}`;
     }
@@ -175,6 +242,78 @@ export const SubmitReportModal: React.FC<SubmitReportModalProps> = ({
   const handleHomeroomChange = (data: HomeroomMeetingMinutesData, generatedText: string) => {
     setHomeroomData(data);
     setContent(generatedText);
+  };
+
+  const handleDeptMinutesChange = (data: DepartmentMeetingMinutesData, generatedText: string) => {
+    setDeptMinutesData(data);
+    setContent(generatedText);
+  };
+
+  // Export handlers for downloading Word (.doc) and PDF (.pdf) to PC
+  const handleExportWord = () => {
+    if (isDeptMinutesActive && deptMinutesData) {
+      exportDepartmentMeetingToWord(
+        deptMinutesData, 
+        schoolInfo, 
+        `Bien_Ban_Hop_To_${deptMinutesData.departmentName || 'Chuyen_Mon'}_${deptMinutesData.meetingNumber || 'Lan_1'}`
+      );
+    } else if (isHomeroomActive && homeroomData) {
+      exportHomeroomReportToWord(homeroomData);
+    } else if (hasFormTemplate) {
+      exportCustomReportToWord({
+        title: currentPeriod?.title || 'Báo Cáo Biểu Mẫu Trực Tuyến',
+        authorName: currentUser.name,
+        authorRole: currentUser.roleTitle,
+        departmentOrClass: currentUser.departmentName,
+        academicYear: currentPeriod?.academicYear || '2026 – 2027',
+        fields: customFields,
+        fieldValues: customFieldValues,
+        tables: customTables,
+        notes: customNotes,
+        fileName: currentPeriod?.title
+      });
+    } else {
+      exportStandardReportToWord({
+        title: currentPeriod?.title || 'Báo Cáo',
+        content: content || 'Chưa có nội dung',
+        authorName: currentUser.name,
+        authorRole: currentUser.roleTitle,
+        departmentOrClass: currentUser.departmentName,
+        academicYear: currentPeriod?.academicYear || '2026 – 2027',
+        attachments,
+        fileName: currentPeriod?.title
+      });
+    }
+  };
+
+  const handleExportPdf = () => {
+    if (isDeptMinutesActive && deptMinutesData) {
+      exportDepartmentMeetingToPdf(deptMinutesData, schoolInfo);
+    } else if (isHomeroomActive && homeroomData) {
+      exportHomeroomReportToPdf(homeroomData);
+    } else if (hasFormTemplate) {
+      exportCustomReportToPdf({
+        title: currentPeriod?.title || 'Báo Cáo Biểu Mẫu Trực Tuyến',
+        authorName: currentUser.name,
+        authorRole: currentUser.roleTitle,
+        departmentOrClass: currentUser.departmentName,
+        academicYear: currentPeriod?.academicYear || '2026 – 2027',
+        fields: customFields,
+        fieldValues: customFieldValues,
+        tables: customTables,
+        notes: customNotes
+      });
+    } else {
+      exportStandardReportToPdf({
+        title: currentPeriod?.title || 'Báo Cáo',
+        content: content || 'Chưa có nội dung',
+        authorName: currentUser.name,
+        authorRole: currentUser.roleTitle,
+        departmentOrClass: currentUser.departmentName,
+        academicYear: currentPeriod?.academicYear || '2026 – 2027',
+        attachments
+      });
+    }
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -268,7 +407,7 @@ export const SubmitReportModal: React.FC<SubmitReportModalProps> = ({
       finalContent = `BÁO CÁO THEO BIỂU MẪU ĐIỆN TỬ:\n${fieldSummaries}\n${tableSummaries}\n\nĐÁNH GIÁ & KIẾN NGHỊ:\n${customNotes || '(Không có)'}`;
     }
 
-    if (!finalContent.trim() && attachments.length === 0 && !homeroomData) {
+    if (!finalContent.trim() && attachments.length === 0 && !homeroomData && !(isDeptMinutesActive && deptMinutesData)) {
       alert('Vui lòng nhập thông tin vào biểu mẫu, soạn thảo nội dung hoặc đính kèm ít nhất 1 tệp tin minh chứng!');
       return;
     }
@@ -279,6 +418,12 @@ export const SubmitReportModal: React.FC<SubmitReportModalProps> = ({
     }
 
     const structuredDataPayload: any = {};
+    if (isDeptMinutesActive && deptMinutesData) {
+      structuredDataPayload.departmentMeetingMinutes = deptMinutesData;
+      if (!finalContent.trim()) {
+        finalContent = generateDepartmentMeetingText(deptMinutesData);
+      }
+    }
     if (isSpecificLegacyHomeroomMinutes && homeroomData) {
       structuredDataPayload.homeroomMinutes = homeroomData;
     }
@@ -499,8 +644,89 @@ export const SubmitReportModal: React.FC<SubmitReportModalProps> = ({
           </div>
         )}
 
-        {/* PRIMARY REPORT INPUT INTERFACE (AUTOMATICALLY SELECTED BASED ON PERIOD) */}
-        {isSpecificLegacyHomeroomMinutes ? (
+        {/* THANH CÔNG CỤ ĐỊNH DẠNG VÀ XUẤT TÀI LIỆU WORD / PDF */}
+        <div className="bg-slate-100/90 border border-slate-200/90 p-3 rounded-2xl flex flex-wrap items-center justify-between gap-3 shadow-2xs">
+          {/* Bộ chuyển đổi mẫu báo cáo */}
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="text-[11px] font-bold text-slate-500 uppercase mr-1">Mẫu báo cáo:</span>
+            <button
+              type="button"
+              onClick={() => setFormMode('dept_minutes')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-2xs ${
+                isDeptMinutesActive
+                  ? 'bg-emerald-700 text-white shadow-xs'
+                  : 'bg-white text-slate-700 hover:bg-slate-50 border border-slate-200'
+              }`}
+            >
+              <Users className="w-3.5 h-3.5" />
+              <span>Biên Bản Họp Tổ Chuyên Môn</span>
+            </button>
+
+            {hasFormTemplate && (
+              <button
+                type="button"
+                onClick={() => setFormMode('custom_form')}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-2xs ${
+                  isCustomFormActive
+                    ? 'bg-emerald-700 text-white shadow-xs'
+                    : 'bg-white text-slate-700 hover:bg-slate-50 border border-slate-200'
+                }`}
+              >
+                <Layers className="w-3.5 h-3.5" />
+                <span>Biểu Mẫu Nhập Liệu</span>
+              </button>
+            )}
+
+            <button
+              type="button"
+              onClick={() => setFormMode('standard')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-2xs ${
+                formMode === 'standard' || (!isDeptMinutesActive && !isHomeroomActive && !isCustomFormActive)
+                  ? 'bg-emerald-700 text-white shadow-xs'
+                  : 'bg-white text-slate-700 hover:bg-slate-50 border border-slate-200'
+              }`}
+            >
+              <FileText className="w-3.5 h-3.5" />
+              <span>Soạn Thảo Tự Do</span>
+            </button>
+          </div>
+
+          {/* Các nút xuất file lưu trên máy tính */}
+          <div className="flex items-center gap-2 ml-auto flex-wrap">
+            <span className="text-xs text-slate-500 hidden sm:inline font-medium">Xuất tệp lưu PC:</span>
+            <button
+              type="button"
+              onClick={handleExportWord}
+              className="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-2xs transition cursor-pointer"
+              title="Tải tệp Word (.doc) chứa toàn bộ nội dung đã điền về máy tính"
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span>Tải Word (.doc)</span>
+            </button>
+            <button
+              type="button"
+              onClick={handleExportPdf}
+              className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-2xs transition cursor-pointer"
+              title="Xuất hoặc in tệp PDF (.pdf) theo đúng chuẩn thể thức lưu trữ trên máy tính"
+            >
+              <Printer className="w-3.5 h-3.5" />
+              <span>Xuất PDF / In (.pdf)</span>
+            </button>
+          </div>
+        </div>
+
+        {/* PRIMARY REPORT INPUT INTERFACE (AUTOMATICALLY SELECTED BASED ON PERIOD & USER SELECTION) */}
+        {isDeptMinutesActive ? (
+          /* DEPARTMENT MEETING MINUTES FORM (OFFICIAL ADMINISTRATIVE TEMPLATE) */
+          <div className="border border-slate-200 rounded-2xl p-1 bg-white shadow-2xs">
+            <DepartmentMeetingMinutesForm
+              currentUser={currentUser}
+              initialData={deptMinutesData || undefined}
+              schoolInfo={schoolInfo}
+              onChange={handleDeptMinutesChange}
+            />
+          </div>
+        ) : isSpecificLegacyHomeroomMinutes ? (
           /* HOMEROOM MINUTES FORM (HISTORICAL MEETING MINUTES) */
           <div className="border border-slate-200 rounded-2xl p-1 bg-white shadow-2xs">
             <HomeroomMeetingMinutesForm
@@ -509,7 +735,7 @@ export const SubmitReportModal: React.FC<SubmitReportModalProps> = ({
               onChange={handleHomeroomChange}
             />
           </div>
-        ) : hasFormTemplate ? (
+        ) : hasFormTemplate && isCustomFormActive ? (
           /* MULTI-SECTION DYNAMIC FORM & TABLE BUILDER (4 SECTIONS: I. INFO, II. TABLES, III. NOTES, IV. PREVIEW/WORD) */
           <div className="border border-slate-200 rounded-2xl p-3 bg-white shadow-2xs">
             <CustomReportFormBuilder
@@ -675,13 +901,35 @@ export const SubmitReportModal: React.FC<SubmitReportModalProps> = ({
 
         {/* FOOTER ACTION BUTTONS */}
         <div className="pt-3 border-t border-slate-200 flex flex-wrap items-center justify-between gap-3">
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-4 py-2 rounded-xl border border-slate-300 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition cursor-pointer"
-          >
-            {hasAlreadySubmitted ? 'Đóng' : 'Hủy bỏ'}
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 rounded-xl border border-slate-300 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition cursor-pointer"
+            >
+              {hasAlreadySubmitted ? 'Đóng' : 'Hủy bỏ'}
+            </button>
+
+            {/* Quick Export in Footer */}
+            <button
+              type="button"
+              onClick={handleExportWord}
+              className="px-3 py-2 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-800 border border-blue-200 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
+              title="Tải tệp Word (.doc) theo đúng thể thức lưu trữ trên máy tính"
+            >
+              <Download className="w-3.5 h-3.5 text-blue-700" />
+              <span>Tải Word</span>
+            </button>
+            <button
+              type="button"
+              onClick={handleExportPdf}
+              className="px-3 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
+              title="Xuất hoặc in tệp PDF (.pdf) theo đúng chuẩn thể thức lưu trên máy tính"
+            >
+              <Printer className="w-3.5 h-3.5 text-emerald-700" />
+              <span>Xuất PDF / In</span>
+            </button>
+          </div>
 
           <div className="flex items-center gap-2">
             {isApprovedByPrincipal ? (
