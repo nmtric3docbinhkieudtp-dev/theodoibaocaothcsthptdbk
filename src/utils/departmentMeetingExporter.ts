@@ -396,7 +396,7 @@ export function generateDepartmentMeetingHtml(
 
       <!-- NỘI DUNG BIÊN BẢN -->
       <div style="margin-top: 16px;">
-        <div class="section-header" style="font-size: 13.5pt; font-weight: bold; text-transform: uppercase; margin-top: 18px; margin-bottom: 10px;">
+        <div class="section-header" style="font-size: 13.5pt; font-weight: bold; text-transform: uppercase; margin-top: 18px; margin-bottom: 10px; text-align: center;">
           NỘI DUNG CUỘC HỌP
         </div>
 

@@ -640,32 +640,7 @@ export function generateCustomReportHtml({
       const textVal = rawVal !== undefined && rawVal !== null ? String(rawVal).trim() : '';
       const lines = splitSmartLines(textVal);
       if (lines.length === 0) {
-        const labelLower = (f.label || '').toLowerCase();
-        if (labelLower.includes('đánh giá') && (labelLower.includes('tổ') || labelLower.includes('thời gian qua') || labelLower.includes('hoạt động'))) {
-          valFormatted = `
-            <div style="margin: 3px 0; text-indent: 20px;">- Ưu điểm: Tập thể giáo viên trong tổ chấp hành tốt quy chế chuyên môn, tham gia đầy đủ các buổi tập huấn chuyên môn đầu năm; duy trì tốt nề nếp dạy và học.</div>
-            <div style="margin: 3px 0; text-indent: 20px;">- Hạn chế: Việc nộp một số kế hoạch cá nhân đôi lúc còn chậm trễ so với hạn định.</div>
-            <div style="margin: 3px 0; text-indent: 20px;">- Nguyên nhân của hạn chế: Đầu năm học nhiều hồ sơ sổ sách và chuẩn bị giảng dạy đồng thời.</div>
-            <div style="margin: 3px 0; text-indent: 20px;">- Giải pháp khắc phục: Tổ trưởng nhắc nhở kịp thời trên nhóm Zalo của tổ và phân công giáo viên hỗ trợ lẫn nhau.</div>
-          `;
-        } else if (labelLower.includes('trọng tâm')) {
-          valFormatted = `
-            <div style="margin: 3px 0; text-indent: 20px;">- Góp ý dự thảo kế hoạch giáo dục nhà trường năm học 2026-2027. Tập trung đánh giá các số liệu, chỉ tiêu trong kế hoạch giáo dục.</div>
-            <div style="margin: 3px 0; text-indent: 20px;">- Thảo luận việc phân công chuyên môn và thời khóa biểu áp dụng từ tuần 01.</div>
-            <div style="margin: 3px 0; text-indent: 20px;">- Rà soát thiết bị dạy học, phòng bộ môn, sách giáo khoa và các điều kiện đảm bảo cho năm học mới.</div>
-            <div style="margin: 3px 0; text-indent: 20px;">- Triển khai sinh hoạt chuyên môn theo nghiên cứu bài học, thao giảng và kiểm tra nội bộ tổ.</div>
-          `;
-        } else if (labelLower.includes('văn bản')) {
-          valFormatted = `
-            <div style="margin: 3px 0; text-indent: 20px;">- Kế hoạch giáo dục nhà trường năm học 2026-2027 (bản dự thảo).</div>
-            <div style="margin: 3px 0; text-indent: 20px;">- Quyết định phân công nhiệm vụ năm học 2026-2027.</div>
-            <div style="margin: 3px 0; text-indent: 20px;">- Công văn hướng dẫn thực hiện nhiệm vụ năm học và các quy định chuyên môn hiện hành.</div>
-          `;
-        } else {
-          valFormatted = isMinutes 
-            ? '<div style="margin: 3px 0; text-indent: 20px; font-style: italic; color: #555;">(Chưa có nội dung ghi nhận)</div>'
-            : '<span style="font-style: italic; color: #444;">Không</span>';
-        }
+        valFormatted = '';
       } else if (lines.length === 1 && !lines[0].startsWith('-') && !lines[0].startsWith('•') && !lines[0].startsWith('+') && !lines[0].startsWith('*') && !lines[0].startsWith('–')) {
         valFormatted = `<div style="text-indent: 20px; text-align: justify; line-height: 1.55;">${lines[0]}</div>`;
       } else {
@@ -682,11 +657,34 @@ export function generateCustomReportHtml({
     }
 
     const cleanLabel = f.label.replace(/:$/, '').trim();
+    const isSubBullet = /^(ưu điểm|hạn chế|nguyên nhân|giải pháp)/i.test(cleanLabel.replace(/^[-•+*–\s]+/, ''));
+
+    if (isSubBullet) {
+      const pureLabel = cleanLabel.replace(/^[-•+*–\s]+/, '');
+      const rawText = rawVal !== undefined && rawVal !== null ? String(rawVal).trim() : '';
+      const subLines = splitSmartLines(rawText);
+      const textDisplay = subLines.length > 0 ? subLines.join(' ') : '';
+      return `
+        <div style="margin: 3px 0 3px 20px; text-indent: -12px; font-size: 13pt; line-height: 1.55; text-align: justify; color: #111;">
+          <strong>- ${pureLabel}:</strong> ${textDisplay ? `<span>${textDisplay}</span>` : '<span style="font-style: italic; color: #666;">Chưa ghi nhận</span>'}
+        </div>
+      `;
+    }
+
+    if (!valFormatted) {
+      return `
+        <div style="margin-top: 14px; margin-bottom: 6px; font-size: 13pt; line-height: 1.55;">
+          <div style="font-weight: bold; color: #000;">
+            ${cleanLabel}${cleanLabel.endsWith(':') ? '' : ':'}
+          </div>
+        </div>
+      `;
+    }
 
     return `
       <div style="margin-top: 12px; margin-bottom: 8px; font-size: 13pt; line-height: 1.55;">
         <div style="font-weight: bold; margin-bottom: 4px; color: #000;">
-          ${cleanLabel}:
+          ${cleanLabel}${cleanLabel.endsWith(':') ? '' : ':'}
         </div>
         <div style="text-align: justify; padding-left: 2px; color: #111;">
           ${valFormatted}
@@ -695,30 +693,19 @@ export function generateCustomReportHtml({
     `;
   }).join('');
 
-  // Nếu là biên bản mà trong danh sách các trường chưa có mục 1 (Đánh giá hoạt động của tổ), tự động chèn vào đầu nội dung
+  // Nếu là biên bản mà trong danh sách các trường chưa có mục 1 (Đánh giá hoạt động của tổ), tự động chèn tiêu đề vào đầu nội dung
   let fullContentHtml = contentBodyHtml;
   if (isMinutes && !hasEvaluationField) {
     const evaluationHtmlBlock = `
-      <div style="margin-top: 12px; margin-bottom: 8px; font-size: 13pt; line-height: 1.55;">
-        <div style="font-weight: bold; margin-bottom: 4px; color: #000;">
+      <div style="margin-top: 14px; margin-bottom: 6px; font-size: 13pt; line-height: 1.55;">
+        <div style="font-weight: bold; color: #000;">
           1. Đánh giá hoạt động của tổ trong thời gian qua:
-        </div>
-        <div style="text-align: justify; padding-left: 2px; color: #111;">
-          <div style="margin: 3px 0; text-indent: 20px;">- Ưu điểm: Tập thể giáo viên trong tổ chấp hành tốt quy chế chuyên môn, tham gia đầy đủ các buổi tập huấn chuyên môn đầu năm; duy trì tốt nề nếp dạy và học.</div>
-          <div style="margin: 3px 0; text-indent: 20px;">- Hạn chế: Việc nộp một số kế hoạch cá nhân đôi lúc còn chậm trễ so với hạn định.</div>
-          <div style="margin: 3px 0; text-indent: 20px;">- Nguyên nhân của hạn chế: Đầu năm học nhiều hồ sơ sổ sách và chuẩn bị giảng dạy đồng thời.</div>
-          <div style="margin: 3px 0; text-indent: 20px;">- Giải pháp khắc phục: Tổ trưởng nhắc nhở kịp thời trên nhóm Zalo của tổ và phân công giáo viên hỗ trợ lẫn nhau.</div>
         </div>
       </div>
     `;
 
-    // Chèn trước mục 2: "2. Triển khai các văn bản" hoặc chèn lên đầu
-    const insertBefore2Index = fullContentHtml.search(/(Triển khai các văn bản|2\.\s*Triển khai|2\.\s*Văn bản)/i);
-    if (insertBefore2Index !== -1) {
-      fullContentHtml = fullContentHtml.slice(0, insertBefore2Index) + evaluationHtmlBlock + fullContentHtml.slice(insertBefore2Index);
-    } else {
-      fullContentHtml = evaluationHtmlBlock + fullContentHtml;
-    }
+    // Chèn ngay đầu nội dung (dưới dòng NỘI DUNG CUỘC HỌP và ngay trên các phần Ưu điểm, Hạn chế...)
+    fullContentHtml = evaluationHtmlBlock + fullContentHtml;
   }
 
   // Nếu là biên bản mà trong danh sách các trường chưa có mục 3 (công việc trọng tâm), tự động chèn vào đúng vị trí
@@ -931,7 +918,7 @@ export function generateCustomReportHtml({
           ${secretaryStr ? `<p style="margin: 2px 0 4px 0;"><strong>Thư ký cuộc họp:</strong> ${secretaryStr}.</p>` : ''}
         </div>
 
-        <div style="font-size: 13.5pt; font-weight: bold; text-transform: uppercase; margin-top: 18px; margin-bottom: 10px;">
+        <div style="font-size: 13.5pt; font-weight: bold; text-transform: uppercase; margin-top: 18px; margin-bottom: 10px; text-align: center;">
           NỘI DUNG CUỘC HỌP
         </div>
       ` : ''}

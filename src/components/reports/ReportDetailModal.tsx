@@ -513,7 +513,7 @@ export const ReportDetailModal: React.FC<ReportDetailModalProps> = ({
               </div>
 
               <div className="space-y-4 font-sans text-xs sm:text-sm pt-2">
-                <div className="font-bold uppercase text-slate-900 border-b border-slate-200 pb-1 text-sm">
+                <div className="font-bold uppercase text-slate-900 border-b border-slate-200 pb-1 text-sm text-center">
                   NỘI DUNG CUỘC HỌP
                 </div>
 
