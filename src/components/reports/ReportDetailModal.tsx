@@ -41,7 +41,8 @@ import {
   exportCustomReportToWord,
   exportCustomReportToPdf,
   exportStandardReportToWord,
-  exportStandardReportToPdf
+  exportStandardReportToPdf,
+  splitSmartLines
 } from '../../utils/homeroomReportExporter';
 import { 
   exportDepartmentMeetingToWord, 
@@ -319,9 +320,13 @@ export const ReportDetailModal: React.FC<ReportDetailModalProps> = ({
                   );
                 }
 
+                const valStr = val !== undefined && val !== null ? String(val) : '';
+                const lines = splitSmartLines(valStr);
+                const isWide = field.type === 'textarea' || valStr.length > 50 || lines.length > 1;
+
                 return (
-                  <div key={field.id} className="bg-white p-3 rounded-xl border border-slate-200 shadow-2xs">
-                    <div className="text-[11px] font-bold text-slate-500 uppercase">{field.label}</div>
+                  <div key={field.id} className={`${isWide ? 'col-span-1 sm:col-span-2' : ''} bg-white p-3.5 rounded-xl border border-slate-200 shadow-2xs space-y-1.5`}>
+                    <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wide">{field.label}</div>
                     <div className="text-xs font-semibold text-slate-900 mt-1">
                       {field.type === 'checkbox' ? (
                         Array.isArray(val) ? (
@@ -350,10 +355,21 @@ export const ReportDetailModal: React.FC<ReportDetailModalProps> = ({
                         ) : (
                           <span className="italic text-slate-400">Chưa đánh giá</span>
                         )
+                      ) : lines.length > 0 ? (
+                        <div className="space-y-1 pt-0.5">
+                          {lines.map((l, lIdx) => (
+                            <div 
+                              key={lIdx} 
+                              className={l.startsWith('-') || l.startsWith('•') || l.startsWith('+') || l.startsWith('*') || l.startsWith('–')
+                                ? "pl-2 text-slate-800 leading-relaxed font-normal" 
+                                : "text-slate-800 leading-relaxed font-normal"}
+                            >
+                              {l}
+                            </div>
+                          ))}
+                        </div>
                       ) : (
-                        val !== undefined && val !== '' 
-                          ? String(val) 
-                          : <span className="italic text-slate-400">Không có dữ liệu</span>
+                        <span className="italic text-slate-400">Không có dữ liệu</span>
                       )}
                     </div>
                   </div>

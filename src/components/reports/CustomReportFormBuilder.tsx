@@ -34,7 +34,7 @@ import {
 import { CustomFormField, CustomDynamicTable } from '../../types';
 import { ImportFormFromDocModal } from '../common/ImportFormFromDocModal';
 import { ParsedTemplateResult } from '../../utils/formFileParser';
-import { exportCustomReportToWord } from '../../utils/homeroomReportExporter';
+import { exportCustomReportToWord, splitSmartLines } from '../../utils/homeroomReportExporter';
 
 interface CustomReportFormBuilderProps {
   fields: CustomFormField[];
@@ -75,6 +75,7 @@ export const CustomReportFormBuilder: React.FC<CustomReportFormBuilderProps> = (
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [isDesigning, setIsDesigning] = useState(!readOnlyStructure && fields.length === 0 && tables.length === 0);
   const [isNotesOpen, setIsNotesOpen] = useState(Boolean(notes && notes.trim().length > 0));
+  const [expandedFields, setExpandedFields] = useState<Record<string, boolean>>({});
   
   // Design state for new field
   const [newFieldLabel, setNewFieldLabel] = useState('');
@@ -614,16 +615,97 @@ export const CustomReportFormBuilder: React.FC<CustomReportFormBuilderProps> = (
                   <p className="text-[11px] text-slate-500 italic">{field.description}</p>
                 )}
 
-                {/* 1. TEXT */}
-                {field.type === 'text' && (
-                  <input
-                    type="text"
-                    placeholder={field.placeholder || 'Nhập nội dung...'}
-                    value={fieldValues[field.id] || ''}
-                    onChange={(e) => onFieldValueChange(field.id, e.target.value)}
-                    className="w-full text-xs px-3 py-2 bg-white rounded-lg border border-slate-300 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden font-medium"
-                  />
-                )}
+                {/* 1. TEXT & 3. TEXTAREA (Tự động hỗ trợ gõ Enter xuống hàng và nút tách ý thông minh) */}
+                {(() => {
+                  const isTextType = field.type === 'text';
+                  const isTextareaType = field.type === 'textarea';
+                  if (!isTextType && !isTextareaType) return null;
+
+                  const rawCurrentVal = String(fieldValues[field.id] || '');
+                  const labelLower = (field.label || '').toLowerCase();
+                  
+                  // Nhận diện các trường có tính chất văn bản dài/tường thuật cần xuống hàng
+                  const shouldBeMultiline = isTextareaType || 
+                    expandedFields[field.id] ||
+                    field.label.length > 25 ||
+                    labelLower.includes('văn bản') ||
+                    labelLower.includes('triển khai') ||
+                    labelLower.includes('vướng mắc') ||
+                    labelLower.includes('đề xuất') ||
+                    labelLower.includes('nội dung') ||
+                    labelLower.includes('ý kiến') ||
+                    labelLower.includes('đánh giá') ||
+                    labelLower.includes('kết luận') ||
+                    labelLower.includes('kiến nghị') ||
+                    labelLower.includes('giải pháp') ||
+                    labelLower.includes('kế hoạch') ||
+                    labelLower.includes('nhiệm vụ') ||
+                    rawCurrentVal.includes('\n') ||
+                    rawCurrentVal.length > 40 ||
+                    /[-•+*–]\s+/.test(rawCurrentVal);
+
+                  // Kiểm tra xem đoạn văn bản hiện tại có nhiều ý dính liền chưa được xuống hàng hay không
+                  const potentialLines = splitSmartLines(rawCurrentVal);
+                  const hasUnsplitBullets = potentialLines.length > 1 && !rawCurrentVal.includes('\n');
+
+                  if (!shouldBeMultiline) {
+                    return (
+                      <div className="relative">
+                        <input
+                          type="text"
+                          placeholder={field.placeholder || 'Nhập nội dung...'}
+                          value={fieldValues[field.id] || ''}
+                          onChange={(e) => onFieldValueChange(field.id, e.target.value)}
+                          className="w-full text-xs px-3 py-2 pr-8 bg-white rounded-lg border border-slate-300 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden font-medium"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setExpandedFields(prev => ({ ...prev, [field.id]: true }))}
+                          className="absolute right-2 top-2 text-slate-400 hover:text-emerald-700 cursor-pointer p-0.5"
+                          title="Chuyển sang ô nhập nhiều dòng (nhấn phím Enter xuống hàng)"
+                        >
+                          <AlignLeft className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    );
+                  }
+
+                  const rowCount = Math.min(8, Math.max(3, rawCurrentVal.split('\n').length + 1));
+
+                  return (
+                    <div className="space-y-1.5">
+                      <div className="relative">
+                        <textarea
+                          rows={rowCount}
+                          placeholder={field.placeholder || 'Nhập nội dung chi tiết (nhấn phím Enter để xuống hàng mỗi ý)...'}
+                          value={fieldValues[field.id] || ''}
+                          onChange={(e) => onFieldValueChange(field.id, e.target.value)}
+                          className="w-full text-xs p-2.5 bg-white rounded-lg border border-slate-300 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden leading-relaxed"
+                        />
+                      </div>
+
+                      <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-500 px-1">
+                        <span className="flex items-center gap-1 text-emerald-800 font-medium">
+                          💡 <span>Bạn có thể nhấn phím <strong>Enter</strong> để xuống hàng cho từng ý hoặc từng văn bản.</span>
+                        </span>
+
+                        {hasUnsplitBullets && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              onFieldValueChange(field.id, potentialLines.join('\n'));
+                            }}
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-emerald-100 hover:bg-emerald-200 text-emerald-800 font-bold text-[10.5px] transition cursor-pointer shadow-2xs"
+                            title="Tự động nhận diện các dấu gạch đầu dòng và ngắt thành từng hàng riêng biệt"
+                          >
+                            <Sparkles className="w-3.5 h-3.5 text-emerald-700" />
+                            <span>Tự động tách {potentialLines.length} ý xuống hàng</span>
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })()}
 
                 {/* 2. NUMBER */}
                 {field.type === 'number' && (
@@ -633,17 +715,6 @@ export const CustomReportFormBuilder: React.FC<CustomReportFormBuilderProps> = (
                     value={fieldValues[field.id] || ''}
                     onChange={(e) => onFieldValueChange(field.id, e.target.value)}
                     className="w-full text-xs px-3 py-2 bg-white rounded-lg border border-slate-300 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden font-bold"
-                  />
-                )}
-
-                {/* 3. TEXTAREA */}
-                {field.type === 'textarea' && (
-                  <textarea
-                    rows={2}
-                    placeholder={field.placeholder || 'Nhập chi tiết nội dung...'}
-                    value={fieldValues[field.id] || ''}
-                    onChange={(e) => onFieldValueChange(field.id, e.target.value)}
-                    className="w-full text-xs p-2.5 bg-white rounded-lg border border-slate-300 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
                   />
                 )}
 

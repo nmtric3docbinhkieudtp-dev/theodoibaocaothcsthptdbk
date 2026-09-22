@@ -1,4 +1,5 @@
 import { DepartmentMeetingMinutesData, SchoolInfo } from '../types';
+import { splitSmartLines } from './homeroomReportExporter';
 
 /**
  * Mẫu văn bản triển khai mặc định chuẩn theo hướng dẫn năm học 2026-2027
@@ -203,19 +204,19 @@ export function generateDepartmentMeetingHtml(
   const chairPerson = data.chairPerson || '.........................';
   const secretary = data.secretary || '.......................................';
 
-  // Chuyển đổi text có ngắt dòng thành HTML paragraphs/bullet items
+  // Chuyển đổi text có ngắt dòng thành HTML paragraphs/bullet items với tính năng tự hiểu xuống hàng
   const formatTextToHtml = (text: string, defaultPlaceholder = '……………….') => {
     if (!text || !text.trim()) {
       return `<p style="margin: 4px 0; text-indent: 0;">${defaultPlaceholder}</p>`;
     }
-    const lines = text.split('\n');
+    const lines = splitSmartLines(text);
     return lines.map(line => {
       const trimmed = line.trim();
       if (!trimmed) return '';
-      if (trimmed.startsWith('-')) {
-        return `<p style="margin: 3px 0; text-indent: 0; padding-left: 15px; text-align: justify;">${trimmed}</p>`;
+      if (trimmed.startsWith('-') || trimmed.startsWith('•') || trimmed.startsWith('+') || trimmed.startsWith('*') || trimmed.startsWith('–')) {
+        return `<p style="margin: 4px 0 4px 20px; text-indent: -12px; text-align: justify; line-height: 1.55;">${trimmed}</p>`;
       }
-      return `<p style="margin: 4px 0; text-indent: 20px; text-align: justify;">${trimmed}</p>`;
+      return `<p style="margin: 4px 0; text-indent: 20px; text-align: justify; line-height: 1.55;">${trimmed}</p>`;
     }).filter(Boolean).join('');
   };
 

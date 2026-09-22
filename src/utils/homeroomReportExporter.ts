@@ -1,6 +1,45 @@
 import { HomeroomMeetingMinutesData, AbsentStudentItem, TalentAchievementItem, ClassCadreItem, CustomFormField, CustomDynamicTable, ReportAttachment } from '../types';
 
 /**
+ * Phân tích nội dung và tách dòng thông minh:
+ * - Tách theo ký tự xuống dòng thực tế (\n, \r\n)
+ * - Tự động nhận diện và ngắt dòng cho các dấu gạch đầu dòng (- , • , + , * , – )
+ *   hoặc mục đánh số (1. , 2. ) ngay cả khi người dùng gõ / dán dính liền trên 1 dòng.
+ * - Tuyệt đối không ngắt nhầm các số hiệu văn bản (như 3284/SGDĐT-GDPT, 1061/HD-SGDĐT) hay khoảng năm học (2026-2027).
+ */
+export function splitSmartLines(text: string): string[] {
+  if (!text) return [];
+  const rawSegments = text.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+  const result: string[] = [];
+
+  for (const segment of rawSegments) {
+    let normalized = segment;
+
+    // 1. Sau dấu kết thúc [.;:!?\)] có dấu gạch đầu dòng: "...dự thảo). - Công văn số..."
+    normalized = normalized.replace(/([.;:!?\)])\s*([-•+*–])\s+/g, '$1\n$2 ');
+
+    // 2. Có từ 2 khoảng trắng liên tiếp trở lên rồi đến dấu gạch đầu dòng: "...trung học.      - Công văn..."
+    normalized = normalized.replace(/\s{2,}([-•+*–])\s+/g, '\n$1 ');
+
+    // 3. Ở giữa câu có " - " hoặc " – " theo sau bởi từ viết hoa (tiếng Việt): "...văn bản - Kế hoạch..."
+    // Đảm bảo không ngắt năm học như 2026-2027 hoặc 2026 – 2027
+    normalized = normalized.replace(/([a-z0-9à-ỹ\)])\s+([-•+*–])\s+([A-ZÀ-Ỹ])/g, '$1\n$2 $3');
+
+    // 4. Có danh sách đánh số dạng "1. ", "2. ", "a) ", "b) " sau dấu kết câu hoặc khoảng trắng rộng
+    normalized = normalized.replace(/([.;:!?\)])\s*(\d+[\.\)]|[a-zA-Z]\))\s+/g, '$1\n$2 ');
+
+    const subLines = normalized
+      .split('\n')
+      .map(l => l.trim())
+      .filter(l => l.length > 0);
+
+    result.push(...subLines);
+  }
+
+  return result;
+}
+
+/**
  * Trình hỗ trợ in trực tiếp hoặc lưu PDF an toàn (hỗ trợ cả popup và iframe cho môi trường sandbox)
  */
 export function printOrSavePdfHelper(htmlContent: string): void {
@@ -599,7 +638,7 @@ export function generateCustomReportHtml({
       }
     } else {
       const textVal = rawVal !== undefined && rawVal !== null ? String(rawVal).trim() : '';
-      const lines = textVal.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+      const lines = splitSmartLines(textVal);
       if (lines.length === 0) {
         const labelLower = (f.label || '').toLowerCase();
         if (labelLower.includes('đánh giá') && (labelLower.includes('tổ') || labelLower.includes('thời gian qua') || labelLower.includes('hoạt động'))) {
@@ -627,17 +666,17 @@ export function generateCustomReportHtml({
             ? '<div style="margin: 3px 0; text-indent: 20px; font-style: italic; color: #555;">(Chưa có nội dung ghi nhận)</div>'
             : '<span style="font-style: italic; color: #444;">Không</span>';
         }
-      } else if (lines.length === 1) {
-        valFormatted = `<div style="text-indent: 20px;">${lines[0]}</div>`;
+      } else if (lines.length === 1 && !lines[0].startsWith('-') && !lines[0].startsWith('•') && !lines[0].startsWith('+') && !lines[0].startsWith('*') && !lines[0].startsWith('–')) {
+        valFormatted = `<div style="text-indent: 20px; text-align: justify; line-height: 1.55;">${lines[0]}</div>`;
       } else {
         valFormatted = lines.map(line => {
-          if (line.startsWith('-') || line.startsWith('+') || line.startsWith('•') || line.startsWith('*')) {
-            return `<div style="margin: 3px 0 3px 20px; text-indent: -12px;">${line}</div>`;
+          if (line.startsWith('-') || line.startsWith('+') || line.startsWith('•') || line.startsWith('*') || line.startsWith('–')) {
+            return `<div style="margin: 4px 0 4px 20px; text-indent: -12px; text-align: justify; line-height: 1.55;">${line}</div>`;
           }
           if (/^(Ý kiến|\d+[\.\)]|[a-zA-Z][\.\)])/i.test(line)) {
-            return `<div style="margin: 4px 0 4px 15px; font-weight: 500;">${line}</div>`;
+            return `<div style="margin: 4px 0 4px 15px; font-weight: 500; text-align: justify; line-height: 1.55;">${line}</div>`;
           }
-          return `<div style="margin: 3px 0; text-indent: 20px;">${line}</div>`;
+          return `<div style="margin: 3px 0; text-indent: 20px; text-align: justify; line-height: 1.55;">${line}</div>`;
         }).join('');
       }
     }
