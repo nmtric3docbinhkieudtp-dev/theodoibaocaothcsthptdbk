@@ -542,6 +542,8 @@ export function generateCustomReportHtml({
   const secretaryName = secretaryStr || '';
   const chairPersonName = chairPersonStr || authorName;
 
+  // Kiểm tra xem trong các trường có mục 1 (Đánh giá hoạt động của tổ) hay không
+  let hasEvaluationField = false;
   // Kiểm tra xem trong các trường có mục 3 (Triển khai công việc trọng tâm) hay không
   let hasCentralTasksField = false;
 
@@ -550,6 +552,15 @@ export function generateCustomReportHtml({
     if (handledFieldIds.has(f.id)) return false;
     
     const labelLower = (f.label || '').toLowerCase();
+    if (
+      labelLower.includes('đánh giá hoạt động') || 
+      labelLower.includes('đánh giá của tổ') || 
+      labelLower.includes('hoạt động của tổ trong thời gian qua') ||
+      (labelLower.includes('đánh giá') && labelLower.includes('tổ'))
+    ) {
+      hasEvaluationField = true;
+    }
+
     if (
       labelLower.includes('trọng tâm') || 
       labelLower.includes('công việc trọng tâm') || 
@@ -591,7 +602,14 @@ export function generateCustomReportHtml({
       const lines = textVal.split('\n').map(l => l.trim()).filter(l => l.length > 0);
       if (lines.length === 0) {
         const labelLower = (f.label || '').toLowerCase();
-        if (labelLower.includes('trọng tâm')) {
+        if (labelLower.includes('đánh giá') && (labelLower.includes('tổ') || labelLower.includes('thời gian qua') || labelLower.includes('hoạt động'))) {
+          valFormatted = `
+            <div style="margin: 3px 0; text-indent: 20px;">- Ưu điểm: Tập thể giáo viên trong tổ chấp hành tốt quy chế chuyên môn, tham gia đầy đủ các buổi tập huấn chuyên môn đầu năm; duy trì tốt nề nếp dạy và học.</div>
+            <div style="margin: 3px 0; text-indent: 20px;">- Hạn chế: Việc nộp một số kế hoạch cá nhân đôi lúc còn chậm trễ so với hạn định.</div>
+            <div style="margin: 3px 0; text-indent: 20px;">- Nguyên nhân của hạn chế: Đầu năm học nhiều hồ sơ sổ sách và chuẩn bị giảng dạy đồng thời.</div>
+            <div style="margin: 3px 0; text-indent: 20px;">- Giải pháp khắc phục: Tổ trưởng nhắc nhở kịp thời trên nhóm Zalo của tổ và phân công giáo viên hỗ trợ lẫn nhau.</div>
+          `;
+        } else if (labelLower.includes('trọng tâm')) {
           valFormatted = `
             <div style="margin: 3px 0; text-indent: 20px;">- Góp ý dự thảo kế hoạch giáo dục nhà trường năm học 2026-2027. Tập trung đánh giá các số liệu, chỉ tiêu trong kế hoạch giáo dục.</div>
             <div style="margin: 3px 0; text-indent: 20px;">- Thảo luận việc phân công chuyên môn và thời khóa biểu áp dụng từ tuần 01.</div>
@@ -638,8 +656,33 @@ export function generateCustomReportHtml({
     `;
   }).join('');
 
-  // Nếu là biên bản mà trong danh sách các trường chưa có mục 3 (công việc trọng tâm), tự động chèn vào đúng vị trí
+  // Nếu là biên bản mà trong danh sách các trường chưa có mục 1 (Đánh giá hoạt động của tổ), tự động chèn vào đầu nội dung
   let fullContentHtml = contentBodyHtml;
+  if (isMinutes && !hasEvaluationField) {
+    const evaluationHtmlBlock = `
+      <div style="margin-top: 12px; margin-bottom: 8px; font-size: 13pt; line-height: 1.55;">
+        <div style="font-weight: bold; margin-bottom: 4px; color: #000;">
+          1. Đánh giá hoạt động của tổ trong thời gian qua:
+        </div>
+        <div style="text-align: justify; padding-left: 2px; color: #111;">
+          <div style="margin: 3px 0; text-indent: 20px;">- Ưu điểm: Tập thể giáo viên trong tổ chấp hành tốt quy chế chuyên môn, tham gia đầy đủ các buổi tập huấn chuyên môn đầu năm; duy trì tốt nề nếp dạy và học.</div>
+          <div style="margin: 3px 0; text-indent: 20px;">- Hạn chế: Việc nộp một số kế hoạch cá nhân đôi lúc còn chậm trễ so với hạn định.</div>
+          <div style="margin: 3px 0; text-indent: 20px;">- Nguyên nhân của hạn chế: Đầu năm học nhiều hồ sơ sổ sách và chuẩn bị giảng dạy đồng thời.</div>
+          <div style="margin: 3px 0; text-indent: 20px;">- Giải pháp khắc phục: Tổ trưởng nhắc nhở kịp thời trên nhóm Zalo của tổ và phân công giáo viên hỗ trợ lẫn nhau.</div>
+        </div>
+      </div>
+    `;
+
+    // Chèn trước mục 2: "2. Triển khai các văn bản" hoặc chèn lên đầu
+    const insertBefore2Index = fullContentHtml.search(/(Triển khai các văn bản|2\.\s*Triển khai|2\.\s*Văn bản)/i);
+    if (insertBefore2Index !== -1) {
+      fullContentHtml = fullContentHtml.slice(0, insertBefore2Index) + evaluationHtmlBlock + fullContentHtml.slice(insertBefore2Index);
+    } else {
+      fullContentHtml = evaluationHtmlBlock + fullContentHtml;
+    }
+  }
+
+  // Nếu là biên bản mà trong danh sách các trường chưa có mục 3 (công việc trọng tâm), tự động chèn vào đúng vị trí
   if (isMinutes && !hasCentralTasksField) {
     const centralTasksHtmlBlock = `
       <div style="margin-top: 12px; margin-bottom: 8px; font-size: 13pt; line-height: 1.55;">
