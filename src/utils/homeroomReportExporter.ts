@@ -251,18 +251,18 @@ export function generateHomeroomReportHtml(data: HomeroomMeetingMinutesData, isF
             <div style="font-size: 11pt; text-transform: uppercase;">SỞ GDĐT TỈNH ĐỒNG THÁP</div>
             <div style="font-size: 11.5pt; font-weight: bold; text-transform: uppercase; margin-top: 2px;">TRƯỜNG THCS VÀ THPT</div>
             <div style="font-size: 11.5pt; font-weight: bold; text-transform: uppercase; margin-top: 1px;">ĐỐC BINH KIỀU</div>
-            <div style="text-align: center; margin-top: 5px; margin-bottom: 6px;">
-              <span style="display: inline-block; width: 90px; border-bottom: 1.5px solid #000;"></span>
+            <div style="text-align: center; font-size: 1pt; line-height: 1pt; margin-top: 2px; margin-bottom: 4px;">
+              <span style="display: inline-block; width: 90px; border-bottom: 1.5px solid #000; height: 1px; vertical-align: top;"></span>
             </div>
-            <div style="font-size: 11pt; margin-top: 4px;">Số: &nbsp; &nbsp; /BB-THCS&amp;THPTĐBK</div>
+            <div style="font-size: 11pt; margin-top: 2px;">Số: &nbsp; &nbsp; /BB-THCS&amp;THPTĐBK</div>
           </td>
           <td style="width: 55%; text-align: center; vertical-align: top; border: none; padding: 0;">
             <div style="font-size: 11pt; font-weight: bold; text-transform: uppercase;">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</div>
             <div style="font-size: 11.5pt; font-weight: bold; margin-top: 2px;">Độc lập – Tự do – Hạnh phúc</div>
-            <div style="text-align: center; margin-top: 5px; margin-bottom: 6px;">
-              <span style="display: inline-block; width: 175px; border-bottom: 1.5px solid #000;"></span>
+            <div style="text-align: center; font-size: 1pt; line-height: 1pt; margin-top: 2px; margin-bottom: 4px;">
+              <span style="display: inline-block; width: 170px; border-bottom: 1.5px solid #000; height: 1px; vertical-align: top;"></span>
             </div>
-            <div style="font-size: 11pt; font-style: italic; margin-top: 4px;">Đồng Tháp, ngày ${data.meetingDate || '28'} tháng ${data.meetingMonth || '8'} năm ${data.meetingYear || '2026'}</div>
+            <div style="font-size: 11pt; font-style: italic; margin-top: 2px;">Đồng Tháp, ngày ${data.meetingDate || '28'} tháng ${data.meetingMonth || '8'} năm ${data.meetingYear || '2026'}</div>
           </td>
         </tr>
       </table>
@@ -271,8 +271,8 @@ export function generateHomeroomReportHtml(data: HomeroomMeetingMinutesData, isF
         <div style="font-size: 14pt; font-weight: bold; text-transform: uppercase; margin: 0 0 4px 0;">BIÊN BẢN</div>
         <div style="font-size: 13.5pt; font-weight: bold; text-transform: uppercase; margin: 0;">TẬP TRUNG HỌC SINH ĐẦU NĂM HỌC</div>
         <div style="font-size: 13.5pt; font-weight: bold; text-transform: uppercase; margin-top: 4px;">NĂM HỌC: ${data.academicYear || '2026 – 2027'}</div>
-        <div style="text-align: center; margin-top: 6px; margin-bottom: 16px;">
-          <span style="display: inline-block; width: 180px; border-bottom: 1.5px solid #000;"></span>
+        <div style="text-align: center; font-size: 1pt; line-height: 1pt; margin-top: 3px; margin-bottom: 14px;">
+          <span style="display: inline-block; width: 160px; border-bottom: 1.5px solid #000; height: 1px; vertical-align: top;"></span>
         </div>
       </div>
 
@@ -542,9 +542,28 @@ export function generateCustomReportHtml({
   const secretaryName = secretaryStr || '';
   const chairPersonName = chairPersonStr || authorName;
 
+  // Kiểm tra xem trong các trường có mục 3 (Triển khai công việc trọng tâm) hay không
+  let hasCentralTasksField = false;
+
   // Lọc các trường nội dung còn lại (thể hiện dưới dạng văn bản hành chính)
   const activeFields = fields.filter(f => {
     if (handledFieldIds.has(f.id)) return false;
+    
+    const labelLower = (f.label || '').toLowerCase();
+    if (
+      labelLower.includes('trọng tâm') || 
+      labelLower.includes('công việc trọng tâm') || 
+      labelLower.includes('nội dung công việc trọng tâm')
+    ) {
+      hasCentralTasksField = true;
+    }
+
+    // Luôn giữ lại tiêu đề phân mục section
+    if (f.type === 'section') return true;
+
+    // Nếu là biên bản họp thì giữ lại tất cả các trường để in mẫu đầy đủ các mục 1, 2, 3, 4, 5, 6...
+    if (isMinutes) return true;
+
     const v = fieldValues[f.id];
     return v !== undefined && v !== null && String(v).trim() !== '';
   });
@@ -555,7 +574,7 @@ export function generateCustomReportHtml({
 
     if (f.type === 'section') {
       return `
-        <div style="font-size: 13pt; font-weight: bold; text-transform: uppercase; margin-top: 18px; margin-bottom: 8px; color: #000;">
+        <div style="font-size: 13pt; font-weight: bold; margin-top: 14px; margin-bottom: 6px; color: #000;">
           ${f.label}
         </div>
       `;
@@ -568,10 +587,28 @@ export function generateCustomReportHtml({
         valFormatted = rawVal ? 'Đã hoàn thành / Đạt chuẩn quy định' : 'Chưa hoàn thành';
       }
     } else {
-      const textVal = String(rawVal).trim();
+      const textVal = rawVal !== undefined && rawVal !== null ? String(rawVal).trim() : '';
       const lines = textVal.split('\n').map(l => l.trim()).filter(l => l.length > 0);
       if (lines.length === 0) {
-        valFormatted = '<span style="font-style: italic; color: #444;">Không</span>';
+        const labelLower = (f.label || '').toLowerCase();
+        if (labelLower.includes('trọng tâm')) {
+          valFormatted = `
+            <div style="margin: 3px 0; text-indent: 20px;">- Góp ý dự thảo kế hoạch giáo dục nhà trường năm học 2026-2027. Tập trung đánh giá các số liệu, chỉ tiêu trong kế hoạch giáo dục.</div>
+            <div style="margin: 3px 0; text-indent: 20px;">- Thảo luận việc phân công chuyên môn và thời khóa biểu áp dụng từ tuần 01.</div>
+            <div style="margin: 3px 0; text-indent: 20px;">- Rà soát thiết bị dạy học, phòng bộ môn, sách giáo khoa và các điều kiện đảm bảo cho năm học mới.</div>
+            <div style="margin: 3px 0; text-indent: 20px;">- Triển khai sinh hoạt chuyên môn theo nghiên cứu bài học, thao giảng và kiểm tra nội bộ tổ.</div>
+          `;
+        } else if (labelLower.includes('văn bản')) {
+          valFormatted = `
+            <div style="margin: 3px 0; text-indent: 20px;">- Kế hoạch giáo dục nhà trường năm học 2026-2027 (bản dự thảo).</div>
+            <div style="margin: 3px 0; text-indent: 20px;">- Quyết định phân công nhiệm vụ năm học 2026-2027.</div>
+            <div style="margin: 3px 0; text-indent: 20px;">- Công văn hướng dẫn thực hiện nhiệm vụ năm học và các quy định chuyên môn hiện hành.</div>
+          `;
+        } else {
+          valFormatted = isMinutes 
+            ? '<div style="margin: 3px 0; text-indent: 20px; font-style: italic; color: #555;">(Chưa có nội dung ghi nhận)</div>'
+            : '<span style="font-style: italic; color: #444;">Không</span>';
+        }
       } else if (lines.length === 1) {
         valFormatted = `<div style="text-indent: 20px;">${lines[0]}</div>`;
       } else {
@@ -600,6 +637,32 @@ export function generateCustomReportHtml({
       </div>
     `;
   }).join('');
+
+  // Nếu là biên bản mà trong danh sách các trường chưa có mục 3 (công việc trọng tâm), tự động chèn vào đúng vị trí
+  let fullContentHtml = contentBodyHtml;
+  if (isMinutes && !hasCentralTasksField) {
+    const centralTasksHtmlBlock = `
+      <div style="margin-top: 12px; margin-bottom: 8px; font-size: 13pt; line-height: 1.55;">
+        <div style="font-weight: bold; margin-bottom: 4px; color: #000;">
+          3. Triển khai nội dung công việc trọng tâm của trường/tổ:
+        </div>
+        <div style="text-align: justify; padding-left: 2px; color: #111;">
+          <div style="margin: 3px 0; text-indent: 20px;">- Góp ý dự thảo kế hoạch giáo dục nhà trường năm học 2026-2027. Tập trung đánh giá các số liệu, chỉ tiêu trong kế hoạch giáo dục.</div>
+          <div style="margin: 3px 0; text-indent: 20px;">- Thảo luận việc phân công chuyên môn và thời khóa biểu áp dụng từ tuần 01.</div>
+          <div style="margin: 3px 0; text-indent: 20px;">- Rà soát thiết bị dạy học, phòng bộ môn, sách giáo khoa và các điều kiện đảm bảo cho năm học mới.</div>
+          <div style="margin: 3px 0; text-indent: 20px;">- Triển khai sinh hoạt chuyên môn theo nghiên cứu bài học, thao giảng và kiểm tra nội bộ tổ.</div>
+        </div>
+      </div>
+    `;
+
+    // Chèn sau mục 2 nếu có mục 4, 5, 6
+    const insertIndex = fullContentHtml.search(/(Ý kiến của các thành viên|4\.\s*Ý kiến|Kết luận của chủ trì|5\.\s*Kết luận)/i);
+    if (insertIndex !== -1) {
+      fullContentHtml = fullContentHtml.slice(0, insertIndex) + centralTasksHtmlBlock + fullContentHtml.slice(insertIndex);
+    } else {
+      fullContentHtml += centralTasksHtmlBlock;
+    }
+  }
 
   // Bảng dữ liệu thống kê số liệu (nếu có bảng tùy biến thực sự)
   const tablesHtml = tables.map((t, tIdx) => {
@@ -727,18 +790,18 @@ export function generateCustomReportHtml({
             <div style="font-size: 11pt; text-transform: uppercase;">SỞ GDĐT TỈNH ĐỒNG THÁP</div>
             <div style="font-size: 11.5pt; font-weight: bold; text-transform: uppercase; margin-top: 2px;">TRƯỜNG THCS VÀ THPT</div>
             <div style="font-size: 11.5pt; font-weight: bold; text-transform: uppercase; margin-top: 1px;">ĐỐC BINH KIỀU</div>
-            <div style="text-align: center; margin-top: 5px; margin-bottom: 6px;">
-              <span style="display: inline-block; width: 90px; border-bottom: 1.5px solid #000;"></span>
+            <div style="text-align: center; font-size: 1pt; line-height: 1pt; margin-top: 2px; margin-bottom: 4px;">
+              <span style="display: inline-block; width: 90px; border-bottom: 1.5px solid #000; height: 1px; vertical-align: top;"></span>
             </div>
-            <div style="font-size: 11pt; margin-top: 4px;">Số: &nbsp; &nbsp; /${isMinutes ? 'BB' : 'BC'}-THCS&amp;THPTĐBK</div>
+            <div style="font-size: 11pt; margin-top: 2px;">Số: &nbsp; &nbsp; /${isMinutes ? 'BB' : 'BC'}-THCS&amp;THPTĐBK</div>
           </td>
           <td style="width: 55%; text-align: center; vertical-align: top; border: none; padding: 0;">
             <div style="font-size: 11pt; font-weight: bold; text-transform: uppercase;">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</div>
             <div style="font-size: 11.5pt; font-weight: bold; margin-top: 2px;">Độc lập – Tự do – Hạnh phúc</div>
-            <div style="text-align: center; margin-top: 5px; margin-bottom: 6px;">
-              <span style="display: inline-block; width: 175px; border-bottom: 1.5px solid #000;"></span>
+            <div style="text-align: center; font-size: 1pt; line-height: 1pt; margin-top: 2px; margin-bottom: 4px;">
+              <span style="display: inline-block; width: 170px; border-bottom: 1.5px solid #000; height: 1px; vertical-align: top;"></span>
             </div>
-            <div style="font-size: 11pt; font-style: italic; margin-top: 4px;">${dateStr}</div>
+            <div style="font-size: 11pt; font-style: italic; margin-top: 2px;">${dateStr}</div>
           </td>
         </tr>
       </table>
@@ -754,8 +817,8 @@ export function generateCustomReportHtml({
         <div style="font-size: 13.5pt; font-weight: bold; text-transform: uppercase; margin: 4px 0 0 0;">
           NĂM HỌC: ${academicYear}
         </div>
-        <div style="text-align: center; margin-top: 6px; margin-bottom: 16px;">
-          <span style="display: inline-block; width: 180px; border-bottom: 1.5px solid #000;"></span>
+        <div style="text-align: center; font-size: 1pt; line-height: 1pt; margin-top: 3px; margin-bottom: 14px;">
+          <span style="display: inline-block; width: 160px; border-bottom: 1.5px solid #000; height: 1px; vertical-align: top;"></span>
         </div>
       </div>
 
@@ -775,7 +838,7 @@ export function generateCustomReportHtml({
           ${locationStr ? `<p style="margin: 3px 0;"><strong>Địa điểm:</strong> ${locationStr}.</p>` : ''}
           <p style="margin: 6px 0 2px 0;"><strong>Thành phần tham dự:</strong></p>
           ${participantsStr ? `<p style="margin: 2px 0 2px 20px;">- Đối tượng: ${participantsStr}.</p>` : ''}
-          ${(totalMembersStr || presentMembersStr) ? `
+          ${totalMembersStr || presentMembersStr ? `
             <p style="margin: 2px 0 2px 20px;">
               - Tổng số thành viên của tổ: <strong>${totalMembersStr || '...'}</strong>; Số lượng có mặt tham dự: <strong>${presentMembersStr || '...'}</strong>.
             </p>
@@ -792,10 +855,10 @@ export function generateCustomReportHtml({
       ` : ''}
 
       <!-- NỘI DUNG VĂN BẢN (KHÔNG XUẤT DẠNG BẢNG 2 CỘT) -->
-      ${contentBodyHtml ? `
+      ${fullContentHtml ? `
         ${!isMinutes ? `<div class="section-title">I. THÔNG TIN & NỘI DUNG BÁO CÁO:</div>` : ''}
         <div style="margin-bottom: 16px;">
-          ${contentBodyHtml}
+          ${fullContentHtml}
         </div>
       ` : ''}
 
@@ -1029,18 +1092,18 @@ export function generateStandardReportHtml({
             <div style="font-size: 11pt; text-transform: uppercase;">SỞ GDĐT TỈNH ĐỒNG THÁP</div>
             <div style="font-size: 11.5pt; font-weight: bold; text-transform: uppercase; margin-top: 2px;">TRƯỜNG THCS VÀ THPT</div>
             <div style="font-size: 11.5pt; font-weight: bold; text-transform: uppercase; margin-top: 1px;">ĐỐC BINH KIỀU</div>
-            <div style="text-align: center; margin-top: 5px; margin-bottom: 6px;">
-              <span style="display: inline-block; width: 90px; border-bottom: 1.5px solid #000;"></span>
+            <div style="text-align: center; font-size: 1pt; line-height: 1pt; margin-top: 2px; margin-bottom: 4px;">
+              <span style="display: inline-block; width: 90px; border-bottom: 1.5px solid #000; height: 1px; vertical-align: top;"></span>
             </div>
-            <div style="font-size: 11pt; margin-top: 4px;">Số: &nbsp; &nbsp; /${/biên\s*bản/i.test(title) ? 'BB' : 'BC'}-THCS&amp;THPTĐBK</div>
+            <div style="font-size: 11pt; margin-top: 2px;">Số: &nbsp; &nbsp; /${/biên\s*bản/i.test(title) ? 'BB' : 'BC'}-THCS&amp;THPTĐBK</div>
           </td>
           <td style="width: 55%; text-align: center; vertical-align: top; border: none; padding: 0;">
             <div style="font-size: 11pt; font-weight: bold; text-transform: uppercase;">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</div>
             <div style="font-size: 11.5pt; font-weight: bold; margin-top: 2px;">Độc lập – Tự do – Hạnh phúc</div>
-            <div style="text-align: center; margin-top: 5px; margin-bottom: 6px;">
-              <span style="display: inline-block; width: 175px; border-bottom: 1.5px solid #000;"></span>
+            <div style="text-align: center; font-size: 1pt; line-height: 1pt; margin-top: 2px; margin-bottom: 4px;">
+              <span style="display: inline-block; width: 170px; border-bottom: 1.5px solid #000; height: 1px; vertical-align: top;"></span>
             </div>
-            <div style="font-size: 11pt; font-style: italic; margin-top: 4px;">${dateStr}</div>
+            <div style="font-size: 11pt; font-style: italic; margin-top: 2px;">${dateStr}</div>
           </td>
         </tr>
       </table>
@@ -1055,8 +1118,8 @@ export function generateStandardReportHtml({
         <div style="font-size: 13.5pt; font-weight: bold; text-transform: uppercase; margin: 4px 0 0 0;">
           NĂM HỌC: ${academicYear}
         </div>
-        <div style="text-align: center; margin-top: 6px; margin-bottom: 16px;">
-          <span style="display: inline-block; width: 180px; border-bottom: 1.5px solid #000;"></span>
+        <div style="text-align: center; font-size: 1pt; line-height: 1pt; margin-top: 3px; margin-bottom: 14px;">
+          <span style="display: inline-block; width: 160px; border-bottom: 1.5px solid #000; height: 1px; vertical-align: top;"></span>
         </div>
       </div>
 

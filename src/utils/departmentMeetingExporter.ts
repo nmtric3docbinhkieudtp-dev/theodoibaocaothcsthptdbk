@@ -346,19 +346,19 @@ export function generateDepartmentMeetingHtml(
             <div style="font-size: 11pt; text-transform: uppercase;">SỞ GDĐT TỈNH ĐỒNG THÁP</div>
             <div style="font-size: 11.5pt; font-weight: bold; text-transform: uppercase; margin-top: 1px;">TRƯỜNG THCS VÀ THPT</div>
             <div style="font-size: 11.5pt; font-weight: bold; text-transform: uppercase; margin-top: 1px;">ĐỐC BINH KIỀU</div>
-            <div style="text-align: center; margin-top: 5px; margin-bottom: 6px;">
-              <span style="display: inline-block; width: 90px; border-bottom: 1.5px solid #000;"></span>
+            <div style="text-align: center; font-size: 1pt; line-height: 1pt; margin-top: 2px; margin-bottom: 4px;">
+              <span style="display: inline-block; width: 90px; border-bottom: 1.5px solid #000; height: 1px; vertical-align: top;"></span>
             </div>
             ${data.departmentName ? `<div style="font-size: 11pt; font-weight: bold; text-transform: uppercase; margin-top: 2px;">TỔ ${deptDisplayName}</div>` : ''}
-            <div style="font-size: 11pt; margin-top: 4px;">Số: &nbsp; &nbsp; /BB-THCS&amp;THPTĐBK</div>
+            <div style="font-size: 11pt; margin-top: 2px;">Số: &nbsp; &nbsp; /BB-THCS&amp;THPTĐBK</div>
           </td>
           <td style="width: 55%; text-align: center; vertical-align: top; border: none; padding: 0;">
             <div style="font-size: 11pt; font-weight: bold; text-transform: uppercase;">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</div>
             <div style="font-size: 11.5pt; font-weight: bold; margin-top: 2px;">Độc lập – Tự do – Hạnh phúc</div>
-            <div style="text-align: center; margin-top: 5px; margin-bottom: 6px;">
-              <span style="display: inline-block; width: 175px; border-bottom: 1.5px solid #000;"></span>
+            <div style="text-align: center; font-size: 1pt; line-height: 1pt; margin-top: 2px; margin-bottom: 4px;">
+              <span style="display: inline-block; width: 170px; border-bottom: 1.5px solid #000; height: 1px; vertical-align: top;"></span>
             </div>
-            <div style="font-size: 11pt; font-style: italic; margin-top: 4px;">
+            <div style="font-size: 11pt; font-style: italic; margin-top: 2px;">
               Đồng Tháp, ngày ${meetingDate} tháng ${meetingMonth} năm ${meetingYear}
             </div>
           </td>
@@ -374,8 +374,8 @@ export function generateDepartmentMeetingHtml(
         <div style="font-size: 13.5pt; font-weight: bold; text-transform: uppercase; margin-top: 4px;">
           NĂM HỌC: ${academicYear}
         </div>
-        <div style="text-align: center; margin-top: 6px; margin-bottom: 16px;">
-          <span style="display: inline-block; width: 180px; border-bottom: 1.5px solid #000;"></span>
+        <div style="text-align: center; font-size: 1pt; line-height: 1pt; margin-top: 3px; margin-bottom: 14px;">
+          <span style="display: inline-block; width: 160px; border-bottom: 1.5px solid #000; height: 1px; vertical-align: top;"></span>
         </div>
       </div>
 
