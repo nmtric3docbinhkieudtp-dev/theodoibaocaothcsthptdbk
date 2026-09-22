@@ -30,10 +30,23 @@ import {
   Trash2,
   Table as TableIcon,
   Layers,
-  CheckSquare
+  CheckSquare,
+  Printer
 } from 'lucide-react';
 import { ReportSubmission, SubmissionStatus, CustomFormField, CustomDynamicTable } from '../../types';
-import { exportHomeroomReportToWord, exportAbsentStudentsToExcel } from '../../utils/homeroomReportExporter';
+import { 
+  exportHomeroomReportToWord, 
+  exportHomeroomReportToPdf,
+  exportAbsentStudentsToExcel,
+  exportCustomReportToWord,
+  exportCustomReportToPdf,
+  exportStandardReportToWord,
+  exportStandardReportToPdf
+} from '../../utils/homeroomReportExporter';
+import { 
+  exportDepartmentMeetingToWord, 
+  exportDepartmentMeetingToPdf 
+} from '../../utils/departmentMeetingExporter';
 
 interface ReportDetailModalProps {
   isOpen: boolean;
@@ -49,7 +62,7 @@ export const ReportDetailModal: React.FC<ReportDetailModalProps> = ({
   onEdit
 }) => {
   const { currentUser, isPrincipal, isDeptHead, isAdmin } = useAuth();
-  const { reviewReport, deleteReport, waiveLateStatus } = useReports();
+  const { reviewReport, deleteReport, waiveLateStatus, schoolInfo } = useReports();
 
   const [reviewComment, setReviewComment] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
@@ -248,9 +261,52 @@ export const ReportDetailModal: React.FC<ReportDetailModalProps> = ({
         {/* Custom Dynamic Form Fields View (if present) */}
         {customFields.length > 0 && (
           <div className="space-y-3 bg-slate-50 p-4 rounded-2xl border border-slate-200">
-            <div className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
-              <Layers className="w-4 h-4 text-emerald-600" />
-              <span>Các Chỉ Tiêu & Tiêu Trí Nhập Liệu Điện Tử</span>
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200/80 pb-2">
+              <div className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                <Layers className="w-4 h-4 text-emerald-600" />
+                <span>Các Chỉ Tiêu & Tiêu Trí Nhập Liệu Điện Tử</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => exportCustomReportToPdf({
+                    title: submission.title || 'Báo Cáo Biểu Mẫu Trực Tuyến',
+                    authorName: submission.authorName,
+                    authorRole: submission.authorRoleTitle,
+                    departmentOrClass: submission.departmentName,
+                    academicYear: '2026 – 2027',
+                    fields: customFields,
+                    fieldValues: customFieldValues,
+                    tables: customTables,
+                    notes: submission.structuredData?.customNotes
+                  })}
+                  className="px-3 py-1 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition flex items-center gap-1 cursor-pointer shadow-2xs"
+                  title="Xuất hoặc in tệp PDF theo mẫu hành chính"
+                >
+                  <Printer className="w-3.5 h-3.5" />
+                  <span>Xuất PDF / In</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => exportCustomReportToWord({
+                    title: submission.title || 'Báo Cáo Biểu Mẫu Trực Tuyến',
+                    authorName: submission.authorName,
+                    authorRole: submission.authorRoleTitle,
+                    departmentOrClass: submission.departmentName,
+                    academicYear: '2026 – 2027',
+                    fields: customFields,
+                    fieldValues: customFieldValues,
+                    tables: customTables,
+                    notes: submission.structuredData?.customNotes,
+                    fileName: submission.title
+                  })}
+                  className="px-3 py-1 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition flex items-center gap-1 cursor-pointer shadow-2xs"
+                  title="Tải tệp Microsoft Word (.doc) về máy tính"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>Tải File Word (.doc)</span>
+                </button>
+              </div>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {customFields.map((field) => {
@@ -343,8 +399,176 @@ export const ReportDetailModal: React.FC<ReportDetailModalProps> = ({
           </div>
         )}
 
-        {/* Content Box or Structured Homeroom Form View */}
-        {submission.structuredData?.homeroomMinutes ? (
+        {/* Content Box or Structured Minutes Form View */}
+        {submission.structuredData?.departmentMeetingMinutes ? (
+          <div className="space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-2">
+              <div className="text-xs font-bold text-emerald-800 uppercase tracking-wider flex items-center gap-1.5">
+                <School className="w-4 h-4 text-emerald-600" />
+                <span>Biên Bản Họp Tổ Chuyên Môn {submission.structuredData.departmentMeetingMinutes.departmentName} - {submission.structuredData.departmentMeetingMinutes.meetingNumber}</span>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => exportDepartmentMeetingToPdf(submission.structuredData!.departmentMeetingMinutes!, schoolInfo)}
+                  className="px-3 py-1 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition flex items-center gap-1 cursor-pointer shadow-2xs"
+                  title="Xuất hoặc in tệp PDF chuẩn trang in"
+                >
+                  <Printer className="w-3.5 h-3.5" />
+                  <span>Xuất PDF / In</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => exportDepartmentMeetingToWord(
+                    submission.structuredData!.departmentMeetingMinutes!,
+                    schoolInfo,
+                    `Bien_Ban_Hop_To_${submission.structuredData!.departmentMeetingMinutes!.departmentName || 'Chuyen_Mon'}_${submission.structuredData!.departmentMeetingMinutes!.meetingNumber || 'Lan_1'}`
+                  )}
+                  className="px-3 py-1 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition flex items-center gap-1 cursor-pointer shadow-2xs"
+                  title="Tải tệp Microsoft Word (.doc) về máy tính"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>Tải File Word (.doc)</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Administrative Document Card */}
+            <div className="p-6 bg-white border border-slate-200 rounded-2xl space-y-5 shadow-2xs font-serif text-slate-900 leading-relaxed">
+              <div className="grid grid-cols-2 text-center text-xs pb-4 border-b border-slate-200">
+                <div>
+                  <div className="font-sans">SỞ GDĐT TỈNH ĐỒNG THÁP</div>
+                  <div className="font-sans font-bold">TRƯỜNG THCS VÀ THPT ĐỐC BINH KIỀU</div>
+                  <div className="font-sans font-bold text-emerald-900 mt-0.5">TỔ {submission.structuredData.departmentMeetingMinutes.departmentName}</div>
+                  <div className="my-1.5 flex justify-center">
+                    <div className="w-20 border-b border-black"></div>
+                  </div>
+                  <div className="font-sans text-[11px] text-slate-500">Số: &nbsp; &nbsp; /BB-THCS&amp;THPTĐBK</div>
+                </div>
+                <div>
+                  <div className="font-sans font-bold">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</div>
+                  <div className="font-sans font-bold">Độc lập – Tự do – Hạnh phúc</div>
+                  <div className="my-1.5 flex justify-center">
+                    <div className="w-36 border-b border-black"></div>
+                  </div>
+                  <div className="font-sans italic text-[11px]">
+                    Đồng Tháp, ngày {submission.structuredData.departmentMeetingMinutes.meetingDate} tháng {submission.structuredData.departmentMeetingMinutes.meetingMonth} năm {submission.structuredData.departmentMeetingMinutes.meetingYear}
+                  </div>
+                </div>
+              </div>
+
+              <div className="text-center my-3">
+                <h3 className="text-base sm:text-lg font-bold uppercase tracking-wider font-sans">
+                  BIÊN BẢN
+                </h3>
+                <p className="text-sm font-bold font-sans uppercase text-slate-800">
+                  HỌP TỔ CHUYÊN MÔN {submission.structuredData.departmentMeetingMinutes.meetingNumber ? submission.structuredData.departmentMeetingMinutes.meetingNumber.toUpperCase() : 'LẦN 1'}
+                </p>
+                <p className="text-sm font-bold font-sans uppercase text-slate-800 mt-1">
+                  NĂM HỌC: {submission.structuredData.departmentMeetingMinutes.academicYear}
+                </p>
+                <div className="my-2 flex justify-center">
+                  <div className="w-32 border-b border-black"></div>
+                </div>
+              </div>
+
+              <div className="space-y-1.5 text-xs sm:text-sm font-sans bg-slate-50/80 p-4 rounded-xl border border-slate-200">
+                <p>
+                  <strong>Thời gian:</strong> Vào lúc <strong>{submission.structuredData.departmentMeetingMinutes.timeHour}</strong> giờ <strong>{submission.structuredData.departmentMeetingMinutes.timeMinute}</strong> phút, Ngày <strong>{submission.structuredData.departmentMeetingMinutes.meetingDate}</strong> tháng <strong>{submission.structuredData.departmentMeetingMinutes.meetingMonth}</strong> năm <strong>{submission.structuredData.departmentMeetingMinutes.meetingYear}</strong>.
+                </p>
+                <p>
+                  <strong>Địa điểm:</strong> Tại phòng <strong>{submission.structuredData.departmentMeetingMinutes.location}</strong>.
+                </p>
+                <p className="font-bold pt-1">Thành phần tham dự:</p>
+                <p className="pl-4">
+                  - Tổng số thành viên của tổ: <strong>{submission.structuredData.departmentMeetingMinutes.totalMembers}</strong>; Số lượng có mặt: <strong>{submission.structuredData.departmentMeetingMinutes.presentMembers}</strong>.
+                </p>
+                <p className="pl-4">
+                  - Vắng: <strong>{submission.structuredData.departmentMeetingMinutes.absentCount || 0}</strong> (Có phép: {submission.structuredData.departmentMeetingMinutes.absentWithPermission || 0}{submission.structuredData.departmentMeetingMinutes.absentReason ? `, lý do: ${submission.structuredData.departmentMeetingMinutes.absentReason}` : ''}; Không phép: {submission.structuredData.departmentMeetingMinutes.absentWithoutPermission || 0}).
+                </p>
+                <p className="pt-1">
+                  <strong>Chủ trì cuộc họp:</strong> <strong>{submission.structuredData.departmentMeetingMinutes.chairPerson}</strong> - {submission.structuredData.departmentMeetingMinutes.chairTitle || 'Tổ trưởng'}
+                </p>
+                <p>
+                  <strong>Thư ký cuộc họp:</strong> <strong>{submission.structuredData.departmentMeetingMinutes.secretary || '(Chưa điền)'}</strong>
+                </p>
+              </div>
+
+              <div className="space-y-4 font-sans text-xs sm:text-sm pt-2">
+                <div className="font-bold uppercase text-slate-900 border-b border-slate-200 pb-1 text-sm">
+                  NỘI DUNG CUỘC HỌP
+                </div>
+
+                <div>
+                  <div className="font-bold text-slate-800">1. Đánh giá hoạt động của tổ trong thời gian qua:</div>
+                  <div className="pl-3 mt-1 space-y-1 text-slate-700">
+                    <p>- Ưu điểm: {submission.structuredData.departmentMeetingMinutes.reviewStrengths || '-'}</p>
+                    <p>- Hạn chế: {submission.structuredData.departmentMeetingMinutes.reviewWeaknesses || '-'}</p>
+                    <p>- Nguyên nhân của hạn chế: {submission.structuredData.departmentMeetingMinutes.reviewCauses || '-'}</p>
+                    <p>- Giải pháp khắc phục: {submission.structuredData.departmentMeetingMinutes.reviewSolutions || '-'}</p>
+                  </div>
+                </div>
+
+                <div>
+                  <div className="font-bold text-slate-800">2. Triển khai các văn bản:</div>
+                  <div className="pl-3 mt-1 whitespace-pre-line text-slate-700 leading-relaxed bg-slate-50 p-2.5 rounded-lg border border-slate-200 font-mono text-xs">
+                    {submission.structuredData.departmentMeetingMinutes.documentsDeployed || '-'}
+                  </div>
+                </div>
+
+                <div>
+                  <div className="font-bold text-slate-800">3. Triển khai nội dung công việc trọng tâm của trường/tổ:</div>
+                  <div className="pl-3 mt-1 whitespace-pre-line text-slate-700 leading-relaxed">
+                    {submission.structuredData.departmentMeetingMinutes.centralTasks || '-'}
+                  </div>
+                </div>
+
+                <div>
+                  <div className="font-bold text-slate-800">4. Ý kiến của các thành viên trong cuộc họp:</div>
+                  <div className="pl-3 mt-1 text-slate-700">
+                    {submission.structuredData.departmentMeetingMinutes.memberOpinions || '-'}
+                  </div>
+                </div>
+
+                <div>
+                  <div className="font-bold text-slate-800">5. Kết luận của chủ trì:</div>
+                  <div className="pl-3 mt-1 text-slate-700">
+                    {submission.structuredData.departmentMeetingMinutes.conclusion || '-'}
+                  </div>
+                </div>
+
+                <div>
+                  <div className="font-bold text-slate-800">6. Đề xuất, kiến nghị với nhà trường:</div>
+                  <div className="pl-3 mt-1 text-slate-700">
+                    {submission.structuredData.departmentMeetingMinutes.recommendations || '-'}
+                  </div>
+                </div>
+
+                <div className="pt-3 italic text-slate-600 text-xs text-indent">
+                  Cuộc họp kết thúc vào lúc {submission.structuredData.departmentMeetingMinutes.endHour || '...'} giờ {submission.structuredData.departmentMeetingMinutes.endMinute || '...'} phút cùng ngày, biên bản đã được thông qua toàn thể cuộc họp và thống nhất ký tên./.
+                </div>
+
+                {/* Signatures */}
+                <div className="grid grid-cols-2 text-center text-xs font-sans mt-8 pt-4 border-t border-slate-200">
+                  <div>
+                    <div className="font-bold uppercase">THƯ KÝ</div>
+                    <div className="italic text-[11px] text-slate-500">(Ký và ghi rõ họ tên)</div>
+                    <div className="h-12"></div>
+                    <div className="font-bold text-slate-900">{submission.structuredData.departmentMeetingMinutes.secretary || ''}</div>
+                  </div>
+                  <div>
+                    <div className="font-bold uppercase">CHỦ TRÌ CUỘC HỌP</div>
+                    <div className="italic text-[11px] text-slate-500">(Ký và ghi rõ họ tên)</div>
+                    <div className="h-12"></div>
+                    <div className="font-bold text-slate-900">{submission.structuredData.departmentMeetingMinutes.chairPerson}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : submission.structuredData?.homeroomMinutes ? (
           <div className="space-y-4">
             <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-2">
               <div className="text-xs font-bold text-emerald-800 uppercase tracking-wider flex items-center gap-1.5">
@@ -368,6 +592,15 @@ export const ReportDetailModal: React.FC<ReportDetailModalProps> = ({
                     <span>Xuất Excel DS Vắng</span>
                   </button>
                 )}
+
+                <button
+                  type="button"
+                  onClick={() => exportHomeroomReportToPdf(submission.structuredData!.homeroomMinutes!)}
+                  className="px-3 py-1 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition flex items-center gap-1 cursor-pointer shadow-2xs"
+                >
+                  <Printer className="w-3.5 h-3.5" />
+                  <span>Xuất PDF / In</span>
+                </button>
 
                 <button
                   type="button"
@@ -545,8 +778,46 @@ export const ReportDetailModal: React.FC<ReportDetailModalProps> = ({
           </div>
         ) : submission.content ? (
           <div className="space-y-2">
-            <div className="text-xs font-bold text-slate-600 uppercase tracking-wider">
-              Nội dung văn bản báo cáo
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-2">
+              <div className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                <FileText className="w-4 h-4 text-emerald-600" />
+                <span>Nội dung văn bản báo cáo</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => exportStandardReportToPdf({
+                    title: submission.title || 'Báo Cáo',
+                    content: submission.content || '',
+                    authorName: submission.authorName,
+                    authorRole: submission.authorRoleTitle,
+                    departmentOrClass: submission.departmentName,
+                    attachments: submission.attachments
+                  })}
+                  className="px-3 py-1 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition flex items-center gap-1 cursor-pointer shadow-2xs"
+                  title="Xuất hoặc in tệp PDF theo mẫu hành chính"
+                >
+                  <Printer className="w-3.5 h-3.5" />
+                  <span>Xuất PDF / In</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => exportStandardReportToWord({
+                    title: submission.title || 'Báo Cáo',
+                    content: submission.content || '',
+                    authorName: submission.authorName,
+                    authorRole: submission.authorRoleTitle,
+                    departmentOrClass: submission.departmentName,
+                    attachments: submission.attachments,
+                    fileName: submission.title
+                  })}
+                  className="px-3 py-1 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition flex items-center gap-1 cursor-pointer shadow-2xs"
+                  title="Tải tệp Microsoft Word (.doc) về máy tính"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>Tải File Word (.doc)</span>
+                </button>
+              </div>
             </div>
             <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs font-sans text-xs sm:text-sm text-slate-800 whitespace-pre-line leading-relaxed">
               {submission.content}

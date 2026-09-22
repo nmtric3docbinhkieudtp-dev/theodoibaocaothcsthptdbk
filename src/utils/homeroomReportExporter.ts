@@ -250,22 +250,29 @@ export function generateHomeroomReportHtml(data: HomeroomMeetingMinutesData, isF
           <td style="width: 45%; text-align: center; vertical-align: top; border: none; padding: 0;">
             <div style="font-size: 11pt; text-transform: uppercase;">SỞ GDĐT TỈNH ĐỒNG THÁP</div>
             <div style="font-size: 11.5pt; font-weight: bold; text-transform: uppercase; margin-top: 2px;">TRƯỜNG THCS VÀ THPT</div>
-            <div style="font-size: 11.5pt; font-weight: bold; text-transform: uppercase; margin-top: 1px;"><span style="text-decoration: underline;">ĐỐC BINH KIỀU</span></div>
-            <div style="font-size: 11pt; margin-top: 10px;">Số: &nbsp; &nbsp; /BB-THCS&amp;THPTĐBK</div>
+            <div style="font-size: 11.5pt; font-weight: bold; text-transform: uppercase; margin-top: 1px;">ĐỐC BINH KIỀU</div>
+            <div style="text-align: center; margin-top: 5px; margin-bottom: 6px;">
+              <span style="display: inline-block; width: 90px; border-bottom: 1.5px solid #000;"></span>
+            </div>
+            <div style="font-size: 11pt; margin-top: 4px;">Số: &nbsp; &nbsp; /BB-THCS&amp;THPTĐBK</div>
           </td>
           <td style="width: 55%; text-align: center; vertical-align: top; border: none; padding: 0;">
             <div style="font-size: 11pt; font-weight: bold; text-transform: uppercase;">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</div>
-            <div style="font-size: 11.5pt; font-weight: bold; margin-top: 2px;"><span style="text-decoration: underline;">Độc lập – Tự do – Hạnh phúc</span></div>
-            <div style="font-size: 11pt; font-style: italic; margin-top: 10px;">Đồng Tháp, ngày ${data.meetingDate || '28'} tháng ${data.meetingMonth || '8'} năm ${data.meetingYear || '2026'}</div>
+            <div style="font-size: 11.5pt; font-weight: bold; margin-top: 2px;">Độc lập – Tự do – Hạnh phúc</div>
+            <div style="text-align: center; margin-top: 5px; margin-bottom: 6px;">
+              <span style="display: inline-block; width: 175px; border-bottom: 1.5px solid #000;"></span>
+            </div>
+            <div style="font-size: 11pt; font-style: italic; margin-top: 4px;">Đồng Tháp, ngày ${data.meetingDate || '28'} tháng ${data.meetingMonth || '8'} năm ${data.meetingYear || '2026'}</div>
           </td>
         </tr>
       </table>
 
       <div class="main-title" style="text-align: center; margin-top: 16px; margin-bottom: 20px;">
         <div style="font-size: 14pt; font-weight: bold; text-transform: uppercase; margin: 0 0 4px 0;">BIÊN BẢN</div>
-        <div style="font-size: 13.5pt; font-weight: bold; text-transform: uppercase; margin: 0;">TẬP TRUNG HỌC SINH ĐẦU NĂM HỌC ${data.academicYear || '2026 – 2027'}</div>
-        <div style="text-align: center; margin-top: 4px; margin-bottom: 12px;">
-          <span style="display: inline-block; width: 220px; border-bottom: 1.5px solid #000;"></span>
+        <div style="font-size: 13.5pt; font-weight: bold; text-transform: uppercase; margin: 0;">TẬP TRUNG HỌC SINH ĐẦU NĂM HỌC</div>
+        <div style="font-size: 13.5pt; font-weight: bold; text-transform: uppercase; margin-top: 4px;">NĂM HỌC: ${data.academicYear || '2026 – 2027'}</div>
+        <div style="text-align: center; margin-top: 6px; margin-bottom: 16px;">
+          <span style="display: inline-block; width: 180px; border-bottom: 1.5px solid #000;"></span>
         </div>
       </div>
 
@@ -443,6 +450,7 @@ export function exportAbsentStudentsToExcel(
 
 /**
  * Sinh mã HTML cho Báo cáo biểu mẫu tùy biến (Custom form & tables)
+ * Hỗ trợ chuyển đổi định dạng chuẩn văn bản hành chính theo Nghị định 30/2020/NĐ-CP
  */
 export function generateCustomReportHtml({
   title,
@@ -467,17 +475,133 @@ export function generateCustomReportHtml({
   notes?: string;
   isForPrint?: boolean;
 }): string {
-  const fieldsRows = fields.filter(f => fieldValues[f.id] !== undefined && fieldValues[f.id] !== '').map((f) => {
-    let valStr = String(fieldValues[f.id]);
-    if (f.type === 'checkbox') valStr = fieldValues[f.id] ? 'Đã hoàn thành / Đạt chuẩn' : 'Chưa hoàn thành';
+  // Kiểm tra xem đây có phải là Biên bản không
+  const isMinutes = /biên\s*bản/i.test(title) || /họp\s*tổ/i.test(title) || 
+    fields.some(f => /thư\s*ký/i.test(f.label) || /chủ\s*trì/i.test(f.label));
+
+  let cleanTitle = title.trim();
+  cleanTitle = cleanTitle.replace(/^Báo cáo (tổng hợp:?|:?)\s*/i, '').trim();
+
+  // Bóc tách thông tin mở đầu cuộc họp nếu là Biên bản
+  let meetingTimeStr = '';
+  let locationStr = '';
+  let participantsStr = '';
+  let totalMembersStr = '';
+  let presentMembersStr = '';
+  let absentWithPermStr = '';
+  let absentWithoutPermStr = '';
+  let chairPersonStr = '';
+  let secretaryStr = '';
+  let endTimeStr = '';
+
+  const handledFieldIds = new Set<string>();
+
+  if (isMinutes) {
+    for (const f of fields) {
+      const val = fieldValues[f.id];
+      const valStr = val !== undefined && val !== null ? String(val).trim() : '';
+      const labelLower = f.label.toLowerCase();
+
+      if (labelLower.includes('thời gian') || labelLower.includes('giờ, phút') || labelLower.includes('thời điểm họp')) {
+        if (!labelLower.includes('kết thúc')) {
+          meetingTimeStr = valStr;
+          handledFieldIds.add(f.id);
+        }
+      } else if (labelLower.includes('địa điểm') || labelLower.includes('phòng')) {
+        locationStr = valStr;
+        handledFieldIds.add(f.id);
+      } else if (labelLower.includes('tổng số thành viên của tổ') || labelLower.includes('tổng số thành viên') || labelLower.includes('sĩ số')) {
+        totalMembersStr = valStr;
+        handledFieldIds.add(f.id);
+      } else if (labelLower.includes('tham dự') || labelLower.includes('có mặt')) {
+        presentMembersStr = valStr;
+        handledFieldIds.add(f.id);
+      } else if (labelLower.includes('vắng có phép') || labelLower.includes('có phép')) {
+        absentWithPermStr = valStr;
+        handledFieldIds.add(f.id);
+      } else if (labelLower.includes('vắng không phép') || labelLower.includes('không phép')) {
+        absentWithoutPermStr = valStr;
+        handledFieldIds.add(f.id);
+      } else if (labelLower.includes('thành phần')) {
+        participantsStr = valStr;
+        handledFieldIds.add(f.id);
+      } else if (labelLower.includes('chủ trì') || labelLower.includes('chủ tọa') || (labelLower.includes('tổ trưởng') && !labelLower.includes('ý kiến'))) {
+        chairPersonStr = valStr;
+        handledFieldIds.add(f.id);
+      } else if (labelLower.includes('thư ký')) {
+        secretaryStr = valStr;
+        handledFieldIds.add(f.id);
+      } else if (labelLower.includes('kết thúc') || labelLower.includes('kết thúc lúc')) {
+        endTimeStr = valStr;
+        handledFieldIds.add(f.id);
+      }
+    }
+  }
+
+  // Tên hiển thị người ký
+  const secretaryName = secretaryStr || '';
+  const chairPersonName = chairPersonStr || authorName;
+
+  // Lọc các trường nội dung còn lại (thể hiện dưới dạng văn bản hành chính)
+  const activeFields = fields.filter(f => {
+    if (handledFieldIds.has(f.id)) return false;
+    const v = fieldValues[f.id];
+    return v !== undefined && v !== null && String(v).trim() !== '';
+  });
+
+  const contentBodyHtml = activeFields.map((f) => {
+    const rawVal = fieldValues[f.id];
+    let valFormatted = '';
+
+    if (f.type === 'section') {
+      return `
+        <div style="font-size: 13pt; font-weight: bold; text-transform: uppercase; margin-top: 18px; margin-bottom: 8px; color: #000;">
+          ${f.label}
+        </div>
+      `;
+    }
+
+    if (f.type === 'checkbox') {
+      if (Array.isArray(rawVal)) {
+        valFormatted = rawVal.length > 0 ? rawVal.map(item => `<div>- ${item}</div>`).join('') : '<div style="font-style: italic;">Không</div>';
+      } else {
+        valFormatted = rawVal ? 'Đã hoàn thành / Đạt chuẩn quy định' : 'Chưa hoàn thành';
+      }
+    } else {
+      const textVal = String(rawVal).trim();
+      const lines = textVal.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+      if (lines.length === 0) {
+        valFormatted = '<span style="font-style: italic; color: #444;">Không</span>';
+      } else if (lines.length === 1) {
+        valFormatted = `<div style="text-indent: 20px;">${lines[0]}</div>`;
+      } else {
+        valFormatted = lines.map(line => {
+          if (line.startsWith('-') || line.startsWith('+') || line.startsWith('•') || line.startsWith('*')) {
+            return `<div style="margin: 3px 0 3px 20px; text-indent: -12px;">${line}</div>`;
+          }
+          if (/^(Ý kiến|\d+[\.\)]|[a-zA-Z][\.\)])/i.test(line)) {
+            return `<div style="margin: 4px 0 4px 15px; font-weight: 500;">${line}</div>`;
+          }
+          return `<div style="margin: 3px 0; text-indent: 20px;">${line}</div>`;
+        }).join('');
+      }
+    }
+
+    const cleanLabel = f.label.replace(/:$/, '').trim();
+
     return `
-      <tr>
-        <td style="border: 1px solid #000; padding: 6px; font-weight: bold; width: 40%; background-color: #fafafa;">${f.label}</td>
-        <td style="border: 1px solid #000; padding: 6px;">${valStr}</td>
-      </tr>
+      <div style="margin-top: 12px; margin-bottom: 8px; font-size: 13pt; line-height: 1.55;">
+        <div style="font-weight: bold; margin-bottom: 4px; color: #000;">
+          ${cleanLabel}:
+        </div>
+        <div style="text-align: justify; padding-left: 2px; color: #111;">
+          ${valFormatted}
+        </div>
+      </div>
     `;
   }).join('');
 
+  // Bảng dữ liệu thống kê số liệu (nếu có bảng tùy biến thực sự)
   const tablesHtml = tables.map((t, tIdx) => {
     const headerHtml = t.headers.map(h => `<th style="border: 1px solid #000; background-color: #f2f2f2; padding: 6px; text-align: center;">${h}</th>`).join('');
     const rowsHtml = t.rows.map(r => {
@@ -486,10 +610,10 @@ export function generateCustomReportHtml({
     }).join('');
 
     return `
-      <div style="font-weight: bold; font-size: 12pt; margin-top: 14px; margin-bottom: 6px;">
+      <div style="font-weight: bold; font-size: 12.5pt; margin-top: 14px; margin-bottom: 6px;">
         ${tIdx + 1}. ${t.title}
       </div>
-      <table style="width: 100%; border-collapse: collapse; margin-bottom: 12px; font-size: 12pt;">
+      <table style="width: 100%; border-collapse: collapse; margin-bottom: 14px; font-size: 12pt;">
         <thead><tr>${headerHtml}</tr></thead>
         <tbody>${rowsHtml}</tbody>
       </table>
@@ -510,11 +634,45 @@ export function generateCustomReportHtml({
           size: A4 portrait;
           margin: 20mm 15mm 20mm 25mm;
         }
-        body { font-family: 'Times New Roman', Times, serif; font-size: 13pt; line-height: 1.45; color: #000; background: #fff; margin: 0; padding: 10px; }
-        table.meta-header { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
-        table.meta-header td { vertical-align: top; text-align: center; }
-        .main-title { text-align: center; font-size: 15pt; font-weight: bold; margin-top: 15px; margin-bottom: 15px; text-transform: uppercase; }
-        .section-title { font-size: 13pt; font-weight: bold; margin-top: 16px; margin-bottom: 8px; }
+        body { 
+          font-family: 'Times New Roman', Times, serif; 
+          font-size: 13pt; 
+          line-height: 1.45; 
+          color: #000; 
+          background: #fff; 
+          margin: 0; 
+          padding: 10px; 
+        }
+        table.meta-header { 
+          width: 100%; 
+          border-collapse: collapse; 
+          margin-bottom: 16px; 
+        }
+        table.meta-header td { 
+          vertical-align: top; 
+          text-align: center; 
+        }
+        .main-title { 
+          text-align: center; 
+          margin-top: 16px; 
+          margin-bottom: 20px; 
+        }
+        .section-title { 
+          font-size: 13pt; 
+          font-weight: bold; 
+          margin-top: 16px; 
+          margin-bottom: 8px; 
+        }
+        table.data-table {
+          width: 100%;
+          border-collapse: collapse;
+          margin-bottom: 15px;
+          font-size: 12pt;
+        }
+        table.data-table th, table.data-table td {
+          border: 1px solid #000;
+          padding: 6px;
+        }
         @media print {
           .no-print { display: none !important; }
           body { padding: 0; }
@@ -562,67 +720,137 @@ export function generateCustomReportHtml({
         </div>
       ` : ''}
 
+      <!-- HEADER QUỐC HIỆU VÀ TÊN ĐƠN VỊ -->
       <table class="meta-header" style="width: 100%; border: none; border-collapse: collapse; margin-bottom: 16px;">
         <tr>
           <td style="width: 45%; text-align: center; vertical-align: top; border: none; padding: 0;">
             <div style="font-size: 11pt; text-transform: uppercase;">SỞ GDĐT TỈNH ĐỒNG THÁP</div>
             <div style="font-size: 11.5pt; font-weight: bold; text-transform: uppercase; margin-top: 2px;">TRƯỜNG THCS VÀ THPT</div>
-            <div style="font-size: 11.5pt; font-weight: bold; text-transform: uppercase; margin-top: 1px;"><span style="text-decoration: underline;">ĐỐC BINH KIỀU</span></div>
-            <div style="font-size: 11pt; margin-top: 10px;">Số: &nbsp; &nbsp; /BC-THCS&amp;THPTĐBK</div>
+            <div style="font-size: 11.5pt; font-weight: bold; text-transform: uppercase; margin-top: 1px;">ĐỐC BINH KIỀU</div>
+            <div style="text-align: center; margin-top: 5px; margin-bottom: 6px;">
+              <span style="display: inline-block; width: 90px; border-bottom: 1.5px solid #000;"></span>
+            </div>
+            <div style="font-size: 11pt; margin-top: 4px;">Số: &nbsp; &nbsp; /${isMinutes ? 'BB' : 'BC'}-THCS&amp;THPTĐBK</div>
           </td>
           <td style="width: 55%; text-align: center; vertical-align: top; border: none; padding: 0;">
             <div style="font-size: 11pt; font-weight: bold; text-transform: uppercase;">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</div>
-            <div style="font-size: 11.5pt; font-weight: bold; margin-top: 2px;"><span style="text-decoration: underline;">Độc lập – Tự do – Hạnh phúc</span></div>
-            <div style="font-size: 11pt; font-style: italic; margin-top: 10px;">${dateStr}</div>
+            <div style="font-size: 11.5pt; font-weight: bold; margin-top: 2px;">Độc lập – Tự do – Hạnh phúc</div>
+            <div style="text-align: center; margin-top: 5px; margin-bottom: 6px;">
+              <span style="display: inline-block; width: 175px; border-bottom: 1.5px solid #000;"></span>
+            </div>
+            <div style="font-size: 11pt; font-style: italic; margin-top: 4px;">${dateStr}</div>
           </td>
         </tr>
       </table>
 
+      <!-- TIÊU ĐỀ TÀI LIỆU -->
       <div class="main-title" style="text-align: center; margin-top: 16px; margin-bottom: 20px;">
-        <div style="font-size: 14pt; font-weight: bold; text-transform: uppercase; margin: 0 0 4px 0;">BÁO CÁO</div>
-        <div style="font-size: 13.5pt; font-weight: bold; text-transform: uppercase; margin: 0;">${title.replace(/^Báo cáo (tổng hợp:?|:?)/i, '')}</div>
-        <div style="text-align: center; margin-top: 4px; margin-bottom: 12px;">
-          <span style="display: inline-block; width: 220px; border-bottom: 1.5px solid #000;"></span>
+        ${!isMinutes ? `
+          <div style="font-size: 14pt; font-weight: bold; text-transform: uppercase; margin: 0 0 4px 0;">BÁO CÁO</div>
+        ` : ''}
+        <div style="font-size: 14pt; font-weight: bold; text-transform: uppercase; margin: 0 0 4px 0;">
+          ${cleanTitle}
         </div>
-        <div style="font-size: 11pt; font-weight: normal; font-style: italic; margin-top: 4px;">Năm học: ${academicYear}</div>
+        <div style="font-size: 13.5pt; font-weight: bold; text-transform: uppercase; margin: 4px 0 0 0;">
+          NĂM HỌC: ${academicYear}
+        </div>
+        <div style="text-align: center; margin-top: 6px; margin-bottom: 16px;">
+          <span style="display: inline-block; width: 180px; border-bottom: 1.5px solid #000;"></span>
+        </div>
       </div>
 
-      <div style="margin-bottom: 14px; font-size: 12.5pt;">
-        <p style="margin: 4px 0;">- Người thực hiện báo cáo: <strong>${authorName}</strong></p>
-        <p style="margin: 4px 0;">- Chức danh / Tổ: <strong>${authorRole || ''} - ${departmentOrClass || ''}</strong></p>
-        <p style="margin: 4px 0;">- Đơn vị: Trường THCS-THPT Đốc Binh Kiều</p>
-      </div>
-
-      ${fieldsRows ? `
-        <div class="section-title">I. THÔNG TIN & CHỈ TIÊU BÁO CÁO:</div>
-        <table style="width: 100%; border-collapse: collapse; margin-bottom: 16px; font-size: 12pt;">
-          <tbody>${fieldsRows}</tbody>
-        </table>
+      <!-- NẾU LÀ BÁO CÁO: HIỂN THỊ THÔNG TIN NGƯỜI BÁO CÁO -->
+      ${!isMinutes ? `
+        <div style="margin-bottom: 14px; font-size: 12.5pt;">
+          <p style="margin: 4px 0;">- Người thực hiện báo cáo: <strong>${authorName}</strong></p>
+          <p style="margin: 4px 0;">- Chức danh / Tổ: <strong>${authorRole || ''} - ${departmentOrClass || ''}</strong></p>
+          <p style="margin: 4px 0;">- Đơn vị: Trường THCS-THPT Đốc Binh Kiều</p>
+        </div>
       ` : ''}
 
+      <!-- NẾU LÀ BIÊN BẢN: HIỂN THỊ THỜI GIAN, ĐỊA ĐIỂM, THÀNH PHẦN MỞ ĐẦU -->
+      ${isMinutes ? `
+        <div style="margin-bottom: 16px; font-size: 13pt; line-height: 1.6;">
+          ${meetingTimeStr ? `<p style="margin: 3px 0;"><strong>Thời gian:</strong> Vào lúc ${meetingTimeStr}.</p>` : ''}
+          ${locationStr ? `<p style="margin: 3px 0;"><strong>Địa điểm:</strong> ${locationStr}.</p>` : ''}
+          <p style="margin: 6px 0 2px 0;"><strong>Thành phần tham dự:</strong></p>
+          ${participantsStr ? `<p style="margin: 2px 0 2px 20px;">- Đối tượng: ${participantsStr}.</p>` : ''}
+          ${(totalMembersStr || presentMembersStr) ? `
+            <p style="margin: 2px 0 2px 20px;">
+              - Tổng số thành viên của tổ: <strong>${totalMembersStr || '...'}</strong>; Số lượng có mặt tham dự: <strong>${presentMembersStr || '...'}</strong>.
+            </p>
+          ` : ''}
+          ${absentWithPermStr ? `<p style="margin: 2px 0 2px 20px;">- Vắng có phép: ${absentWithPermStr}.</p>` : ''}
+          ${absentWithoutPermStr ? `<p style="margin: 2px 0 2px 20px;">- Vắng không phép: ${absentWithoutPermStr}.</p>` : ''}
+          ${chairPersonStr ? `<p style="margin: 4px 0 2px 0;"><strong>Chủ trì cuộc họp:</strong> ${chairPersonStr}.</p>` : ''}
+          ${secretaryStr ? `<p style="margin: 2px 0 4px 0;"><strong>Thư ký cuộc họp:</strong> ${secretaryStr}.</p>` : ''}
+        </div>
+
+        <div style="font-size: 13.5pt; font-weight: bold; text-transform: uppercase; margin-top: 18px; margin-bottom: 10px;">
+          NỘI DUNG CUỘC HỌP
+        </div>
+      ` : ''}
+
+      <!-- NỘI DUNG VĂN BẢN (KHÔNG XUẤT DẠNG BẢNG 2 CỘT) -->
+      ${contentBodyHtml ? `
+        ${!isMinutes ? `<div class="section-title">I. THÔNG TIN & NỘI DUNG BÁO CÁO:</div>` : ''}
+        <div style="margin-bottom: 16px;">
+          ${contentBodyHtml}
+        </div>
+      ` : ''}
+
+      <!-- CÁC BẢNG SỐ LIỆU (NẾU CÓ BẢNG THỐNG KÊ CHI TIẾT) -->
       ${tablesHtml ? `
-        <div class="section-title">II. CÁC BẢNG SỐ LIỆU THỐNG KÊ CHI TIẾT:</div>
+        <div class="section-title">${isMinutes ? 'CÁC BẢNG SỐ LIỆU ĐÍNH KÈM:' : 'II. CÁC BẢNG SỐ LIỆU THỐNG KÊ CHI TIẾT:'}</div>
         ${tablesHtml}
       ` : ''}
 
+      <!-- GHI CHÚ, ĐÁNH GIÁ THÊM NẾU CÓ -->
       ${notes ? `
-        <div class="section-title">III. ĐÁNH GIÁ, THUẬN LỢI, KHÓ KHĂN & KIẾN NGHỊ:</div>
-        <div style="font-size: 12pt; white-space: pre-line; line-height: 1.5; margin-bottom: 16px; text-align: justify;">
+        <div class="section-title">${isMinutes ? 'GHI CHÚ THÊM:' : 'III. ĐÁNH GIÁ, THUẬN LỢI, KHÓ KHĂN & KIẾN NGHỊ:'}</div>
+        <div style="font-size: 12.5pt; white-space: pre-line; line-height: 1.5; margin-bottom: 16px; text-align: justify; text-indent: 20px;">
           ${notes}
         </div>
       ` : ''}
 
-      <table style="width: 100%; margin-top: 25px; border-collapse: collapse; page-break-inside: avoid;">
-        <tr>
-          <td style="width: 50%; text-align: center; vertical-align: top;"></td>
-          <td style="width: 50%; text-align: center; vertical-align: top;">
-            <div style="font-weight: bold; font-size: 12.5pt;">NGƯỜI LẬP BÁO CÁO</div>
-            <div style="font-style: italic; font-size: 11pt;">(Ký và ghi rõ họ tên)</div>
-            <div style="height: 60px;"></div>
-            <div style="font-weight: bold; font-size: 12.5pt;">${authorName}</div>
-          </td>
-        </tr>
-      </table>
+      <!-- KẾT THÚC CUỘC HỌP CHO BIÊN BẢN -->
+      ${isMinutes ? `
+        <div style="margin-top: 18px; margin-bottom: 20px; font-size: 13pt; text-indent: 25px; line-height: 1.6;">
+          Cuộc họp kết thúc vào lúc ${endTimeStr || '... giờ ... phút'} cùng ngày, biên bản đã được thông qua toàn thể cuộc họp và thống nhất ký tên./.
+        </div>
+      ` : ''}
+
+      <!-- CHỮ KÝ: PHÂN BIỆT RÕ BIÊN BẢN (THƯ KÝ + CHỦ TRÌ) VÀ BÁO CÁO (NGƯỜI BÁO CÁO) -->
+      ${isMinutes ? `
+        <table style="width: 100%; margin-top: 25px; border-collapse: collapse; page-break-inside: avoid;">
+          <tr>
+            <td style="width: 50%; text-align: center; vertical-align: top;">
+              <div style="font-weight: bold; font-size: 13pt; text-transform: uppercase;">THƯ KÝ</div>
+              <div style="font-style: italic; font-size: 11pt; margin-top: 2px;">(Ký và ghi rõ họ tên)</div>
+              <div style="height: 70px;"></div>
+              <div style="font-weight: bold; font-size: 12.5pt;">${secretaryName}</div>
+            </td>
+            <td style="width: 50%; text-align: center; vertical-align: top;">
+              <div style="font-weight: bold; font-size: 13pt; text-transform: uppercase;">CHỦ TRÌ CUỘC HỌP</div>
+              <div style="font-style: italic; font-size: 11pt; margin-top: 2px;">(Ký và ghi rõ họ tên)</div>
+              <div style="height: 70px;"></div>
+              <div style="font-weight: bold; font-size: 12.5pt;">${chairPersonName}</div>
+            </td>
+          </tr>
+        </table>
+      ` : `
+        <table style="width: 100%; margin-top: 25px; border-collapse: collapse; page-break-inside: avoid;">
+          <tr>
+            <td style="width: 50%; text-align: center; vertical-align: top;"></td>
+            <td style="width: 50%; text-align: center; vertical-align: top;">
+              <div style="font-weight: bold; font-size: 12.5pt; text-transform: uppercase;">NGƯỜI LẬP BÁO CÁO</div>
+              <div style="font-style: italic; font-size: 11pt; margin-top: 2px;">(Ký và ghi rõ họ tên)</div>
+              <div style="height: 65px;"></div>
+              <div style="font-weight: bold; font-size: 12.5pt;">${authorName}</div>
+            </td>
+          </tr>
+        </table>
+      `}
 
       ${isForPrint ? `
         <script>
@@ -800,50 +1028,83 @@ export function generateStandardReportHtml({
           <td style="width: 45%; text-align: center; vertical-align: top; border: none; padding: 0;">
             <div style="font-size: 11pt; text-transform: uppercase;">SỞ GDĐT TỈNH ĐỒNG THÁP</div>
             <div style="font-size: 11.5pt; font-weight: bold; text-transform: uppercase; margin-top: 2px;">TRƯỜNG THCS VÀ THPT</div>
-            <div style="font-size: 11.5pt; font-weight: bold; text-transform: uppercase; margin-top: 1px;"><span style="text-decoration: underline;">ĐỐC BINH KIỀU</span></div>
-            <div style="font-size: 11pt; margin-top: 10px;">Số: &nbsp; &nbsp; /BC-THCS&amp;THPTĐBK</div>
+            <div style="font-size: 11.5pt; font-weight: bold; text-transform: uppercase; margin-top: 1px;">ĐỐC BINH KIỀU</div>
+            <div style="text-align: center; margin-top: 5px; margin-bottom: 6px;">
+              <span style="display: inline-block; width: 90px; border-bottom: 1.5px solid #000;"></span>
+            </div>
+            <div style="font-size: 11pt; margin-top: 4px;">Số: &nbsp; &nbsp; /${/biên\s*bản/i.test(title) ? 'BB' : 'BC'}-THCS&amp;THPTĐBK</div>
           </td>
           <td style="width: 55%; text-align: center; vertical-align: top; border: none; padding: 0;">
             <div style="font-size: 11pt; font-weight: bold; text-transform: uppercase;">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</div>
-            <div style="font-size: 11.5pt; font-weight: bold; margin-top: 2px;"><span style="text-decoration: underline;">Độc lập – Tự do – Hạnh phúc</span></div>
-            <div style="font-size: 11pt; font-style: italic; margin-top: 10px;">${dateStr}</div>
+            <div style="font-size: 11.5pt; font-weight: bold; margin-top: 2px;">Độc lập – Tự do – Hạnh phúc</div>
+            <div style="text-align: center; margin-top: 5px; margin-bottom: 6px;">
+              <span style="display: inline-block; width: 175px; border-bottom: 1.5px solid #000;"></span>
+            </div>
+            <div style="font-size: 11pt; font-style: italic; margin-top: 4px;">${dateStr}</div>
           </td>
         </tr>
       </table>
 
       <div class="main-title" style="text-align: center; margin-top: 16px; margin-bottom: 20px;">
-        <div style="font-size: 14pt; font-weight: bold; text-transform: uppercase; margin: 0 0 4px 0;">BÁO CÁO</div>
-        <div style="font-size: 13.5pt; font-weight: bold; text-transform: uppercase; margin: 0;">${title.replace(/^Báo cáo (tổng hợp:?|:?)/i, '')}</div>
-        <div style="text-align: center; margin-top: 4px; margin-bottom: 12px;">
-          <span style="display: inline-block; width: 220px; border-bottom: 1.5px solid #000;"></span>
+        ${!/biên\s*bản/i.test(title) ? `
+          <div style="font-size: 14pt; font-weight: bold; text-transform: uppercase; margin: 0 0 4px 0;">BÁO CÁO</div>
+        ` : ''}
+        <div style="font-size: 14pt; font-weight: bold; text-transform: uppercase; margin: 0 0 4px 0;">
+          ${title.replace(/^Báo cáo (tổng hợp:?|:?)\s*/i, '')}
         </div>
-        <div style="font-size: 11pt; font-weight: normal; font-style: italic; margin-top: 4px;">Năm học: ${academicYear}</div>
+        <div style="font-size: 13.5pt; font-weight: bold; text-transform: uppercase; margin: 4px 0 0 0;">
+          NĂM HỌC: ${academicYear}
+        </div>
+        <div style="text-align: center; margin-top: 6px; margin-bottom: 16px;">
+          <span style="display: inline-block; width: 180px; border-bottom: 1.5px solid #000;"></span>
+        </div>
       </div>
 
-      <div style="margin-bottom: 16px; font-size: 12.5pt;">
-        <p style="margin: 4px 0;">- Người thực hiện báo cáo: <strong>${authorName}</strong></p>
-        <p style="margin: 4px 0;">- Chức vụ / Bộ phận: <strong>${authorRole || ''} - ${departmentOrClass || ''}</strong></p>
-        <p style="margin: 4px 0;">- Đơn vị: Trường THCS-THPT Đốc Binh Kiều</p>
-      </div>
+      ${!/biên\s*bản/i.test(title) ? `
+        <div style="margin-bottom: 16px; font-size: 12.5pt;">
+          <p style="margin: 4px 0;">- Người thực hiện báo cáo: <strong>${authorName}</strong></p>
+          <p style="margin: 4px 0;">- Chức vụ / Bộ phận: <strong>${authorRole || ''} - ${departmentOrClass || ''}</strong></p>
+          <p style="margin: 4px 0;">- Đơn vị: Trường THCS-THPT Đốc Binh Kiều</p>
+        </div>
+      ` : ''}
 
       <div style="font-size: 13pt; line-height: 1.5; margin-bottom: 20px;">
-        <div style="font-weight: bold; margin-bottom: 8px;">NỘI DUNG BÁO CÁO:</div>
+        <div style="font-weight: bold; margin-bottom: 8px;">${/biên\s*bản/i.test(title) ? 'NỘI DUNG BIÊN BẢN:' : 'NỘI DUNG BÁO CÁO:'}</div>
         ${formattedContent}
       </div>
 
       ${attachmentsList}
 
-      <table style="width: 100%; margin-top: 25px; border-collapse: collapse; page-break-inside: avoid;">
-        <tr>
-          <td style="width: 50%; text-align: center; vertical-align: top;"></td>
-          <td style="width: 50%; text-align: center; vertical-align: top;">
-            <div style="font-weight: bold; font-size: 12.5pt;">NGƯỜI LẬP BÁO CÁO</div>
-            <div style="font-style: italic; font-size: 11pt;">(Ký và ghi rõ họ tên)</div>
-            <div style="height: 60px;"></div>
-            <div style="font-weight: bold; font-size: 12.5pt;">${authorName}</div>
-          </td>
-        </tr>
-      </table>
+      ${/biên\s*bản/i.test(title) ? `
+        <table style="width: 100%; margin-top: 25px; border-collapse: collapse; page-break-inside: avoid;">
+          <tr>
+            <td style="width: 50%; text-align: center; vertical-align: top;">
+              <div style="font-weight: bold; font-size: 13pt; text-transform: uppercase;">THƯ KÝ</div>
+              <div style="font-style: italic; font-size: 11pt; margin-top: 2px;">(Ký và ghi rõ họ tên)</div>
+              <div style="height: 70px;"></div>
+              <div style="font-weight: bold; font-size: 12.5pt;">......................................</div>
+            </td>
+            <td style="width: 50%; text-align: center; vertical-align: top;">
+              <div style="font-weight: bold; font-size: 13pt; text-transform: uppercase;">CHỦ TRÌ CUỘC HỌP</div>
+              <div style="font-style: italic; font-size: 11pt; margin-top: 2px;">(Ký và ghi rõ họ tên)</div>
+              <div style="height: 70px;"></div>
+              <div style="font-weight: bold; font-size: 12.5pt;">${authorName}</div>
+            </td>
+          </tr>
+        </table>
+      ` : `
+        <table style="width: 100%; margin-top: 25px; border-collapse: collapse; page-break-inside: avoid;">
+          <tr>
+            <td style="width: 50%; text-align: center; vertical-align: top;"></td>
+            <td style="width: 50%; text-align: center; vertical-align: top;">
+              <div style="font-weight: bold; font-size: 12.5pt; text-transform: uppercase;">NGƯỜI LẬP BÁO CÁO</div>
+              <div style="font-style: italic; font-size: 11pt; margin-top: 2px;">(Ký và ghi rõ họ tên)</div>
+              <div style="height: 65px;"></div>
+              <div style="font-weight: bold; font-size: 12.5pt;">${authorName}</div>
+            </td>
+          </tr>
+        </table>
+      `}
 
       ${isForPrint ? `
         <script>

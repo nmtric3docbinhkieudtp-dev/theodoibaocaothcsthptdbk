@@ -340,60 +340,69 @@ export function generateDepartmentMeetingHtml(
       ` : ''}
 
       <!-- HEADER QUỐC HIỆU VÀ TÊN TRƯỜNG -->
-      <table class="meta-header">
+      <table class="meta-header" style="width: 100%; border: none; border-collapse: collapse; margin-bottom: 16px;">
         <tr>
-          <td style="width: 45%;">
-            <div style="font-size: 11pt; text-transform: uppercase;">TRƯỜNG THCS VÀ THPT</div>
+          <td style="width: 45%; text-align: center; vertical-align: top; border: none; padding: 0;">
+            <div style="font-size: 11pt; text-transform: uppercase;">SỞ GDĐT TỈNH ĐỒNG THÁP</div>
+            <div style="font-size: 11.5pt; font-weight: bold; text-transform: uppercase; margin-top: 1px;">TRƯỜNG THCS VÀ THPT</div>
             <div style="font-size: 11.5pt; font-weight: bold; text-transform: uppercase; margin-top: 1px;">ĐỐC BINH KIỀU</div>
-            <div style="font-size: 11.5pt; font-weight: bold; text-transform: uppercase; margin-top: 2px;">TỔ ${deptDisplayName}</div>
-            <div style="margin-top: 2px;">
-              <span style="display: inline-block; width: 80px; border-bottom: 1.5px solid #000;"></span>
+            <div style="text-align: center; margin-top: 5px; margin-bottom: 6px;">
+              <span style="display: inline-block; width: 90px; border-bottom: 1.5px solid #000;"></span>
             </div>
+            ${data.departmentName ? `<div style="font-size: 11pt; font-weight: bold; text-transform: uppercase; margin-top: 2px;">TỔ ${deptDisplayName}</div>` : ''}
+            <div style="font-size: 11pt; margin-top: 4px;">Số: &nbsp; &nbsp; /BB-THCS&amp;THPTĐBK</div>
           </td>
-          <td style="width: 55%;">
-            <div style="font-size: 11pt; font-weight: bold; text-transform: uppercase;">CỘNG HOÀ XÃ HỘI CHỦ NGHĨA VIỆT NAM</div>
-            <div style="font-size: 11.5pt; font-weight: bold; margin-top: 2px;">
-              <span style="border-bottom: 1.5px solid #000; padding-bottom: 1px;">Độc lập – Tự do – Hạnh Phúc</span>
+          <td style="width: 55%; text-align: center; vertical-align: top; border: none; padding: 0;">
+            <div style="font-size: 11pt; font-weight: bold; text-transform: uppercase;">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</div>
+            <div style="font-size: 11.5pt; font-weight: bold; margin-top: 2px;">Độc lập – Tự do – Hạnh phúc</div>
+            <div style="text-align: center; margin-top: 5px; margin-bottom: 6px;">
+              <span style="display: inline-block; width: 175px; border-bottom: 1.5px solid #000;"></span>
             </div>
-            <div style="font-size: 11pt; font-style: italic; margin-top: 8px;">
-              Đốc Binh Kiều, ngày ${meetingDate} tháng ${meetingMonth} năm ${meetingYear}
+            <div style="font-size: 11pt; font-style: italic; margin-top: 4px;">
+              Đồng Tháp, ngày ${meetingDate} tháng ${meetingMonth} năm ${meetingYear}
             </div>
           </td>
         </tr>
       </table>
 
       <!-- TIÊU ĐỀ BIÊN BẢN -->
-      <div class="main-title">
-        <div style="font-size: 14.5pt; font-weight: bold; text-transform: uppercase; margin-bottom: 3px;">BIÊN BẢN</div>
-        <div style="font-size: 13.5pt; font-weight: bold;">
-          Sinh hoạt tổ chuyên môn ${meetingNum} năm học ${academicYear}
+      <div class="main-title" style="text-align: center; margin-top: 16px; margin-bottom: 20px;">
+        <div style="font-size: 14pt; font-weight: bold; text-transform: uppercase; margin: 0 0 4px 0;">BIÊN BẢN</div>
+        <div style="font-size: 13.5pt; font-weight: bold; text-transform: uppercase; margin: 0;">
+          HỌP TỔ CHUYÊN MÔN ${meetingNum.toUpperCase()}
+        </div>
+        <div style="font-size: 13.5pt; font-weight: bold; text-transform: uppercase; margin-top: 4px;">
+          NĂM HỌC: ${academicYear}
+        </div>
+        <div style="text-align: center; margin-top: 6px; margin-bottom: 16px;">
+          <span style="display: inline-block; width: 180px; border-bottom: 1.5px solid #000;"></span>
         </div>
       </div>
 
       <!-- THỜI GIAN, ĐỊA ĐIỂM, THÀNH PHẦN -->
-      <div style="margin-bottom: 14px; line-height: 1.6;">
-        <p style="text-indent: 0;">Thời gian: lúc ${timeHour} giờ ${timeMinute} phút, ngày ${meetingDate} tháng ${meetingMonth} năm ${meetingYear}.</p>
-        <p style="text-indent: 0;">Địa điểm: Tại phòng ${location}</p>
+      <div style="margin-bottom: 16px; font-size: 13pt; line-height: 1.6;">
+        <p style="margin: 3px 0; text-indent: 0;"><strong>Thời gian:</strong> Vào lúc ${timeHour} giờ ${timeMinute} phút, ngày ${meetingDate} tháng ${meetingMonth} năm ${meetingYear}.</p>
+        <p style="margin: 3px 0; text-indent: 0;"><strong>Địa điểm:</strong> Tại phòng ${location}.</p>
         
-        <p style="margin-top: 6px; font-weight: bold;">Thành phần:</p>
-        <p style="padding-left: 20px; margin: 3px 0;">- Tổng số thành viên của tổ: ${totalMembers}</p>
-        <p style="padding-left: 20px; margin: 3px 0;">- Tổng số thành viên tham dự: ${presentMembers}</p>
-        <p style="padding-left: 20px; margin: 3px 0;">
-          - Vắng: ${absentCount} Trong đó: có phép: ${absentWithPermission}, lý do: ${absentReason}
+        <p style="margin: 6px 0 2px 0; font-weight: bold;">Thành phần tham dự:</p>
+        <p style="margin: 2px 0 2px 20px;">- Tổng số thành viên của tổ: <strong>${totalMembers}</strong>; Số lượng có mặt: <strong>${presentMembers}</strong>.</p>
+        <p style="margin: 2px 0 2px 20px;">
+          - Vắng: <strong>${absentCount}</strong> (Có phép: ${absentWithPermission}${absentReason ? `, lý do: ${absentReason}` : ''}; Không phép: ${absentWithoutPermission}).
         </p>
-        <p style="padding-left: 175px; margin: 2px 0;">
-          không phép: ${absentWithoutPermission}
-        </p>
-        <p style="margin-top: 6px;">Chủ trì: ${chairPerson} - Tổ trưởng</p>
-        <p style="margin-top: 3px;">Thư ký: ${secretary}</p>
+        <p style="margin: 4px 0 2px 0;"><strong>Chủ trì cuộc họp:</strong> ${chairPerson} - ${data.chairTitle || 'Tổ trưởng'}.</p>
+        <p style="margin: 2px 0 4px 0;"><strong>Thư ký cuộc họp:</strong> ${secretary}.</p>
       </div>
 
       <!-- NỘI DUNG BIÊN BẢN -->
-      <div style="margin-top: 14px;">
-        <div class="section-header">NỘI DUNG</div>
+      <div style="margin-top: 16px;">
+        <div class="section-header" style="font-size: 13.5pt; font-weight: bold; text-transform: uppercase; margin-top: 18px; margin-bottom: 10px;">
+          NỘI DUNG CUỘC HỌP
+        </div>
 
         <!-- MỤC 1: ĐÁNH GIÁ HOẠT ĐỘNG -->
-        <div class="sub-section-header">1. Đánh giá hoạt động của tổ trong thời gian qua</div>
+        <div class="sub-section-header" style="font-weight: bold; font-size: 13pt; margin-top: 12px; margin-bottom: 4px;">
+          1. Đánh giá hoạt động của tổ trong thời gian qua:
+        </div>
         <div style="padding-left: 5px;">
           <p style="margin: 3px 0;">- Ưu điểm: ${strengthsHtml}</p>
           <p style="margin: 3px 0;">- Hạn chế: ${weaknessesHtml}</p>
@@ -402,57 +411,66 @@ export function generateDepartmentMeetingHtml(
         </div>
 
         <!-- MỤC 2: TRIỂN KHAI CÁC VĂN BẢN -->
-        <div class="sub-section-header">2. Triển khai các văn bản</div>
+        <div class="sub-section-header" style="font-weight: bold; font-size: 13pt; margin-top: 12px; margin-bottom: 4px;">
+          2. Triển khai các văn bản:
+        </div>
         <div style="padding-left: 5px;">
           ${docsHtml}
         </div>
 
         <!-- MỤC 3: TRIỂN KHAI NỘI DUNG CÔNG VIỆC TRỌNG TÂM -->
-        <div class="sub-section-header">3. Triển khai nội dung công việc trọng tâm của trường/tổ</div>
+        <div class="sub-section-header" style="font-weight: bold; font-size: 13pt; margin-top: 12px; margin-bottom: 4px;">
+          3. Triển khai nội dung công việc trọng tâm của trường/tổ:
+        </div>
         <div style="padding-left: 5px;">
           ${tasksHtml}
           ${tablesHtml}
         </div>
 
         <!-- MỤC 4: Ý KIẾN CỦA CÁC THÀNH VIÊN -->
-        <div class="sub-section-header">4. Ý kiến của các thành viên trong cuộc họp đối với trường/tổ/cá nhân</div>
-        <div style="padding-left: 10px;">
+        <div class="sub-section-header" style="font-weight: bold; font-size: 13pt; margin-top: 12px; margin-bottom: 4px;">
+          4. Ý kiến của các thành viên trong cuộc họp đối với trường/tổ/cá nhân:
+        </div>
+        <div style="padding-left: 5px;">
           ${memberOpinionsHtml}
         </div>
 
         <!-- MỤC 5: KẾT LUẬN CỦA CHỦ TRÌ -->
-        <div class="sub-section-header">5. Kết luận</div>
-        <p style="font-style: italic; margin: 2px 0 4px 10px; font-size: 11.5pt;">(của chủ trì về các chỉ tiêu, nội dung trọng tâm cần thực hiện trong thời gian tới)</p>
-        <div style="padding-left: 10px;">
+        <div class="sub-section-header" style="font-weight: bold; font-size: 13pt; margin-top: 12px; margin-bottom: 4px;">
+          5. Kết luận của chủ trì:
+        </div>
+        <div style="padding-left: 5px;">
           ${conclusionHtml}
         </div>
 
         <!-- MỤC 6: ĐỀ XUẤT KIẾN NGHỊ -->
-        <div class="sub-section-header">6. Đề xuất, kiến nghị với nhà trường</div>
-        <div style="padding-left: 10px;">
+        <div class="sub-section-header" style="font-weight: bold; font-size: 13pt; margin-top: 12px; margin-bottom: 4px;">
+          6. Đề xuất, kiến nghị với nhà trường:
+        </div>
+        <div style="padding-left: 5px;">
           ${recommendationsHtml}
         </div>
       </div>
 
       <!-- KẾT THÚC VÀ CHỮ KÝ 2 BÊN -->
-      <div style="margin-top: 18px; margin-bottom: 25px;">
-        <p style="text-indent: 25px;">
-          Cuộc họp kết thúc vào lúc ${data.endHour || '…'} giờ ${data.endMinute || '…'} phút cùng ngày./.
+      <div style="margin-top: 20px; margin-bottom: 25px; font-size: 13pt; line-height: 1.6;">
+        <p style="text-indent: 25px; margin: 0;">
+          Cuộc họp kết thúc vào lúc ${data.endHour || '…'} giờ ${data.endMinute || '…'} phút cùng ngày, biên bản đã được thông qua toàn thể cuộc họp và thống nhất ký tên./.
         </p>
       </div>
 
-      <table style="width: 100%; border-collapse: collapse; margin-top: 15px; page-break-inside: avoid;">
+      <table style="width: 100%; border: none; border-collapse: collapse; margin-top: 25px; page-break-inside: avoid;">
         <tr>
-          <td style="width: 50%; text-align: center; vertical-align: top;">
-            <div style="font-weight: bold; font-size: 13pt;">Thư ký</div>
+          <td style="width: 50%; text-align: center; vertical-align: top; border: none; padding: 0;">
+            <div style="font-weight: bold; font-size: 13pt; text-transform: uppercase;">THƯ KÝ</div>
             <div style="font-style: italic; font-size: 11pt; margin-top: 2px;">(Ký và ghi rõ họ tên)</div>
-            <div style="height: 75px;"></div>
+            <div style="height: 70px;"></div>
             <div style="font-weight: bold; font-size: 12.5pt;">${secretary !== '.......................................' ? secretary : ''}</div>
           </td>
-          <td style="width: 50%; text-align: center; vertical-align: top;">
-            <div style="font-weight: bold; font-size: 13pt;">Chủ trì</div>
+          <td style="width: 50%; text-align: center; vertical-align: top; border: none; padding: 0;">
+            <div style="font-weight: bold; font-size: 13pt; text-transform: uppercase;">CHỦ TRÌ CUỘC HỌP</div>
             <div style="font-style: italic; font-size: 11pt; margin-top: 2px;">(Ký và ghi rõ họ tên)</div>
-            <div style="height: 75px;"></div>
+            <div style="height: 70px;"></div>
             <div style="font-weight: bold; font-size: 12.5pt;">${chairPerson !== '.........................' ? chairPerson : ''}</div>
           </td>
         </tr>
@@ -542,20 +560,21 @@ export function exportDepartmentMeetingToPdf(
  * Tạo văn bản thuần (plain text) đồng bộ cho Biên bản sinh hoạt tổ chuyên môn
  */
 export function generateDepartmentMeetingText(data: DepartmentMeetingMinutesData): string {
-  return `TRƯỜNG THCS VÀ THPT ĐỐC BINH KIỀU - TỔ ${data.departmentName || '...'}\n` +
-    `CỘNG HOÀ XÃ HỘI CHỦ NGHĨA VIỆT NAM\n` +
-    `Độc lập – Tự do – Hạnh Phúc\n\n` +
+  return `SỞ GDĐT TỈNH ĐỒNG THÁP - TRƯỜNG THCS VÀ THPT ĐỐC BINH KIỀU - TỔ ${data.departmentName || '...'}\n` +
+    `CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM\n` +
+    `Độc lập – Tự do – Hạnh phúc\n\n` +
     `BIÊN BẢN\n` +
-    `Sinh hoạt tổ chuyên môn ${data.meetingNumber || 'lần 1'} năm học ${data.academicYear || '2026 - 2027'}\n\n` +
+    `HỌP TỔ CHUYÊN MÔN ${data.meetingNumber ? data.meetingNumber.toUpperCase() : 'LẦN 1'}\n` +
+    `NĂM HỌC: ${data.academicYear || '2026 - 2027'}\n\n` +
     `Thời gian: lúc ${data.timeHour || '...'} giờ ${data.timeMinute || '...'} phút, ngày ${data.meetingDate || '...'} tháng ${data.meetingMonth || '...'} năm ${data.meetingYear || '2026'}.\n` +
     `Địa điểm: Tại phòng ${data.location || '...'}\n` +
-    `Thành phần:\n` +
+    `Thành phần tham dự:\n` +
     `- Tổng số thành viên của tổ: ${data.totalMembers || '...'}\n` +
     `- Tổng số thành viên tham dự: ${data.presentMembers || '...'}\n` +
     `- Vắng: ${data.absentCount || '0'} (Có phép: ${data.absentWithPermission || '0'}, Không phép: ${data.absentWithoutPermission || '0'})\n` +
-    `- Chủ trì: ${data.chairPerson || '...'} - Tổ trưởng\n` +
-    `- Thư ký: ${data.secretary || '...'}\n\n` +
-    `NỘI DUNG:\n` +
+    `- Chủ trì cuộc họp: ${data.chairPerson || '...'} - ${data.chairTitle || 'Tổ trưởng'}\n` +
+    `- Thư ký cuộc họp: ${data.secretary || '...'}\n\n` +
+    `NỘI DUNG CUỘC HỌP:\n` +
     `1. Đánh giá hoạt động của tổ trong thời gian qua:\n` +
     `- Ưu điểm: ${data.reviewStrengths || '...'}\n` +
     `- Hạn chế: ${data.reviewWeaknesses || '...'}\n` +
@@ -566,6 +585,6 @@ export function generateDepartmentMeetingText(data: DepartmentMeetingMinutesData
     `4. Ý kiến của các thành viên trong cuộc họp: ${data.memberOpinions || '...'}\n\n` +
     `5. Kết luận của chủ trì: ${data.conclusion || '...'}\n\n` +
     `6. Đề xuất, kiến nghị với nhà trường: ${data.recommendations || '...'}\n\n` +
-    `Cuộc họp kết thúc vào lúc ${data.endHour || '...'} giờ ${data.endMinute || '...'} phút cùng ngày.\n` +
-    `Thư ký: ${data.secretary || '...'} | Chủ trì: ${data.chairPerson || '...'}`;
+    `Cuộc họp kết thúc vào lúc ${data.endHour || '...'} giờ ${data.endMinute || '...'} phút cùng ngày, biên bản đã được thông qua toàn thể cuộc họp và thống nhất ký tên./.\n` +
+    `Thư ký: ${data.secretary || '...'} | Chủ trì cuộc họp: ${data.chairPerson || '...'}`;
 }
