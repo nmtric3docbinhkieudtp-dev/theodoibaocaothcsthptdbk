@@ -3,6 +3,7 @@ import {
   ReportSubmission, 
   User, 
   HomeroomMeetingMinutesData, 
+  DepartmentMeetingMinutesData,
   AbsentStudentItem, 
   TalentAchievementItem, 
   ClassCadreItem,
@@ -10,6 +11,21 @@ import {
   CustomDynamicTable
 } from '../types';
 import { HOMEROOM_ROSTER_53, SPECIALIZED_DEPT_HEADS_19, OFFICIAL_DEPARTMENTS } from '../data/staffRoster';
+
+export { OFFICIAL_DEPARTMENTS };
+
+export interface ConsolidatedDeptMeeting {
+  stt: number;
+  departmentId: string;
+  departmentName: string;
+  teacherName: string;
+  roleTitle?: string;
+  hasSubmitted: boolean;
+  submittedAt: string | null;
+  submissionId: string | null;
+  minutes: DepartmentMeetingMinutesData | null;
+  reportContent?: string;
+}
 
 export interface ConsolidatedDeptHeadStat {
   stt: number;
@@ -241,6 +257,10 @@ export interface PeriodConsolidationResult {
   isSpecificUsersAudience: boolean;
   totalSpecificUsers: number;
   specificUserStats: ConsolidatedDeptHeadStat[];
+
+  // Specialized Department Meeting Minutes (Họp tổ chuyên môn)
+  isDeptMeetingAudience: boolean;
+  deptMeetingMinutesList: ConsolidatedDeptMeeting[];
 }
 
 /**
@@ -1170,6 +1190,70 @@ export function aggregatePeriodReportData(
     };
   });
 
+  // 7. Xử lý biên bản họp tổ chuyên môn nếu có
+  const isDeptMeetingAudience = 
+    (period?.title || periodTitle).toLowerCase().includes('họp tổ') ||
+    (period?.title || periodTitle).toLowerCase().includes('biên bản') ||
+    (period?.title || periodTitle).toLowerCase().includes('chuyên môn') ||
+    period?.targetAudience === 'dept_heads_only' ||
+    periodSubs.some(s => !!s.structuredData?.departmentMeetingMinutes);
+
+  const deptMeetingMinutesList: ConsolidatedDeptMeeting[] = [];
+  const processedDeptKeys = new Set<string>();
+
+  // Duyệt qua các tổ chính thức
+  OFFICIAL_DEPARTMENTS.forEach((dept, idx) => {
+    const userSubs = periodSubs.filter(s => 
+      s.departmentId === dept.id ||
+      s.authorId === dept.headUserId ||
+      (s.departmentName && s.departmentName.trim().toLowerCase() === dept.name.trim().toLowerCase()) ||
+      (s.authorName && s.authorName.trim().toLowerCase() === dept.headUserName.trim().toLowerCase())
+    );
+    const sub = userSubs.find(s => s.status !== 'draft') || userSubs[0];
+    const minutes = sub?.structuredData?.departmentMeetingMinutes || null;
+
+    deptMeetingMinutesList.push({
+      stt: idx + 1,
+      departmentId: dept.id,
+      departmentName: dept.name,
+      teacherName: dept.headUserName,
+      roleTitle: 'Tổ trưởng chuyên môn',
+      hasSubmitted: !!sub && sub.status !== 'draft',
+      submittedAt: sub?.submittedAt || null,
+      submissionId: sub?.id || null,
+      minutes,
+      reportContent: sub?.content || ''
+    });
+
+    processedDeptKeys.add(dept.id);
+    processedDeptKeys.add(dept.name.toLowerCase());
+  });
+
+  // Bổ sung các submission có minutes từ các tổ khác (nếu có)
+  periodSubs.forEach(s => {
+    if (s.status !== 'draft') {
+      const minutes = s.structuredData?.departmentMeetingMinutes;
+      const dName = minutes?.departmentName || s.departmentName || '';
+      const dId = s.departmentId || '';
+      if (minutes && (!processedDeptKeys.has(dId) && !processedDeptKeys.has(dName.toLowerCase()))) {
+        deptMeetingMinutesList.push({
+          stt: deptMeetingMinutesList.length + 1,
+          departmentId: dId || `dept-other-${deptMeetingMinutesList.length + 1}`,
+          departmentName: dName ? (dName.toLowerCase().startsWith('tổ') ? dName : `Tổ ${dName}`) : 'Tổ Chuyên Môn',
+          teacherName: minutes.chairPerson || s.authorName,
+          roleTitle: s.authorRoleTitle || 'Tổ trưởng chuyên môn',
+          hasSubmitted: true,
+          submittedAt: s.submittedAt || null,
+          submissionId: s.id,
+          minutes,
+          reportContent: s.content || ''
+        });
+        if (dId) processedDeptKeys.add(dId);
+        if (dName) processedDeptKeys.add(dName.toLowerCase());
+      }
+    }
+  });
+
   return {
     period,
     periodTitle,
@@ -1206,14 +1290,219 @@ export function aggregatePeriodReportData(
     deptHeadStats,
     isSpecificUsersAudience,
     totalSpecificUsers: targetUserIds.length,
-    specificUserStats
+    specificUserStats,
+    isDeptMeetingAudience,
+    deptMeetingMinutesList
   };
 }
 
 /**
+ * Sinh dữ liệu mẫu biên bản họp tổ chuyên môn cho 7 tổ chính thức
+ */
+export function generateSampleDeptMeetingSubmissions(
+  periodId: string,
+  periodTitle: string,
+  allUsers: User[],
+  targetPeriod?: ReportPeriod | null
+): ReportSubmission[] {
+  const submissions: ReportSubmission[] = [];
+  const baseTime = new Date('2026-09-17T08:00:00Z');
+
+  const deptMeetingDetails = [
+    {
+      id: 'toan',
+      name: 'Tổ Toán',
+      head: 'Nguyễn Văn Tới',
+      secretary: 'Phan Thị Mộng Thường',
+      members: 15,
+      location: 'Phòng họp chuyên môn số 1',
+      strengths: 'Tập thể giáo viên tổ Toán chấp hành nghiêm túc quy chế chuyên môn, hoàn thành xây dựng phân phối chương trình và kế hoạch bài dạy đúng hạn; 100% giáo viên tích cực ứng dụng CNTT và phần mềm GeoGebra trong giảng dạy hình học.',
+      weaknesses: 'Một số giáo viên mới nhận lớp đầu cấp cần thêm thời gian để nắm bắt năng lực học tập của học sinh sau sáp nhập.',
+      causes: 'Quy mô học sinh đông, năng lực đầu vào môn Toán của học sinh lớp 6 và lớp 10 chưa đồng đều giữa các cơ sở.',
+      solutions: 'Tổ chức chuyên đề phân loại học sinh ngay từ tuần thứ 3; phân công giáo viên cốt cán kèm cặp, bồi dưỡng phương pháp giảng dạy cho giáo viên trẻ.',
+      tasks: '1. Hoàn thiện kế hoạch giáo dục môn Toán năm học 2026-2027 theo Chương trình GDPT 2018.\n2. Triển khai kế hoạch bồi dưỡng học sinh giỏi Toán cấp THCS và THPT.\n3. Tổ chức thao giảng cấp tổ đợt 1 vào tuần 4, chủ đề đổi mới phương pháp dạy học theo định hướng phát triển năng lực.\n4. Rà soát, phụ đạo học sinh có học lực yếu kém môn Toán.',
+      opinions: '- Thầy Nguyễn Minh Trí: Đề xuất nhà trường trang bị thêm bảng phụ di động tại các phòng học cơ sở 2 để phục vụ hoạt động thảo luận nhóm.\n- Cô Phan Thị Mộng Thường: Thống nhất cấu trúc ma trận đề kiểm tra định kỳ; đề nghị tổ phân công người biên soạn ngân hàng câu hỏi dùng chung.',
+      conclusion: 'Chủ trì cuộc họp kết luận: Toàn tổ biểu quyết 100% thống nhất các nội dung đã triển khai; giao Thầy Trí phụ trách đội tuyển HSG THPT, Cô Thường phụ trách đội tuyển HSG THCS; yêu cầu toàn bộ giáo viên nộp KHBD đúng thứ 6 hàng tuần.',
+      recommendations: '- Đề nghị Ban Giám hiệu trang bị thêm bảng phụ và phấn không bụi cho các lớp tại điểm trường Tân Kiều.\n- Hỗ trợ kinh phí mua bản quyền phần mềm hỗ trợ vẽ hình học và soạn đề trắc nghiệm cho giáo viên tổ Toán.'
+    },
+    {
+      id: 'ngu_van',
+      name: 'Tổ Ngữ văn - Thư viện - Thiết bị',
+      head: 'Tô Thị Lắm',
+      secretary: 'Lê Minh Đức',
+      members: 16,
+      location: 'Phòng họp chuyên môn số 2',
+      strengths: '100% giáo viên trong tổ tích cực hưởng ứng phong trào đổi mới phương pháp dạy học và kiểm tra đánh giá theo hướng mở, không sử dụng ngữ liệu trong SGK; duy trì nề nếp sinh hoạt chuyên môn theo nghiên cứu bài học.',
+      weaknesses: 'Kỹ năng tạo lập văn bản và vốn từ ngữ của một bộ phận học sinh vùng nông thôn còn hạn chế.',
+      causes: 'Học sinh ít có thói quen đọc sách tham khảo tại thư viện; tác động từ mạng xã hội làm giảm thời gian đọc sách.',
+      solutions: 'Phối hợp với nhân viên thư viện tổ chức tuần lễ đọc sách và giới thiệu sách hay hàng tháng; tăng cường tiết rèn kỹ năng viết đoạn văn.',
+      tasks: '1. Thực hiện nghiêm túc việc kiểm tra đánh giá định kỳ theo đúng hướng dẫn của Bộ GDĐT, triệt để tránh ngữ liệu có sẵn trong SGK.\n2. Phát động phong trào đọc sách tại thư viện trường cho cả 3 cơ sở.\n3. Thành lập đội tuyển bồi dưỡng học sinh giỏi môn Ngữ văn cấp trường.\n4. Tổ chức chuyên đề sinh hoạt cụm chuyên môn môn Ngữ văn theo Công văn 1091/HD-SGDĐT.',
+      opinions: '- Thầy Lê Minh Đức: Đề xuất tổ chức câu lạc bộ "Em yêu văn học" vào chiều thứ Năm hàng tuần để tạo sân chơi bổ ích cho học sinh yêu thích môn Văn.\n- Cô Trần Thị Ngọc: Đề nghị thư viện trường cập nhật thêm các đầu sách tham khảo mới phù hợp với chương trình GDPT 2018.',
+      conclusion: 'Chủ trì cuộc họp kết luận: Toàn thể giáo viên trong tổ nhất trí cao với kế hoạch nhiệm vụ năm học; yêu cầu giáo viên chấm trả bài đúng thời gian quy định và có nhận xét chi tiết để động viên học sinh.',
+      recommendations: '- Kiến nghị BGH bổ sung kinh phí mua sắm thêm tài liệu tham khảo, tác phẩm văn học kinh điển cho thư viện các điểm trường.\n- Nâng cấp hệ thống âm thanh phục vụ dạy học các tiết thuyết trình văn học.'
+    },
+    {
+      id: 'su_dia',
+      name: 'Tổ Lịch sử - Địa lý - GDCD - GDKTPL',
+      head: 'Lê Hồng Thúy',
+      secretary: 'Trần Thị Thu Ba',
+      members: 14,
+      location: 'Phòng họp chuyên môn số 3',
+      strengths: 'Giáo viên trong tổ có tinh thần đoàn kết, trách nhiệm cao; nhiều giáo viên đạt danh hiệu giáo viên dạy giỏi cấp cơ sở; tích cực đổi mới phương pháp sử dụng bản đồ tư duy và tranh ảnh lịch sử.',
+      weaknesses: 'Một số học sinh còn xem nhẹ các môn khoa học xã hội, dẫn đến tình trạng học lệch.',
+      causes: 'Tâm lý phụ huynh và học sinh chú trọng các môn Toán, Văn, Ngoại ngữ để xét tuyển đại học.',
+      solutions: 'Tổ chức các tiết học lịch sử, địa lý địa phương gắn liền với di tích Gò Tháp và khu di tích Đốc Binh Kiều để khơi gợi niềm tự hào và hứng thú học tập.',
+      tasks: '1. Triển khai kế hoạch giảng dạy nội dung Giáo dục địa phương tỉnh Đồng Tháp lớp 6, 7, 8, 9, 10, 11, 12.\n2. Phối hợp Đoàn trường tổ chức hoạt động trải nghiệm thực tế về nguồn tại di tích lịch sử địa phương.\n3. Chuẩn bị chuyên đề đổi mới sinh hoạt tổ chuyên môn theo nghiên cứu bài học môn Lịch sử.',
+      opinions: '- Cô Trần Thị Thu Ba: Đề xuất lồng ghép kể chuyện lịch sử trong các buổi sinh hoạt dưới cờ.\n- Thầy Phạm Văn Nam: Cần số hóa các tư liệu tranh ảnh, bản đồ để thuận tiện cho việc trình chiếu trên tivi các lớp.',
+      conclusion: 'Chủ trì cuộc họp kết luận: Yêu cầu giáo viên bộ môn thực hiện nghiêm túc việc kiểm tra đánh giá thường xuyên; chuẩn bị chu đáo hồ sơ chuyên đề giáo dục địa phương.',
+      recommendations: '- Đề nghị nhà trường cho phép tổ chức 01 chuyến học tập trải nghiệm thực tế tại Khu di tích Gò Tháp cho học sinh khối 10 và 11.'
+    },
+    {
+      id: 'khtn',
+      name: 'Tổ Vật lý - Hóa học - Sinh học - CN',
+      head: 'Bùi Kim Huỳnh',
+      secretary: 'Nguyễn Hoàng Nam',
+      members: 18,
+      location: 'Phòng thực hành KHTN',
+      strengths: 'Tổ có đội ngũ giáo viên giàu kinh nghiệm, nhiệt tình; phòng thực hành thí nghiệm được bảo quản sạch sẽ; 100% tiết dạy có thực hành thí nghiệm đều được tổ chức đúng quy chuẩn an toàn.',
+      weaknesses: 'Hóa chất thí nghiệm và một số dụng cụ thực hành bị hao hụt, hư hỏng sau thời gian dài sử dụng.',
+      causes: 'Đặc thù môn học thí nghiệm nhiều, dụng cụ thủy tinh dễ vỡ trong quá trình học sinh thao tác.',
+      solutions: 'Lập danh mục đề xuất thanh lý dụng cụ hư hỏng và mua sắm bổ sung hóa chất, vật tư tiêu hao đầu năm học.',
+      tasks: '1. Rà soát toàn bộ trang thiết bị dạy học tối thiểu môn KHTN và các môn Lý, Hóa, Sinh cấp THPT.\n2. Xây dựng kế hoạch phụ đạo học sinh yếu kém và bồi dưỡng học sinh giỏi STEM/KHKT.\n3. Thành lập các nhóm nghiên cứu đề tài Khoa học kỹ thuật cấp trường dự thi cấp Tỉnh.',
+      opinions: '- Thầy Nguyễn Hoàng Nam: Cần trang bị tủ hút hóa chất đạt chuẩn tại phòng thí nghiệm Hóa để đảm bảo an toàn cho giáo viên và học sinh.\n- Cô Võ Thị Hoa: Đề nghị hỗ trợ kinh phí vật liệu cho các nhóm học sinh làm mô hình STEM.',
+      conclusion: 'Chủ trì cuộc họp kết luận: Giao các nhóm trưởng bộ môn lập danh sách vật tư cần mua sắm ngay trong tuần này; đôn đốc các nhóm hoàn thành đề cương nghiên cứu KHKT trước ngày 30/9.',
+      recommendations: '- Đề nghị BGH cấp bổ sung hóa chất và mua thay thế các bộ thí nghiệm cảm biến đã hỏng.\n- Trang bị thêm bình chữa cháy mini và tủ thuốc sơ cứu tại các phòng thực hành.'
+    },
+    {
+      id: 'ngoai_ngu_tin',
+      name: 'Tổ Ngoại ngữ - Tin học',
+      head: 'Lê Thị Ngọc Tuyền',
+      secretary: 'Phạm Quốc Bảo',
+      members: 12,
+      location: 'Phòng máy vi tính số 1',
+      strengths: 'Giáo viên trẻ, năng động, ứng dụng CNTT và AI rất thành thạo vào bài giảng; các tiết học tiếng Anh được tổ chức sinh động, tăng cường kỹ năng nghe - nói.',
+      weaknesses: 'Phòng máy vi tính tại cơ sở Tân Kiều một số máy cấu hình cũ, thỉnh thoảng lỗi nguồn.',
+      causes: 'Dàn máy vi tính đã đầu tư nhiều năm chưa được bảo dưỡng toàn diện.',
+      solutions: 'Giáo viên Tin học chủ động cài đặt, bảo trì phần mềm; tận dụng máy còn tốt để ghép đôi học sinh trong tiết thực hành.',
+      tasks: '1. Triển khai chương trình tiếng Anh tăng cường và chuẩn bị thành lập CLB Tiếng Anh (English Club).\n2. Tuyển chọn học sinh vào đội tuyển Tin học trẻ và HSG Tiếng Anh các cấp.\n3. Tổ chức tập huấn cho toàn trường về việc sử dụng phần mềm quản lý điểm và sổ theo dõi điện tử.',
+      opinions: '- Thầy Phạm Quốc Bảo: Đề nghị BGH cho phép mở rộng băng thông mạng Internet tại phòng máy để học sinh thực hành thi tiếng Anh trên Internet (IOE).\n- Cô Nguyễn Thị Thảo: Cần trang bị thêm loa bluetooth cầm tay phục vụ bài thi nghe tiếng Anh.',
+      conclusion: 'Chủ trì cuộc họp kết luận: Thống nhất các nội dung nhiệm vụ trọng tâm; phân công Thầy Bảo chịu trách nhiệm kỹ thuật phòng máy, Cô Tuyền phụ trách CLB Tiếng Anh.',
+      recommendations: '- Đề nghị nhà trường nâng cấp đường truyền Internet cáp quang tại phòng máy tính Tân Kiều.\n- Trang bị 04 loa trợ giảng không dây phục vụ các tiết luyện nghe tiếng Anh.'
+    },
+    {
+      id: 'gdtc_qpan_nghethuat',
+      name: 'Tổ GDTC - QPAN - Nghệ thuật',
+      head: 'Võ Văn Tuấn',
+      secretary: 'Đỗ Văn Sang',
+      members: 10,
+      location: 'Nhà thi đấu đa năng',
+      strengths: 'Đội ngũ giáo viên giàu nhiệt huyết, thể lực tốt; tổ chức hiệu quả các hoạt động rèn luyện thể chất, giáo dục quốc phòng an ninh và các phong trào văn nghệ.',
+      weaknesses: 'Sân tập thể dục ngoài trời tại cơ sở 1 thiếu mái che, ảnh hưởng những ngày nắng gắt hoặc mưa.',
+      causes: 'Điều kiện thời tiết đầu năm học mưa nắng thất thường.',
+      solutions: 'Linh hoạt điều chỉnh giờ học thể dục vào sáng sớm hoặc cuối buổi chiều; tận dụng nhà đa năng cho các lớp học chung khi trời mưa.',
+      tasks: '1. Xây dựng kế hoạch tổ chức Hội khỏe Phù Đổng cấp trường năm học 2026-2027.\n2. Thành lập và huấn luyện các đội tuyển thể thao: Điền kinh, Bóng chuyền, Cầu lông, Bóng đá mini.\n3. Chuẩn bị các tiết mục văn nghệ chào mừng Đại hội đại biểu cha mẹ học sinh và ngày Nhà giáo Việt Nam 20/11.',
+      opinions: '- Thầy Đỗ Văn Sang: Đề xuất mua bổ sung bóng đá, bóng chuyền, cầu lông và vợt tập luyện cho học sinh.\n- Thầy Huỳnh Văn Hùng: Cần kẻ lại vạch sơn sân bóng chuyền và sân cầu lông trước khi bước vào giải thi đấu.',
+      conclusion: 'Chủ trì cuộc họp kết luận: Nhất trí toàn bộ kế hoạch; phân công các huấn luyện viên phụ trách từng môn thể thao sẵn sàng cho Hội khỏe Phù Đổng.',
+      recommendations: '- Đề xuất nhà trường mua thêm 20 quả bóng đá số 5, 20 quả bóng chuyền da và lưới mới.\n- Bố trí kinh phí sửa chữa hệ thống thoát nước sân thể dục.'
+    },
+    {
+      id: 'van_phong',
+      name: 'Tổ Hành chính - Văn phòng',
+      head: 'Trần Văn Út',
+      secretary: 'Nguyễn Thị Mai',
+      members: 8,
+      location: 'Văn phòng trường',
+      strengths: 'Thực hiện tốt công tác hành chính văn thư, thủ quỹ, kế toán, y tế và bảo vệ; hoàn thành kịp thời các báo cáo tài chính, thống kê học sinh đầu năm gửi Sở GDĐT.',
+      weaknesses: 'Khối lượng hồ sơ giấy tờ và thủ tục thanh quyết toán đầu năm học rất lớn.',
+      causes: 'Giai đoạn đầu năm học tiếp nhận học sinh mới, cấp phát thẻ BHYT và thu chi các khoản thỏa thuận.',
+      solutions: 'Tăng cường ứng dụng phần mềm dịch vụ công và thu phí không dùng tiền mặt qua tài khoản ngân hàng để giảm tải thủ tục hành chính.',
+      tasks: '1. Hoàn tất việc rà soát và nộp dữ liệu BHYT học sinh cho cơ quan Bảo hiểm Xã hội huyện Tháp Mười.\n2. Phối hợp với trạm y tế xã tổ chức khám sức khỏe định kỳ cho học sinh toàn trường.\n3. Đảm bảo an ninh trật tự, an toàn giao thông trước cổng trường các cơ sở trong các giờ cao điểm.',
+      opinions: '- Cô Nguyễn Thị Mai: Đề nghị các giáo viên chủ nhiệm nộp danh sách miễn giảm học phí và BHYT đúng thời hạn để bộ phận kế toán kịp tổng hợp.\n- Thầy Lê Văn Lâm (Y tế): Đề xuất trang bị thêm thuốc sơ cứu thiết yếu và bông băng tại phòng y tế cả 2 điểm trường.',
+      conclusion: 'Chủ trì cuộc họp kết luận: Toàn tổ cam kết phục vụ chu đáo, chính xác, kịp thời mọi hoạt động dạy và học của nhà trường; đảm bảo công khai minh bạch tài chính.',
+      recommendations: '- Đề nghị Ban Giám hiệu trang bị thêm 01 máy scan tốc độ cao để số hóa hồ sơ lưu trữ văn phòng.\n- Cấp bổ sung kinh phí mua thuốc thiết yếu cho phòng y tế học đường.'
+    }
+  ];
+
+  deptMeetingDetails.forEach((dept, index) => {
+    const user = allUsers.find(u => u.name.trim().toLowerCase() === dept.head.trim().toLowerCase()) 
+      || allUsers.find(u => u.departmentId === dept.id);
+
+    const submitTime = new Date(baseTime.getTime() + (index * 30 * 60 * 1000)).toISOString();
+
+    const minutes: DepartmentMeetingMinutesData = {
+      academicYear: '2026 - 2027',
+      meetingNumber: 'lần 2',
+      timeHour: '08',
+      timeMinute: '00',
+      meetingDate: '17',
+      meetingMonth: '9',
+      meetingYear: '2026',
+      location: dept.location,
+      departmentName: dept.name,
+      totalMembers: dept.members,
+      presentMembers: dept.members,
+      absentCount: 0,
+      absentWithPermission: '0',
+      absentReason: '',
+      absentWithoutPermission: '0',
+      chairPerson: dept.head,
+      chairTitle: 'Tổ trưởng chuyên môn',
+      secretary: dept.secretary,
+      reviewStrengths: dept.strengths,
+      reviewWeaknesses: dept.weaknesses,
+      reviewCauses: dept.causes,
+      reviewSolutions: dept.solutions,
+      documentsDeployed: DEFAULT_DEPARTMENT_MEETING_DOCUMENTS,
+      centralTasks: dept.tasks,
+      includeGradeTable: false,
+      memberOpinions: dept.opinions,
+      conclusion: dept.conclusion,
+      recommendations: dept.recommendations
+    };
+
+    const reportContent = `Biên bản họp tổ chuyên môn ${dept.name} lần 2 (17-9-2026). Chủ trì: ${dept.head}. Đã hoàn thành đánh giá hoạt động, triển khai văn bản chỉ đạo và đề xuất kiến nghị lên Ban Giám Hiệu.`;
+
+    submissions.push({
+      id: `sim-sub-dept-${dept.id}-${periodId}`,
+      periodId: periodId,
+      periodTitle: targetPeriod?.title || periodTitle,
+      authorId: user?.id || `staff-dept-${dept.id}`,
+      authorName: dept.head,
+      authorEmail: user?.email || `totruong.${dept.id}@docbinhkieu.edu.vn`,
+      authorRole: 'dept_head',
+      authorRoleTitle: 'Tổ trưởng chuyên môn',
+      departmentId: dept.id,
+      departmentName: dept.name,
+      title: `Biên bản họp ${dept.name} lần 2 (17-9-2026) - ${dept.head}`,
+      content: reportContent,
+      structuredData: {
+        departmentMeetingMinutes: minutes
+      },
+      attachments: [],
+      status: 'principal_approved',
+      submittedAt: submitTime,
+      updatedAt: submitTime,
+      isLate: false,
+      reviewHistory: [],
+      version: 1
+    });
+  });
+
+  return submissions;
+}
+
+/**
+ * Mẫu văn bản triển khai mặc định cho họp tổ chuyên môn
+ */
+export const DEFAULT_DEPARTMENT_MEETING_DOCUMENTS = `- Kế hoạch giáo dục nhà trường năm học 2026-2027 (bản dự thảo).
+- Công văn số 3284/SGDĐT-GDPT ngày 24 tháng 8 năm 2026 về việc hướng dẫn xây dựng và tổ chức thực hiện kế hoạch giáo dục của nhà trường cấp trung học.
+- Công văn số 1061/HD-SGDĐT ngày 28 tháng 8 năm 2026 về hướng dẫn thực hiện nhiệm vụ giáo dục phổ thông năm học 2026 – 2027.
+- Công văn số 1091/HD-SGDĐT ngày 08 tháng 9 năm 2026 về việc hướng dẫn tổ chức sinh hoạt chuyên môn tại cơ sở giáo dục phổ thông và sinh hoạt cụm chuyên môn kể từ năm học 2026 – 2027.`;
+
+/**
  * Sinh bộ dữ liệu báo cáo mẫu cho đầy đủ 53 lớp chủ nhiệm
- * THÔNG MINH: Tự động phát hiện chủ đề của đợt (Hộ nghèo, Bỏ học, BHYT, hoặc mẫu tùy biến)
- * để sinh ra đúng danh sách học sinh và số liệu thực tế cho 53 lớp!
+ * THÔNG MINH: Tự động phát hiện chủ đề của đợt (Hộ nghèo, Bỏ học, BHYT, Họp tổ chuyên môn, hoặc mẫu tùy biến)
+ * để sinh ra đúng danh sách học sinh và số liệu thực tế cho 53 lớp hoặc 7 tổ chuyên môn!
  */
 export function generateSample53Submissions(
   periodId: string, 
@@ -1222,6 +1511,11 @@ export function generateSample53Submissions(
   targetPeriod?: ReportPeriod | null
 ): ReportSubmission[] {
   const pTitle = (targetPeriod?.title || periodTitle || '').toLowerCase();
+
+  const isDeptMeetingTopic = pTitle.includes('họp tổ') || pTitle.includes('biên bản') || pTitle.includes('chuyên môn') || targetPeriod?.targetAudience === 'dept_heads_only';
+  if (isDeptMeetingTopic) {
+    return generateSampleDeptMeetingSubmissions(periodId, periodTitle, allUsers, targetPeriod);
+  }
 
   const isPoorStudentTopic = pTitle.includes('nghèo') || pTitle.includes('khó khăn') || pTitle.includes('chính sách');
   const isDropoutTopic = pTitle.includes('nghỉ') || pTitle.includes('bỏ học') || pTitle.includes('nguy cơ');

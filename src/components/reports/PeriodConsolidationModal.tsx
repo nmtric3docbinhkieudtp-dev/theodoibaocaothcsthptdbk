@@ -5,10 +5,15 @@ import { ExportService } from '../../services/exportService';
 import { 
   aggregatePeriodReportData, 
   generateSample53Submissions, 
+  generateSampleDeptMeetingSubmissions,
   generateConsolidatedExecutiveSummary,
   PeriodConsolidationResult,
-  ConsolidatedStudent
+  ConsolidatedStudent,
+  OFFICIAL_DEPARTMENTS,
+  DEFAULT_DEPARTMENT_MEETING_DOCUMENTS
 } from '../../utils/consolidationHelper';
+import { splitSmartLines } from '../../utils/homeroomReportExporter';
+import { formatReportTitleHeader } from '../../services/consolidatedExportGenerators';
 import { 
   X, 
   FileSpreadsheet, 
@@ -62,7 +67,7 @@ export const PeriodConsolidationModal: React.FC<PeriodConsolidationModalProps> =
   });
 
   // Active tab state
-  const [activeTab, setActiveTab] = useState<'dynamic' | 'matrix' | 'absent' | 'classes' | 'talents' | 'feedbacks' | 'ai'>('dynamic');
+  const [activeTab, setActiveTab] = useState<'dept_meetings' | 'dynamic' | 'matrix' | 'absent' | 'classes' | 'talents' | 'feedbacks' | 'ai'>('dynamic');
 
   // Filter states
   const [searchAbsent, setSearchAbsent] = useState('');
@@ -70,11 +75,13 @@ export const PeriodConsolidationModal: React.FC<PeriodConsolidationModalProps> =
   const [gradeFilter, setGradeFilter] = useState<string>('all');
   const [campusFilter, setCampusFilter] = useState<string>('all');
   const [searchFeedback, setSearchFeedback] = useState('');
+  const [selectedDeptFilter, setSelectedDeptFilter] = useState<string>('all');
 
   // Loading & Action states
   const [exportingExcel, setExportingExcel] = useState(false);
   const [exportingWord, setExportingWord] = useState(false);
   const [copiedAI, setCopiedAI] = useState(false);
+  const [copiedMeetingDoc, setCopiedMeetingDoc] = useState(false);
   const [isGeneratingSample, setIsGeneratingSample] = useState(false);
 
   // Active period object
@@ -88,9 +95,58 @@ export const PeriodConsolidationModal: React.FC<PeriodConsolidationModalProps> =
     return aggregatePeriodReportData(activePeriod, submissions, allUsers);
   }, [activePeriod, submissions, allUsers]);
 
+  // Check if current period is a Department Meeting Minutes report
+  const isMeetingMinutes = useMemo(() => {
+    return (
+      consolidatedData.isDeptMeetingAudience ||
+      (activePeriod?.title || consolidatedData.periodTitle || '').toLowerCase().includes('họp tổ') ||
+      (activePeriod?.title || consolidatedData.periodTitle || '').toLowerCase().includes('biên bản') ||
+      (consolidatedData.deptMeetingMinutesList && consolidatedData.deptMeetingMinutesList.length > 0 && consolidatedData.deptMeetingMinutesList.some(d => d.hasSubmitted && d.minutes))
+    );
+  }, [consolidatedData, activePeriod]);
+
+  // Count of department meetings with submitted minutes
+  const submittedDeptMeetingCount = useMemo(() => {
+    return consolidatedData.deptMeetingMinutesList.filter(d => d.hasSubmitted && (d.minutes || d.reportContent)).length;
+  }, [consolidatedData.deptMeetingMinutesList]);
+
+  // Formatted report title info
+  const reportTitleInfo = useMemo(() => {
+    return formatReportTitleHeader(activePeriod?.title || consolidatedData.periodTitle);
+  }, [activePeriod, consolidatedData.periodTitle]);
+
+  // Meeting minutes list for display (with simulation fallback if 0 submitted)
+  const displayDeptMeetings = useMemo(() => {
+    let meetings = consolidatedData.deptMeetingMinutesList.filter(d => d.hasSubmitted && (d.minutes || d.reportContent));
+    if (meetings.length === 0) {
+      const sampleSubs = generateSampleDeptMeetingSubmissions(activePeriod?.id || 'sample', activePeriod?.title || consolidatedData.periodTitle, allUsers);
+      meetings = OFFICIAL_DEPARTMENTS.map((dept, idx) => {
+        const sub = sampleSubs.find(s => s.departmentId === dept.id || s.departmentName?.toLowerCase().includes(dept.code.toLowerCase()));
+        return {
+          stt: idx + 1,
+          departmentId: dept.id,
+          departmentName: dept.name,
+          teacherName: dept.headUserName,
+          roleTitle: 'Tổ trưởng chuyên môn',
+          hasSubmitted: true,
+          submittedAt: '2026-09-17T08:00:00Z',
+          submissionId: `sim-sub-dept-${dept.id}`,
+          minutes: sub?.structuredData?.departmentMeetingMinutes || null,
+          reportContent: sub?.content || ''
+        };
+      });
+    }
+    if (selectedDeptFilter !== 'all') {
+      return meetings.filter(m => m.departmentId === selectedDeptFilter);
+    }
+    return meetings;
+  }, [consolidatedData.deptMeetingMinutesList, activePeriod, consolidatedData.periodTitle, allUsers, selectedDeptFilter]);
+
   // Auto select best tab when period changes
   React.useEffect(() => {
-    if (consolidatedData.dynamicTables.length > 0) {
+    if (isMeetingMinutes) {
+      setActiveTab('dept_meetings');
+    } else if (consolidatedData.dynamicTables.length > 0) {
       setActiveTab('dynamic');
     } else if (consolidatedData.fieldMatrix.columns.length > 0) {
       setActiveTab('matrix');
@@ -99,7 +155,7 @@ export const PeriodConsolidationModal: React.FC<PeriodConsolidationModalProps> =
     } else {
       setActiveTab('classes');
     }
-  }, [selectedPeriodId, consolidatedData.dynamicTables.length, consolidatedData.absentStudents.length, consolidatedData.fieldMatrix.columns.length]);
+  }, [selectedPeriodId, isMeetingMinutes, consolidatedData.dynamicTables.length, consolidatedData.absentStudents.length, consolidatedData.fieldMatrix.columns.length]);
 
   // Filter dynamic tables
   const filteredDynamicTables = useMemo(() => {
@@ -259,6 +315,111 @@ export const PeriodConsolidationModal: React.FC<PeriodConsolidationModalProps> =
     }
   };
 
+  // Handle generate sample submissions for 7 departments (Department Meeting Minutes)
+  const handleGenerateSampleDeptMeetings = async () => {
+    if (!activePeriod) {
+      alert('Vui lòng chọn một đợt báo cáo cụ thể để nạp dữ liệu mẫu!');
+      return;
+    }
+    const confirm = window.confirm(
+      `Thầy có muốn hệ thống tự động sinh dữ liệu biên bản họp thử nghiệm cho 7 Tổ chuyên môn vào đợt "${activePeriod.title}"?\n\nĐiều này giúp Thầy kiểm tra ngay văn bản tổng hợp đầy đủ 100% nội dung (Đánh giá hoạt động, Văn bản triển khai, Công việc trọng tâm, Ý kiến thảo luận, Kết luận chủ trì, Đề xuất kiến nghị) chuẩn thể thức Nghị định 30.`
+    );
+    if (!confirm) return;
+
+    setIsGeneratingSample(true);
+    try {
+      const sampleSubs = generateSampleDeptMeetingSubmissions(activePeriod.id, activePeriod.title, allUsers);
+      for (const sub of sampleSubs) {
+        await submitReport({
+          periodId: sub.periodId,
+          title: sub.title,
+          content: sub.content,
+          structuredData: sub.structuredData,
+          attachments: [],
+          isDraft: false,
+          departmentId: sub.departmentId,
+          departmentName: sub.departmentName
+        });
+      }
+      alert('Đã nạp biên bản họp mẫu cho 7 Tổ chuyên môn thành công! Thầy có thể xem báo cáo tổng hợp ngay bây giờ.');
+    } catch (e: any) {
+      alert('Lỗi khi nạp dữ liệu mẫu: ' + (e?.message || e));
+    } finally {
+      setIsGeneratingSample(false);
+    }
+  };
+
+  // Handle copy synthesized meeting minutes document text
+  const handleCopyMeetingDoc = () => {
+    const textLines: string[] = [];
+    textLines.push('SỞ GDĐT TỈNH ĐỒNG THÁP                    CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM');
+    textLines.push('TRƯỜNG THCS VÀ THPT ĐỐC BINH KIỀU              Độc lập – Tự do – Hạnh phúc');
+    textLines.push('');
+    textLines.push(reportTitleInfo.mainType);
+    textLines.push(reportTitleInfo.subTitle);
+    textLines.push('----------------------------------------');
+    textLines.push('');
+    textLines.push('I. TÌNH HÌNH TỔ CHỨC HỌP CỦA CÁC TỔ CHUYÊN MÔN:');
+    textLines.push(`- Tổng số tổ chuyên môn: ${OFFICIAL_DEPARTMENTS.length} tổ.`);
+    textLines.push(`- Số tổ đã tiến hành họp và hoàn thành nộp biên bản: ${submittedDeptMeetingCount || OFFICIAL_DEPARTMENTS.length} / ${OFFICIAL_DEPARTMENTS.length} tổ.`);
+    textLines.push('- Thời gian, địa điểm và quân số tham dự họp của từng tổ:');
+    displayDeptMeetings.forEach(m => {
+      const min = m.minutes;
+      const timeStr = min ? `vào lúc ${min.timeHour || '08'} giờ ${min.timeMinute || '00'} phút, ngày ${min.meetingDate || '17'}/${min.meetingMonth || '9'}/${min.meetingYear || '2026'}` : 'theo kế hoạch';
+      const locStr = min?.location ? `tại ${min.location}` : '';
+      const chairStr = min?.chairPerson ? `Chủ trì: ${min.chairPerson}` : `Chủ trì: ${m.teacherName}`;
+      const secStr = min?.secretary ? `; Thư ký: ${min.secretary}` : '';
+      const memStr = min ? `; Quân số: ${min.presentMembers || min.totalMembers}/${min.totalMembers}, vắng: ${min.absentCount || 0}` : '';
+      textLines.push(`  + ${m.departmentName}: Họp ${timeStr} ${locStr}. ${chairStr}${secStr}${memStr}.`);
+    });
+    textLines.push('');
+    textLines.push('NỘI DUNG CUỘC HỌP');
+    textLines.push('');
+    textLines.push('1. Đánh giá hoạt động của tổ trong thời gian qua:');
+    displayDeptMeetings.forEach(m => {
+      const min = m.minutes;
+      textLines.push(`  • ${m.departmentName}:`);
+      textLines.push(`    - Ưu điểm: ${min?.reviewStrengths || 'Thực hiện tốt quy chế chuyên môn và kế hoạch dạy học.'}`);
+      textLines.push(`    - Hạn chế: ${min?.reviewWeaknesses || 'Không có'}`);
+      textLines.push(`    - Nguyên nhân: ${min?.reviewCauses || 'Không có'}`);
+      textLines.push(`    - Giải pháp: ${min?.reviewSolutions || 'Tiếp tục phát huy.'}`);
+    });
+    textLines.push('');
+    textLines.push('2. Triển khai các văn bản:');
+    displayDeptMeetings.forEach(m => {
+      textLines.push(`  • ${m.departmentName}:`);
+      textLines.push(`    ${m.minutes?.documentsDeployed || DEFAULT_DEPARTMENT_MEETING_DOCUMENTS}`);
+    });
+    textLines.push('');
+    textLines.push('3. Triển khai nội dung công việc trọng tâm của trường/tổ:');
+    displayDeptMeetings.forEach(m => {
+      textLines.push(`  • ${m.departmentName}:`);
+      textLines.push(`    ${m.minutes?.centralTasks || 'Nghiêm túc thực hiện kế hoạch nhà trường.'}`);
+    });
+    textLines.push('');
+    textLines.push('4. Ý kiến của các thành viên trong cuộc họp:');
+    displayDeptMeetings.forEach(m => {
+      textLines.push(`  • ${m.departmentName}:`);
+      textLines.push(`    ${m.minutes?.memberOpinions || 'Nhất trí 100%, không có ý kiến thắc mắc.'}`);
+    });
+    textLines.push('');
+    textLines.push('5. Kết luận của chủ trì:');
+    displayDeptMeetings.forEach(m => {
+      textLines.push(`  • ${m.departmentName} (${m.teacherName} - Chủ trì):`);
+      textLines.push(`    ${m.minutes?.conclusion || 'Thực hiện nghiêm túc nhiệm vụ phân công.'}`);
+    });
+    textLines.push('');
+    textLines.push('6. Đề xuất, kiến nghị với nhà trường:');
+    displayDeptMeetings.forEach(m => {
+      textLines.push(`  • ${m.departmentName}:`);
+      textLines.push(`    ${m.minutes?.recommendations || 'Không có đề xuất kiến nghị thêm.'}`);
+    });
+
+    navigator.clipboard.writeText(textLines.join('\n'));
+    setCopiedMeetingDoc(true);
+    setTimeout(() => setCopiedMeetingDoc(false), 2000);
+  };
+
   if (!isOpen || (!isAdmin && !isPrincipal)) return null;
 
   return (
@@ -322,24 +483,36 @@ export const PeriodConsolidationModal: React.FC<PeriodConsolidationModalProps> =
           {/* Quick Metrics Bar */}
           <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs">
             <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-slate-200 shadow-2xs font-semibold text-slate-700">
-              {consolidatedData.isSpecificUsersAudience ? (
+              {isMeetingMinutes ? (
+                <Users className="w-4 h-4 text-blue-600" />
+              ) : consolidatedData.isSpecificUsersAudience ? (
                 <UserCheck className="w-4 h-4 text-indigo-600" />
               ) : (
                 <Users className="w-4 h-4 text-emerald-600" />
               )}
               <span>Tiến độ nộp:</span>
               <span className="font-bold text-emerald-700">
-                {consolidatedData.submittedCount} / {
-                  consolidatedData.isSpecificUsersAudience 
-                    ? `${consolidatedData.totalSpecificUsers} người` 
-                    : consolidatedData.isDeptHeadAudience 
-                    ? '19 người' 
-                    : '53 lớp'
-                } ({consolidatedData.completionRate}%)
+                {isMeetingMinutes ? (
+                  `${submittedDeptMeetingCount} / ${OFFICIAL_DEPARTMENTS.length} tổ (${Math.round((submittedDeptMeetingCount / OFFICIAL_DEPARTMENTS.length) * 100)}%)`
+                ) : (
+                  `${consolidatedData.submittedCount} / ${
+                    consolidatedData.isSpecificUsersAudience 
+                      ? `${consolidatedData.totalSpecificUsers} người` 
+                      : consolidatedData.isDeptHeadAudience 
+                      ? '19 người' 
+                      : '53 lớp'
+                  } (${consolidatedData.completionRate}%)`
+                )}
               </span>
             </div>
 
-            {consolidatedData.isSpecificUsersAudience ? (
+            {isMeetingMinutes ? (
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-50 border border-blue-200 shadow-2xs font-semibold text-blue-800">
+                <Users className="w-4 h-4 text-blue-600" />
+                <span>Đối tượng:</span>
+                <span className="font-bold text-blue-950">{OFFICIAL_DEPARTMENTS.length} Tổ Chuyên Môn</span>
+              </div>
+            ) : consolidatedData.isSpecificUsersAudience ? (
               <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-50 border border-indigo-200 shadow-2xs font-semibold text-indigo-800">
                 <UserCheck className="w-4 h-4 text-indigo-600" />
                 <span>Chỉ định đích danh:</span>
@@ -359,7 +532,7 @@ export const PeriodConsolidationModal: React.FC<PeriodConsolidationModalProps> =
               </div>
             )}
 
-            {consolidatedData.totalAbsentStudents > 0 && (
+            {consolidatedData.totalAbsentStudents > 0 && !isMeetingMinutes && (
               <div 
                 onClick={() => setActiveTab('absent')}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-50 border border-rose-200 shadow-2xs font-semibold text-rose-700 cursor-pointer hover:bg-rose-100 transition"
@@ -374,15 +547,28 @@ export const PeriodConsolidationModal: React.FC<PeriodConsolidationModalProps> =
             <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-slate-200 shadow-2xs font-semibold text-slate-700">
               <CheckCircle2 className="w-4 h-4 text-emerald-600" />
               <span>Chưa nộp:</span>
-              <span className={`font-bold ${consolidatedData.pendingCount > 0 ? 'text-amber-700' : 'text-emerald-700'}`}>
-                {consolidatedData.pendingCount} {consolidatedData.isSpecificUsersAudience || consolidatedData.isDeptHeadAudience ? 'người' : 'lớp'}
+              <span className={`font-bold ${(isMeetingMinutes ? (OFFICIAL_DEPARTMENTS.length - submittedDeptMeetingCount) : consolidatedData.pendingCount) > 0 ? 'text-amber-700' : 'text-emerald-700'}`}>
+                {isMeetingMinutes ? `${Math.max(0, OFFICIAL_DEPARTMENTS.length - submittedDeptMeetingCount)} tổ` : `${consolidatedData.pendingCount} ${consolidatedData.isSpecificUsersAudience || consolidatedData.isDeptHeadAudience ? 'người' : 'lớp'}`}
               </span>
             </div>
           </div>
 
           {/* Master Export Buttons */}
           <div className="flex items-center gap-2">
-            {consolidatedData.submittedCount < 5 && activePeriod && (
+            {isMeetingMinutes && submittedDeptMeetingCount < OFFICIAL_DEPARTMENTS.length && activePeriod && (
+              <button
+                type="button"
+                onClick={handleGenerateSampleDeptMeetings}
+                disabled={isGeneratingSample}
+                className="px-3 py-2 rounded-xl bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-900 text-xs font-bold flex items-center gap-1.5 transition cursor-pointer"
+                title="Tạo nhanh biên bản họp mẫu cho 7 Tổ chuyên môn để kiểm tra văn bản tổng hợp"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+                <span>{isGeneratingSample ? 'Đang tạo mẫu...' : 'Nạp mẫu 7 Tổ CM'}</span>
+              </button>
+            )}
+
+            {!isMeetingMinutes && consolidatedData.submittedCount < 5 && activePeriod && (
               <button
                 type="button"
                 onClick={handleGenerateSample53}
@@ -402,7 +588,7 @@ export const PeriodConsolidationModal: React.FC<PeriodConsolidationModalProps> =
               className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-xs transition active:scale-98 cursor-pointer"
             >
               <Download className="w-3.5 h-3.5" />
-              <span>{exportingExcel ? 'Đang xuất...' : 'Xuất Excel 53 Lớp (.xlsx)'}</span>
+              <span>{exportingExcel ? 'Đang xuất...' : (isMeetingMinutes ? 'Xuất Excel (.xlsx)' : 'Xuất Excel 53 Lớp (.xlsx)')}</span>
             </button>
 
             <button
@@ -412,7 +598,7 @@ export const PeriodConsolidationModal: React.FC<PeriodConsolidationModalProps> =
               className="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-xs transition active:scale-98 cursor-pointer"
             >
               <FileText className="w-3.5 h-3.5" />
-              <span>{exportingWord ? 'Đang xuất...' : 'Xuất Word (.doc)'}</span>
+              <span>{exportingWord ? 'Đang xuất...' : (isMeetingMinutes ? 'Xuất Word Biên Bản (.doc)' : 'Xuất Word (.doc)')}</span>
             </button>
 
             <button
@@ -428,6 +614,22 @@ export const PeriodConsolidationModal: React.FC<PeriodConsolidationModalProps> =
 
         {/* Navigation Tabs */}
         <div className="px-6 border-b border-slate-200 bg-white flex items-center gap-2 overflow-x-auto">
+          {(isMeetingMinutes || consolidatedData.deptMeetingMinutesList.length > 0) && (
+            <button
+              onClick={() => setActiveTab('dept_meetings')}
+              className={`py-3 px-3.5 text-xs font-bold border-b-2 flex items-center gap-2 transition cursor-pointer whitespace-nowrap ${
+                activeTab === 'dept_meetings'
+                  ? 'border-blue-600 text-blue-700 bg-blue-50/50'
+                  : 'border-transparent text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <FileText className="w-4 h-4 text-blue-600" />
+              <span>Tổng Hợp Biên Bản Họp Tổ Chuyên Môn</span>
+              <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-800">
+                {submittedDeptMeetingCount} / {OFFICIAL_DEPARTMENTS.length} tổ
+              </span>
+            </button>
+          )}
           {consolidatedData.dynamicTables.length > 0 && (
             <button
               onClick={() => setActiveTab('dynamic')}
@@ -557,6 +759,281 @@ export const PeriodConsolidationModal: React.FC<PeriodConsolidationModalProps> =
         {/* Tab Content Body */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-slate-50/60">
           
+          {/* TAB: TỔNG HỢP BIÊN BẢN HỌP CÁC TỔ CHUYÊN MÔN (CHUẨN NGHỊ ĐỊNH 30/2020/NĐ-CP, DẠNG VĂN BẢN HÀNH CHÍNH, KHÔNG KẺ Ô) */}
+          {activeTab === 'dept_meetings' && (
+            <div className="space-y-4">
+              {/* Document Actions Bar */}
+              <div className="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-2xs flex flex-wrap items-center justify-between gap-3">
+                <div className="flex items-center gap-3 flex-wrap">
+                  <div className="flex items-center gap-2">
+                    <Filter className="w-4 h-4 text-slate-500" />
+                    <span className="text-xs font-bold text-slate-700">Lọc theo tổ:</span>
+                  </div>
+                  <select
+                    value={selectedDeptFilter}
+                    onChange={(e) => setSelectedDeptFilter(e.target.value)}
+                    className="text-xs px-3 py-1.5 rounded-xl border border-slate-300 bg-white font-semibold text-slate-800 focus:outline-blue-600 cursor-pointer"
+                  >
+                    <option value="all">-- Hiển thị tất cả {OFFICIAL_DEPARTMENTS.length} tổ chuyên môn --</option>
+                    {OFFICIAL_DEPARTMENTS.map(d => (
+                      <option key={d.id} value={d.id}>{d.name} ({d.headUserName})</option>
+                    ))}
+                  </select>
+                  <span className="text-xs text-slate-500 italic">
+                    (Hiển thị {displayDeptMeetings.length} tổ)
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-2 flex-wrap">
+                  <button
+                    type="button"
+                    onClick={handleCopyMeetingDoc}
+                    className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold flex items-center gap-1.5 transition cursor-pointer"
+                  >
+                    {copiedMeetingDoc ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5 text-slate-600" />}
+                    <span>{copiedMeetingDoc ? 'Đã sao chép!' : 'Sao chép văn bản'}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleExportWord}
+                    className="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-2xs transition cursor-pointer"
+                  >
+                    <FileText className="w-3.5 h-3.5" />
+                    <span>Tải file Word (.doc)</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handlePrint}
+                    className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-2xs transition cursor-pointer"
+                  >
+                    <Printer className="w-3.5 h-3.5" />
+                    <span>In A4 / Xuất PDF</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Administrative Document Paper View */}
+              <div className="bg-slate-200/70 p-4 sm:p-8 rounded-2xl overflow-y-auto max-h-[72vh] flex justify-center shadow-inner">
+                <div className="bg-white w-full max-w-[850px] shadow-xl border border-slate-300 rounded-sm p-8 sm:p-14 text-slate-900 font-serif leading-relaxed text-[14.5px]">
+                  
+                  {/* Header: Quốc hiệu, Tiêu ngữ & Đơn vị ban hành */}
+                  <div className="grid grid-cols-2 gap-4 pb-4 border-b border-transparent">
+                    <div className="text-center">
+                      <div className="text-[12px] uppercase tracking-wide">SỞ GDĐT TỈNH ĐỒNG THÁP</div>
+                      <div className="text-[12.5px] font-bold uppercase mt-0.5">TRƯỜNG THCS VÀ THPT</div>
+                      <div className="text-[12.5px] font-bold uppercase underline underline-offset-4">ĐỐC BINH KIỀU</div>
+                      <div className="text-[12px] mt-2">Số: &nbsp; &nbsp; /BC-THCS&amp;THPTĐBK</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-[12px] font-bold uppercase">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</div>
+                      <div className="text-[12.5px] font-bold underline underline-offset-4 mt-0.5">Độc lập – Tự do – Hạnh phúc</div>
+                      <div className="text-[12px] italic mt-2">Đồng Tháp, ngày {new Date().getDate()} tháng {new Date().getMonth() + 1} năm {new Date().getFullYear()}</div>
+                    </div>
+                  </div>
+
+                  {/* Title */}
+                  <div className="text-center my-6">
+                    <h2 className="text-[16px] font-bold uppercase tracking-wider text-slate-950">
+                      {reportTitleInfo.mainType}
+                    </h2>
+                    <h3 className="text-[15px] font-bold uppercase text-slate-950 mt-1">
+                      {reportTitleInfo.subTitle}
+                    </h3>
+                    <div className="w-48 h-0.5 bg-black mx-auto mt-2"></div>
+                  </div>
+
+                  {/* Phần I: Tình hình tổ chức họp */}
+                  <div className="mt-6 text-justify">
+                    <h4 className="font-bold text-[14.5px] uppercase">
+                      I. TÌNH HÌNH TỔ CHỨC HỌP CỦA CÁC TỔ CHUYÊN MÔN
+                    </h4>
+                    <p className="indent-6 mt-1">
+                      - <strong>Tổng số tổ chuyên môn:</strong> {OFFICIAL_DEPARTMENTS.length} tổ.
+                    </p>
+                    <p className="indent-6 mt-1">
+                      - <strong>Số tổ đã tiến hành họp và hoàn thành nộp biên bản:</strong> <strong>{submittedDeptMeetingCount} / {OFFICIAL_DEPARTMENTS.length}</strong> tổ (Tỷ lệ: <strong>{Math.round((submittedDeptMeetingCount / OFFICIAL_DEPARTMENTS.length) * 100)}%</strong>).
+                    </p>
+                    <p className="indent-6 mt-1">
+                      - <strong>Thời gian, địa điểm và quân số tham dự họp của từng tổ:</strong>
+                    </p>
+                    <div className="pl-6 mt-1 space-y-1">
+                      {displayDeptMeetings.map(m => {
+                        const min = m.minutes;
+                        const timeStr = min ? `vào lúc ${min.timeHour || '08'} giờ ${min.timeMinute || '00'} phút, ngày ${min.meetingDate || '17'} tháng ${min.meetingMonth || '9'} năm ${min.meetingYear || '2026'}` : 'theo đúng kế hoạch';
+                        const locStr = min?.location ? `tại ${min.location}` : '';
+                        const chairStr = min?.chairPerson ? `Chủ trì: ${min.chairPerson} (${min.chairTitle || 'Tổ trưởng chuyên môn'})` : `Chủ trì: ${m.teacherName}`;
+                        const secStr = min?.secretary ? `; Thư ký: ${min.secretary}` : '';
+                        const memberStr = min ? `; Tổng số thành viên: ${min.totalMembers || '100%'}, có mặt: ${min.presentMembers || min.totalMembers}, vắng: ${min.absentCount || 0}${min.absentReason ? ` (Lý do: ${min.absentReason})` : ''}` : '';
+                        return (
+                          <p key={m.departmentId} className="text-justify">
+                            + <strong>{m.departmentName}:</strong> Họp {timeStr} {locStr}. {chairStr}{secStr}{memberStr}.
+                          </p>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* NỘI DUNG CUỘC HỌP (CANH GIỮA TRANG GIẤY) */}
+                  <div className="text-center my-6">
+                    <h3 className="text-[15.5px] font-bold uppercase tracking-wider text-black">
+                      NỘI DUNG CUỘC HỌP
+                    </h3>
+                  </div>
+
+                  {/* Mục 1: Đánh giá hoạt động */}
+                  <div className="mt-4 text-justify">
+                    <h4 className="font-bold text-[14.5px]">
+                      1. Đánh giá hoạt động của tổ trong thời gian qua:
+                    </h4>
+                    {displayDeptMeetings.map(m => {
+                      const min = m.minutes;
+                      const strengths = min?.reviewStrengths || 'Tập thể giáo viên trong tổ chấp hành tốt quy chế chuyên môn, tham gia đầy đủ các buổi tập huấn; duy trì tốt nề nếp dạy và học.';
+                      const weaknesses = min?.reviewWeaknesses || 'Không có';
+                      const causes = min?.reviewCauses || 'Không có';
+                      const solutions = min?.reviewSolutions || 'Tiếp tục phát huy tinh thần trách nhiệm và nâng cao chất lượng sinh hoạt chuyên môn.';
+                      return (
+                        <div key={m.departmentId} className="my-2.5 pl-4">
+                          <p className="font-bold">• {m.departmentName}:</p>
+                          <div className="pl-4 space-y-0.5 mt-0.5">
+                            <p>- <em>Ưu điểm:</em> {strengths}</p>
+                            <p>- <em>Hạn chế:</em> {weaknesses}</p>
+                            <p>- <em>Nguyên nhân của hạn chế:</em> {causes}</p>
+                            <p>- <em>Giải pháp khắc phục:</em> {solutions}</p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Mục 2: Triển khai các văn bản */}
+                  <div className="mt-5 text-justify">
+                    <h4 className="font-bold text-[14.5px]">
+                      2. Triển khai các văn bản:
+                    </h4>
+                    {displayDeptMeetings.map(m => {
+                      const docs = m.minutes?.documentsDeployed || DEFAULT_DEPARTMENT_MEETING_DOCUMENTS;
+                      const docLines = splitSmartLines(docs);
+                      return (
+                        <div key={m.departmentId} className="my-2.5 pl-4">
+                          <p className="font-bold">• {m.departmentName}:</p>
+                          <div className="pl-4 space-y-0.5 mt-0.5">
+                            {docLines.map((line, lIdx) => (
+                              <p key={lIdx} className="text-justify">{line}</p>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Mục 3: Triển khai nội dung công việc trọng tâm */}
+                  <div className="mt-5 text-justify">
+                    <h4 className="font-bold text-[14.5px]">
+                      3. Triển khai nội dung công việc trọng tâm của trường/tổ:
+                    </h4>
+                    {displayDeptMeetings.map(m => {
+                      const tasks = m.minutes?.centralTasks || 'Thực hiện nghiêm túc kế hoạch giáo dục của nhà trường năm học 2026-2027; xây dựng kế hoạch bài dạy đúng hạn; tích cực đổi mới phương pháp dạy học theo định hướng phát triển phẩm chất, năng lực học sinh.';
+                      const taskLines = splitSmartLines(tasks);
+                      return (
+                        <div key={m.departmentId} className="my-2.5 pl-4">
+                          <p className="font-bold">• {m.departmentName}:</p>
+                          <div className="pl-4 space-y-0.5 mt-0.5">
+                            {taskLines.map((line, lIdx) => (
+                              <p key={lIdx} className="text-justify">{line}</p>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Mục 4: Ý kiến các thành viên */}
+                  <div className="mt-5 text-justify">
+                    <h4 className="font-bold text-[14.5px]">
+                      4. Ý kiến của các thành viên trong cuộc họp đối với trường/tổ/cá nhân:
+                    </h4>
+                    {displayDeptMeetings.map(m => {
+                      const opinions = m.minutes?.memberOpinions || '- Toàn thể giáo viên trong tổ nhất trí cao với các nội dung đã triển khai; không có ý kiến thắc mắc thêm.';
+                      const opLines = splitSmartLines(opinions);
+                      return (
+                        <div key={m.departmentId} className="my-2.5 pl-4">
+                          <p className="font-bold">• {m.departmentName}:</p>
+                          <div className="pl-4 space-y-0.5 mt-0.5">
+                            {opLines.map((line, lIdx) => (
+                              <p key={lIdx} className="text-justify">{line}</p>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Mục 5: Kết luận của chủ trì */}
+                  <div className="mt-5 text-justify">
+                    <h4 className="font-bold text-[14.5px]">
+                      5. Kết luận của chủ trì:
+                    </h4>
+                    {displayDeptMeetings.map(m => {
+                      const conclusion = m.minutes?.conclusion || `Chủ trì cuộc họp kết luận: Toàn thể giáo viên trong tổ nghiêm túc thực hiện các nhiệm vụ chuyên môn được phân công; nộp kế hoạch bài dạy và hồ sơ chuyên môn đúng thời hạn.`;
+                      const concLines = splitSmartLines(conclusion);
+                      return (
+                        <div key={m.departmentId} className="my-2.5 pl-4">
+                          <p className="font-bold">• {m.departmentName} ({m.teacherName} - Chủ trì):</p>
+                          <div className="pl-4 space-y-0.5 mt-0.5">
+                            {concLines.map((line, lIdx) => (
+                              <p key={lIdx} className="text-justify">{line}</p>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Mục 6: Đề xuất, kiến nghị với nhà trường */}
+                  <div className="mt-5 text-justify">
+                    <h4 className="font-bold text-[14.5px]">
+                      6. Đề xuất, kiến nghị với nhà trường:
+                    </h4>
+                    {displayDeptMeetings.map(m => {
+                      const recs = m.minutes?.recommendations || '- Tổ không có đề xuất, kiến nghị thêm với Ban Giám hiệu.';
+                      const recLines = splitSmartLines(recs);
+                      return (
+                        <div key={m.departmentId} className="my-2.5 pl-4">
+                          <p className="font-bold">• {m.departmentName}:</p>
+                          <div className="pl-4 space-y-0.5 mt-0.5">
+                            {recLines.map((line, lIdx) => (
+                              <p key={lIdx} className="text-justify">{line}</p>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Chữ ký 2 bên */}
+                  <div className="grid grid-cols-2 gap-4 mt-12 pt-6 text-center">
+                    <div>
+                      <div className="font-bold uppercase text-[13px]">NGƯỜI LẬP BIỂU</div>
+                      <div className="text-[12px] italic">(Ký và ghi rõ họ tên)</div>
+                      <div className="h-16"></div>
+                      <div className="font-bold text-[13.5px]">{currentUser?.name}</div>
+                      <div className="text-[12px] text-slate-600">{currentUser?.roleTitle}</div>
+                    </div>
+                    <div>
+                      <div className="font-bold uppercase text-[13px]">HIỆU TRƯỞNG</div>
+                      <div className="text-[12px] italic">(Ký tên, đóng dấu)</div>
+                      <div className="h-16"></div>
+                      <div className="font-bold text-[13.5px]">{schoolInfo.principalName}</div>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* TAB 1: HỌC SINH CHƯA RA LỚP TOÀN TRƯỜNG */}
           {activeTab === 'absent' && (
             <div className="space-y-4">

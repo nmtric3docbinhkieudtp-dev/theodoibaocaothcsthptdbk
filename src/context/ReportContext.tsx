@@ -49,6 +49,10 @@ interface ReportContextType {
     homeroomClass?: string;
     homeroomStudentCount?: number;
     homeroomCampus?: string;
+    departmentId?: string;
+    departmentName?: string;
+    authorId?: string;
+    authorName?: string;
   }) => Promise<ReportSubmission>;
   
   updateReport: (
@@ -440,6 +444,10 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     homeroomClass?: string;
     homeroomStudentCount?: number;
     homeroomCampus?: string;
+    departmentId?: string;
+    departmentName?: string;
+    authorId?: string;
+    authorName?: string;
   }): Promise<ReportSubmission> => {
     const period = periods.find(p => p.id === data.periodId);
     const now = new Date();
@@ -456,9 +464,10 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       }
     }
 
+    const targetAuthorId = data.authorId || currentUser.id;
     // Kiểm tra xem người dùng đã có bài nộp hoặc bản nháp nào cho đợt báo cáo này chưa
     const existingSubs = submissions.filter(s => 
-      s.authorId === currentUser.id && 
+      s.authorId === targetAuthorId && 
       s.periodId === data.periodId
     );
     const existingSub = existingSubs.find(s => s.status !== 'draft') || existingSubs[0];
@@ -471,13 +480,13 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       id: submissionId,
       periodId: data.periodId,
       periodTitle: period ? period.title : 'Báo cáo định kỳ',
-      authorId: currentUser.id,
-      authorName: currentUser.name,
+      authorId: targetAuthorId,
+      authorName: data.authorName || currentUser.name,
       authorEmail: currentUser.email,
       authorRole: currentUser.role,
       authorRoleTitle: currentUser.roleTitle,
-      departmentId: currentUser.departmentId,
-      departmentName: currentUser.departmentName,
+      departmentId: data.departmentId || currentUser.departmentId,
+      departmentName: data.departmentName || currentUser.departmentName,
       isHomeroomReport: data.isHomeroomReport ?? (
         period?.targetAudience === 'homeroom_teachers' || 
         period?.targetAudience === 'gvcn_diem_chinh' ||

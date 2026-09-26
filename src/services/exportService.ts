@@ -1,6 +1,7 @@
 import * as XLSX from 'xlsx';
 import { ReportSubmission, ReportPeriod, Department, User, SchoolInfo } from '../types';
 import { PeriodConsolidationResult, isMeaningfulTableRow } from '../utils/consolidationHelper';
+import { printOrSavePdfHelper } from '../utils/homeroomReportExporter';
 import { 
   buildConsolidatedExcelWorkbook, 
   generateConsolidatedWordHtml, 
@@ -440,15 +441,8 @@ export const ExportService = {
     schoolInfo: SchoolInfo,
     currentUser: User
   ) {
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) {
-      alert('Vui lòng cho phép mở popup trong trình duyệt để xem và in báo cáo.');
-      return;
-    }
-
     const htmlContent = generateConsolidatedPrintHtml(data, schoolInfo, currentUser);
-    printWindow.document.write(htmlContent);
-    printWindow.document.close();
+    printOrSavePdfHelper(htmlContent);
   },
 
   // Export list of unsubmitted teachers for a period to Excel (.xlsx)
