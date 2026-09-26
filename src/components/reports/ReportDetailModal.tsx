@@ -639,7 +639,10 @@ export const ReportDetailModal: React.FC<ReportDetailModalProps> = ({
                 </div>
                 <div>
                   <div className="font-sans font-bold">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</div>
-                  <div className="font-sans font-bold underline">Độc lập - Tự do - Hạnh phúc</div>
+                  <div className="font-sans font-bold">Độc lập - Tự do - Hạnh phúc</div>
+                  <div className="flex justify-center mt-0.5">
+                    <div className="w-[140px] h-[1.2px] bg-black"></div>
+                  </div>
                   <div className="font-sans italic text-[11px] mt-1">
                     Đốc Binh Kiều, ngày {submission.structuredData.homeroomMinutes.meetingDate} tháng {submission.structuredData.homeroomMinutes.meetingMonth} năm {submission.structuredData.homeroomMinutes.meetingYear}
                   </div>

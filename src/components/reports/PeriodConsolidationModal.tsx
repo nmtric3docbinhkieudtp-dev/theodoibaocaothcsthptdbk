@@ -115,32 +115,14 @@ export const PeriodConsolidationModal: React.FC<PeriodConsolidationModalProps> =
     return formatReportTitleHeader(activePeriod?.title || consolidatedData.periodTitle);
   }, [activePeriod, consolidatedData.periodTitle]);
 
-  // Meeting minutes list for display (with simulation fallback if 0 submitted)
+  // Meeting minutes list for display (only genuine submitted meetings)
   const displayDeptMeetings = useMemo(() => {
-    let meetings = consolidatedData.deptMeetingMinutesList.filter(d => d.hasSubmitted && (d.minutes || d.reportContent));
-    if (meetings.length === 0) {
-      const sampleSubs = generateSampleDeptMeetingSubmissions(activePeriod?.id || 'sample', activePeriod?.title || consolidatedData.periodTitle, allUsers);
-      meetings = OFFICIAL_DEPARTMENTS.map((dept, idx) => {
-        const sub = sampleSubs.find(s => s.departmentId === dept.id || s.departmentName?.toLowerCase().includes(dept.code.toLowerCase()));
-        return {
-          stt: idx + 1,
-          departmentId: dept.id,
-          departmentName: dept.name,
-          teacherName: dept.headUserName,
-          roleTitle: 'Tổ trưởng chuyên môn',
-          hasSubmitted: true,
-          submittedAt: '2026-09-17T08:00:00Z',
-          submissionId: `sim-sub-dept-${dept.id}`,
-          minutes: sub?.structuredData?.departmentMeetingMinutes || null,
-          reportContent: sub?.content || ''
-        };
-      });
-    }
+    const meetings = consolidatedData.deptMeetingMinutesList.filter(d => d.hasSubmitted && (d.minutes || d.reportContent));
     if (selectedDeptFilter !== 'all') {
       return meetings.filter(m => m.departmentId === selectedDeptFilter);
     }
     return meetings;
-  }, [consolidatedData.deptMeetingMinutesList, activePeriod, consolidatedData.periodTitle, allUsers, selectedDeptFilter]);
+  }, [consolidatedData.deptMeetingMinutesList, selectedDeptFilter]);
 
   // Auto select best tab when period changes
   React.useEffect(() => {
@@ -379,40 +361,41 @@ export const PeriodConsolidationModal: React.FC<PeriodConsolidationModalProps> =
     displayDeptMeetings.forEach(m => {
       const min = m.minutes;
       textLines.push(`  • ${m.departmentName}:`);
-      textLines.push(`    - Ưu điểm: ${min?.reviewStrengths || 'Thực hiện tốt quy chế chuyên môn và kế hoạch dạy học.'}`);
-      textLines.push(`    - Hạn chế: ${min?.reviewWeaknesses || 'Không có'}`);
-      textLines.push(`    - Nguyên nhân: ${min?.reviewCauses || 'Không có'}`);
-      textLines.push(`    - Giải pháp: ${min?.reviewSolutions || 'Tiếp tục phát huy.'}`);
+      textLines.push(`    - Ưu điểm: ${min?.reviewStrengths?.trim() || '(Không ghi)'}`);
+      textLines.push(`    - Hạn chế: ${min?.reviewWeaknesses?.trim() || '(Không có)'}`);
+      textLines.push(`    - Nguyên nhân: ${min?.reviewCauses?.trim() || '(Không có)'}`);
+      textLines.push(`    - Giải pháp: ${min?.reviewSolutions?.trim() || '(Không có)'}`);
     });
     textLines.push('');
     textLines.push('2. Triển khai các văn bản:');
     displayDeptMeetings.forEach(m => {
       textLines.push(`  • ${m.departmentName}:`);
-      textLines.push(`    ${m.minutes?.documentsDeployed || DEFAULT_DEPARTMENT_MEETING_DOCUMENTS}`);
+      textLines.push(`    ${m.minutes?.documentsDeployed?.trim() || '(Không ghi nhận)'}`);
     });
     textLines.push('');
     textLines.push('3. Triển khai nội dung công việc trọng tâm của trường/tổ:');
     displayDeptMeetings.forEach(m => {
       textLines.push(`  • ${m.departmentName}:`);
-      textLines.push(`    ${m.minutes?.centralTasks || 'Nghiêm túc thực hiện kế hoạch nhà trường.'}`);
+      textLines.push(`    ${m.minutes?.centralTasks?.trim() || '(Không ghi nhận)'}`);
     });
     textLines.push('');
     textLines.push('4. Ý kiến của các thành viên trong cuộc họp:');
     displayDeptMeetings.forEach(m => {
       textLines.push(`  • ${m.departmentName}:`);
-      textLines.push(`    ${m.minutes?.memberOpinions || 'Nhất trí 100%, không có ý kiến thắc mắc.'}`);
+      textLines.push(`    ${m.minutes?.memberOpinions?.trim() || '(Không có ý kiến)'}`);
     });
     textLines.push('');
     textLines.push('5. Kết luận của chủ trì:');
     displayDeptMeetings.forEach(m => {
-      textLines.push(`  • ${m.departmentName} (${m.teacherName} - Chủ trì):`);
-      textLines.push(`    ${m.minutes?.conclusion || 'Thực hiện nghiêm túc nhiệm vụ phân công.'}`);
+      const chairName = m.minutes?.chairPerson || m.teacherName;
+      textLines.push(`  • ${m.departmentName} (${chairName} - Chủ trì):`);
+      textLines.push(`    ${m.minutes?.conclusion?.trim() || '(Không ghi nhận kết luận riêng)'}`);
     });
     textLines.push('');
     textLines.push('6. Đề xuất, kiến nghị với nhà trường:');
     displayDeptMeetings.forEach(m => {
       textLines.push(`  • ${m.departmentName}:`);
-      textLines.push(`    ${m.minutes?.recommendations || 'Không có đề xuất kiến nghị thêm.'}`);
+      textLines.push(`    ${m.minutes?.recommendations?.trim() || '(Không có đề xuất, kiến nghị)'}`);
     });
 
     navigator.clipboard.writeText(textLines.join('\n'));
@@ -823,13 +806,19 @@ export const PeriodConsolidationModal: React.FC<PeriodConsolidationModalProps> =
                     <div className="text-center">
                       <div className="text-[12px] uppercase tracking-wide">SỞ GDĐT TỈNH ĐỒNG THÁP</div>
                       <div className="text-[12.5px] font-bold uppercase mt-0.5">TRƯỜNG THCS VÀ THPT</div>
-                      <div className="text-[12.5px] font-bold uppercase underline underline-offset-4">ĐỐC BINH KIỀU</div>
-                      <div className="text-[12px] mt-2">Số: &nbsp; &nbsp; /BC-THCS&amp;THPTĐBK</div>
+                      <div className="text-[12.5px] font-bold uppercase mt-0.5">ĐỐC BINH KIỀU</div>
+                      <div className="flex justify-center mt-1">
+                        <div className="w-[85px] h-[1.5px] bg-black"></div>
+                      </div>
+                      <div className="text-[12px] mt-1.5">Số: &nbsp; &nbsp; /BC-THCS&amp;THPTĐBK</div>
                     </div>
                     <div className="text-center">
                       <div className="text-[12px] font-bold uppercase">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</div>
-                      <div className="text-[12.5px] font-bold underline underline-offset-4 mt-0.5">Độc lập – Tự do – Hạnh phúc</div>
-                      <div className="text-[12px] italic mt-2">Đồng Tháp, ngày {new Date().getDate()} tháng {new Date().getMonth() + 1} năm {new Date().getFullYear()}</div>
+                      <div className="text-[12.5px] font-bold mt-0.5">Độc lập – Tự do – Hạnh phúc</div>
+                      <div className="flex justify-center mt-1">
+                        <div className="w-[160px] h-[1.5px] bg-black"></div>
+                      </div>
+                      <div className="text-[12px] italic mt-1.5">Đồng Tháp, ngày {new Date().getDate()} tháng {new Date().getMonth() + 1} năm {new Date().getFullYear()}</div>
                     </div>
                   </div>
 
@@ -853,22 +842,46 @@ export const PeriodConsolidationModal: React.FC<PeriodConsolidationModalProps> =
                       - <strong>Tổng số tổ chuyên môn:</strong> {OFFICIAL_DEPARTMENTS.length} tổ.
                     </p>
                     <p className="indent-6 mt-1">
-                      - <strong>Số tổ đã tiến hành họp và hoàn thành nộp biên bản:</strong> <strong>{submittedDeptMeetingCount} / {OFFICIAL_DEPARTMENTS.length}</strong> tổ (Tỷ lệ: <strong>{Math.round((submittedDeptMeetingCount / OFFICIAL_DEPARTMENTS.length) * 100)}%</strong>).
+                      - <strong>Số tổ đã tiến hành họp và hoàn thành nộp biên bản:</strong> <strong>{submittedDeptMeetingCount} / {OFFICIAL_DEPARTMENTS.length}</strong> tổ (Tỷ lệ: <strong>{OFFICIAL_DEPARTMENTS.length > 0 ? Math.round((submittedDeptMeetingCount / OFFICIAL_DEPARTMENTS.length) * 100) : 0}%</strong>).
                     </p>
                     <p className="indent-6 mt-1">
                       - <strong>Thời gian, địa điểm và quân số tham dự họp của từng tổ:</strong>
                     </p>
                     <div className="pl-6 mt-1 space-y-1">
-                      {displayDeptMeetings.map(m => {
+                      {OFFICIAL_DEPARTMENTS.map(dept => {
+                        const m = consolidatedData.deptMeetingMinutesList.find(d => d.departmentId === dept.id || d.departmentName?.toLowerCase().includes(dept.code.toLowerCase()));
+                        if (!m || !m.hasSubmitted) {
+                          return (
+                            <p key={dept.id} className="text-justify">
+                              + <strong>{dept.name}:</strong> <em>(Chưa nộp biên bản/báo cáo)</em>.
+                            </p>
+                          );
+                        }
                         const min = m.minutes;
-                        const timeStr = min ? `vào lúc ${min.timeHour || '08'} giờ ${min.timeMinute || '00'} phút, ngày ${min.meetingDate || '17'} tháng ${min.meetingMonth || '9'} năm ${min.meetingYear || '2026'}` : 'theo đúng kế hoạch';
-                        const locStr = min?.location ? `tại ${min.location}` : '';
-                        const chairStr = min?.chairPerson ? `Chủ trì: ${min.chairPerson} (${min.chairTitle || 'Tổ trưởng chuyên môn'})` : `Chủ trì: ${m.teacherName}`;
-                        const secStr = min?.secretary ? `; Thư ký: ${min.secretary}` : '';
-                        const memberStr = min ? `; Tổng số thành viên: ${min.totalMembers || '100%'}, có mặt: ${min.presentMembers || min.totalMembers}, vắng: ${min.absentCount || 0}${min.absentReason ? ` (Lý do: ${min.absentReason})` : ''}` : '';
+                        if (min) {
+                          const timeParts: string[] = [];
+                          if (min.timeHour) timeParts.push(`vào lúc ${min.timeHour} giờ ${min.timeMinute || '00'} phút`);
+                          if (min.meetingDate) timeParts.push(`ngày ${min.meetingDate} tháng ${min.meetingMonth || '9'} năm ${min.meetingYear || '2026'}`);
+                          const timeStr = timeParts.length > 0 ? timeParts.join(', ') : 'theo kế hoạch sinh hoạt tổ';
+                          const locStr = min?.location ? `tại ${min.location}` : '';
+                          const chairStr = min?.chairPerson ? `Chủ trì: ${min.chairPerson} (${min.chairTitle || 'Tổ trưởng chuyên môn'})` : `Chủ trì: ${m.teacherName}`;
+                          const secStr = min?.secretary ? `; Thư ký: ${min.secretary}` : '';
+                          const memParts: string[] = [];
+                          if (min.totalMembers) memParts.push(`Tổng số thành viên: ${min.totalMembers}`);
+                          if (min.presentMembers !== undefined && min.presentMembers !== null) memParts.push(`có mặt: ${min.presentMembers}`);
+                          if (min.absentCount !== undefined && min.absentCount !== null) {
+                            memParts.push(`vắng: ${min.absentCount}${min.absentReason ? ` (Lý do: ${min.absentReason})` : ''}`);
+                          }
+                          const memberStr = memParts.length > 0 ? `; ${memParts.join(', ')}` : '';
+                          return (
+                            <p key={dept.id} className="text-justify">
+                              + <strong>{m.departmentName}:</strong> Họp ${timeStr} ${locStr}. ${chairStr}${secStr}${memberStr}.
+                            </p>
+                          );
+                        }
                         return (
-                          <p key={m.departmentId} className="text-justify">
-                            + <strong>{m.departmentName}:</strong> Họp {timeStr} {locStr}. {chairStr}{secStr}{memberStr}.
+                          <p key={dept.id} className="text-justify">
+                            + <strong>{m.departmentName}:</strong> Đã nộp báo cáo chuyên môn (Người nộp: {m.teacherName}).
                           </p>
                         );
                       })}
@@ -882,135 +895,196 @@ export const PeriodConsolidationModal: React.FC<PeriodConsolidationModalProps> =
                     </h3>
                   </div>
 
-                  {/* Mục 1: Đánh giá hoạt động */}
-                  <div className="mt-4 text-justify">
-                    <h4 className="font-bold text-[14.5px]">
-                      1. Đánh giá hoạt động của tổ trong thời gian qua:
-                    </h4>
-                    {displayDeptMeetings.map(m => {
-                      const min = m.minutes;
-                      const strengths = min?.reviewStrengths || 'Tập thể giáo viên trong tổ chấp hành tốt quy chế chuyên môn, tham gia đầy đủ các buổi tập huấn; duy trì tốt nề nếp dạy và học.';
-                      const weaknesses = min?.reviewWeaknesses || 'Không có';
-                      const causes = min?.reviewCauses || 'Không có';
-                      const solutions = min?.reviewSolutions || 'Tiếp tục phát huy tinh thần trách nhiệm và nâng cao chất lượng sinh hoạt chuyên môn.';
-                      return (
-                        <div key={m.departmentId} className="my-2.5 pl-4">
-                          <p className="font-bold">• {m.departmentName}:</p>
-                          <div className="pl-4 space-y-0.5 mt-0.5">
-                            <p>- <em>Ưu điểm:</em> {strengths}</p>
-                            <p>- <em>Hạn chế:</em> {weaknesses}</p>
-                            <p>- <em>Nguyên nhân của hạn chế:</em> {causes}</p>
-                            <p>- <em>Giải pháp khắc phục:</em> {solutions}</p>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
+                  {displayDeptMeetings.length === 0 ? (
+                    <div className="my-6 p-4 bg-slate-50 border border-dashed border-slate-300 rounded-lg text-center italic text-slate-600">
+                      (Hiện tại chưa ghi nhận biên bản hoặc nội dung báo cáo nộp lên từ các tổ chuyên môn)
+                    </div>
+                  ) : (
+                    <>
+                      {/* Mục 1: Đánh giá hoạt động */}
+                      <div className="mt-4 text-justify">
+                        <h4 className="font-bold text-[14.5px]">
+                          1. Đánh giá hoạt động của tổ trong thời gian qua:
+                        </h4>
+                        {displayDeptMeetings.map(m => {
+                          const min = m.minutes;
+                          const strengths = min?.reviewStrengths?.trim() || '(Không ghi)';
+                          const weaknesses = min?.reviewWeaknesses?.trim() || '(Không có)';
+                          const causes = min?.reviewCauses?.trim() || '(Không có)';
+                          const solutions = min?.reviewSolutions?.trim() || '(Không có)';
+                          return (
+                            <div key={m.departmentId} className="my-2.5 pl-4">
+                              <p className="font-bold">• {m.departmentName}:</p>
+                              <div className="pl-4 space-y-0.5 mt-0.5">
+                                <p>- <em>Ưu điểm:</em> {strengths}</p>
+                                <p>- <em>Hạn chế:</em> {weaknesses}</p>
+                                <p>- <em>Nguyên nhân của hạn chế:</em> {causes}</p>
+                                <p>- <em>Giải pháp khắc phục:</em> {solutions}</p>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
 
-                  {/* Mục 2: Triển khai các văn bản */}
-                  <div className="mt-5 text-justify">
-                    <h4 className="font-bold text-[14.5px]">
-                      2. Triển khai các văn bản:
-                    </h4>
-                    {displayDeptMeetings.map(m => {
-                      const docs = m.minutes?.documentsDeployed || DEFAULT_DEPARTMENT_MEETING_DOCUMENTS;
-                      const docLines = splitSmartLines(docs);
-                      return (
-                        <div key={m.departmentId} className="my-2.5 pl-4">
-                          <p className="font-bold">• {m.departmentName}:</p>
-                          <div className="pl-4 space-y-0.5 mt-0.5">
-                            {docLines.map((line, lIdx) => (
-                              <p key={lIdx} className="text-justify">{line}</p>
+                      {/* Mục 2: Triển khai các văn bản */}
+                      <div className="mt-5 text-justify">
+                        <h4 className="font-bold text-[14.5px]">
+                          2. Triển khai các văn bản:
+                        </h4>
+                        {displayDeptMeetings.map(m => {
+                          const docs = m.minutes?.documentsDeployed?.trim() || '';
+                          const docLines = splitSmartLines(docs);
+                          return (
+                            <div key={m.departmentId} className="my-2.5 pl-4">
+                              <p className="font-bold">• {m.departmentName}:</p>
+                              <div className="pl-4 space-y-0.5 mt-0.5">
+                                {docLines.length > 0 ? (
+                                  docLines.map((line, lIdx) => (
+                                    <p key={lIdx} className="text-justify">{line}</p>
+                                  ))
+                                ) : (
+                                  <p className="italic text-slate-500">(Không ghi nhận)</p>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      {/* Mục 3: Triển khai nội dung công việc trọng tâm */}
+                      <div className="mt-5 text-justify">
+                        <h4 className="font-bold text-[14.5px]">
+                          3. Triển khai nội dung công việc trọng tâm của trường/tổ:
+                        </h4>
+                        {displayDeptMeetings.map(m => {
+                          const tasks = m.minutes?.centralTasks?.trim() || '';
+                          const taskLines = splitSmartLines(tasks);
+                          return (
+                            <div key={m.departmentId} className="my-2.5 pl-4">
+                              <p className="font-bold">• {m.departmentName}:</p>
+                              <div className="pl-4 space-y-0.5 mt-0.5">
+                                {taskLines.length > 0 ? (
+                                  taskLines.map((line, lIdx) => (
+                                    <p key={lIdx} className="text-justify">{line}</p>
+                                  ))
+                                ) : (
+                                  <p className="italic text-slate-500">(Không ghi nhận)</p>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      {/* Mục 4: Ý kiến các thành viên */}
+                      <div className="mt-5 text-justify">
+                        <h4 className="font-bold text-[14.5px]">
+                          4. Ý kiến của các thành viên trong cuộc họp đối với trường/tổ/cá nhân:
+                        </h4>
+                        {displayDeptMeetings.map(m => {
+                          const opinions = m.minutes?.memberOpinions?.trim() || '';
+                          const opLines = splitSmartLines(opinions);
+                          return (
+                            <div key={m.departmentId} className="my-2.5 pl-4">
+                              <p className="font-bold">• {m.departmentName}:</p>
+                              <div className="pl-4 space-y-0.5 mt-0.5">
+                                {opLines.length > 0 ? (
+                                  opLines.map((line, lIdx) => (
+                                    <p key={lIdx} className="text-justify">{line}</p>
+                                  ))
+                                ) : (
+                                  <p className="italic text-slate-500">(Không có ý kiến)</p>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      {/* Mục 5: Kết luận của chủ trì */}
+                      <div className="mt-5 text-justify">
+                        <h4 className="font-bold text-[14.5px]">
+                          5. Kết luận của chủ trì:
+                        </h4>
+                        {displayDeptMeetings.map(m => {
+                          const conclusion = m.minutes?.conclusion?.trim() || '';
+                          const chairName = m.minutes?.chairPerson || m.teacherName;
+                          const concLines = splitSmartLines(conclusion);
+                          return (
+                            <div key={m.departmentId} className="my-2.5 pl-4">
+                              <p className="font-bold">• {m.departmentName} ({chairName} - Chủ trì):</p>
+                              <div className="pl-4 space-y-0.5 mt-0.5">
+                                {concLines.length > 0 ? (
+                                  concLines.map((line, lIdx) => (
+                                    <p key={lIdx} className="text-justify">{line}</p>
+                                  ))
+                                ) : (
+                                  <p className="italic text-slate-500">(Không ghi nhận kết luận riêng)</p>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      {/* Mục 6: Đề xuất, kiến nghị với nhà trường */}
+                      <div className="mt-5 text-justify">
+                        <h4 className="font-bold text-[14.5px]">
+                          6. Đề xuất, kiến nghị với nhà trường:
+                        </h4>
+                        {displayDeptMeetings.map(m => {
+                          const recs = m.minutes?.recommendations?.trim() || '';
+                          const recLines = splitSmartLines(recs);
+                          return (
+                            <div key={m.departmentId} className="my-2.5 pl-4">
+                              <p className="font-bold">• {m.departmentName}:</p>
+                              <div className="pl-4 space-y-0.5 mt-0.5">
+                                {recLines.length > 0 ? (
+                                  recLines.map((line, lIdx) => (
+                                    <p key={lIdx} className="text-justify">{line}</p>
+                                  ))
+                                ) : (
+                                  <p className="italic text-slate-500">(Không có đề xuất, kiến nghị)</p>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      {/* Mục 7: Nội dung báo cáo văn bản bổ sung (nếu có) */}
+                      {(() => {
+                        const extraDepts = displayDeptMeetings.filter(m => m.reportContent && m.reportContent.trim());
+                        if (extraDepts.length === 0) return null;
+                        return (
+                          <div className="mt-5 text-justify">
+                            <h4 className="font-bold text-[14.5px]">
+                              7. Nội dung báo cáo văn bản &amp; ý kiến bổ sung từ các tổ:
+                            </h4>
+                            {extraDepts.map(m => (
+                              <div key={m.departmentId} className="my-2.5 pl-4">
+                                <p className="font-bold">• {m.departmentName} (Người gửi: {m.teacherName}):</p>
+                                <div className="pl-4 space-y-0.5 mt-0.5">
+                                  {splitSmartLines(m.reportContent || '').map((line, lIdx) => (
+                                    <p key={lIdx} className="text-justify">{line}</p>
+                                  ))}
+                                </div>
+                              </div>
                             ))}
                           </div>
-                        </div>
-                      );
-                    })}
-                  </div>
+                        );
+                      })()}
 
-                  {/* Mục 3: Triển khai nội dung công việc trọng tâm */}
-                  <div className="mt-5 text-justify">
-                    <h4 className="font-bold text-[14.5px]">
-                      3. Triển khai nội dung công việc trọng tâm của trường/tổ:
-                    </h4>
-                    {displayDeptMeetings.map(m => {
-                      const tasks = m.minutes?.centralTasks || 'Thực hiện nghiêm túc kế hoạch giáo dục của nhà trường năm học 2026-2027; xây dựng kế hoạch bài dạy đúng hạn; tích cực đổi mới phương pháp dạy học theo định hướng phát triển phẩm chất, năng lực học sinh.';
-                      const taskLines = splitSmartLines(tasks);
-                      return (
-                        <div key={m.departmentId} className="my-2.5 pl-4">
-                          <p className="font-bold">• {m.departmentName}:</p>
-                          <div className="pl-4 space-y-0.5 mt-0.5">
-                            {taskLines.map((line, lIdx) => (
-                              <p key={lIdx} className="text-justify">{line}</p>
-                            ))}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-
-                  {/* Mục 4: Ý kiến các thành viên */}
-                  <div className="mt-5 text-justify">
-                    <h4 className="font-bold text-[14.5px]">
-                      4. Ý kiến của các thành viên trong cuộc họp đối với trường/tổ/cá nhân:
-                    </h4>
-                    {displayDeptMeetings.map(m => {
-                      const opinions = m.minutes?.memberOpinions || '- Toàn thể giáo viên trong tổ nhất trí cao với các nội dung đã triển khai; không có ý kiến thắc mắc thêm.';
-                      const opLines = splitSmartLines(opinions);
-                      return (
-                        <div key={m.departmentId} className="my-2.5 pl-4">
-                          <p className="font-bold">• {m.departmentName}:</p>
-                          <div className="pl-4 space-y-0.5 mt-0.5">
-                            {opLines.map((line, lIdx) => (
-                              <p key={lIdx} className="text-justify">{line}</p>
-                            ))}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-
-                  {/* Mục 5: Kết luận của chủ trì */}
-                  <div className="mt-5 text-justify">
-                    <h4 className="font-bold text-[14.5px]">
-                      5. Kết luận của chủ trì:
-                    </h4>
-                    {displayDeptMeetings.map(m => {
-                      const conclusion = m.minutes?.conclusion || `Chủ trì cuộc họp kết luận: Toàn thể giáo viên trong tổ nghiêm túc thực hiện các nhiệm vụ chuyên môn được phân công; nộp kế hoạch bài dạy và hồ sơ chuyên môn đúng thời hạn.`;
-                      const concLines = splitSmartLines(conclusion);
-                      return (
-                        <div key={m.departmentId} className="my-2.5 pl-4">
-                          <p className="font-bold">• {m.departmentName} ({m.teacherName} - Chủ trì):</p>
-                          <div className="pl-4 space-y-0.5 mt-0.5">
-                            {concLines.map((line, lIdx) => (
-                              <p key={lIdx} className="text-justify">{line}</p>
-                            ))}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-
-                  {/* Mục 6: Đề xuất, kiến nghị với nhà trường */}
-                  <div className="mt-5 text-justify">
-                    <h4 className="font-bold text-[14.5px]">
-                      6. Đề xuất, kiến nghị với nhà trường:
-                    </h4>
-                    {displayDeptMeetings.map(m => {
-                      const recs = m.minutes?.recommendations || '- Tổ không có đề xuất, kiến nghị thêm với Ban Giám hiệu.';
-                      const recLines = splitSmartLines(recs);
-                      return (
-                        <div key={m.departmentId} className="my-2.5 pl-4">
-                          <p className="font-bold">• {m.departmentName}:</p>
-                          <div className="pl-4 space-y-0.5 mt-0.5">
-                            {recLines.map((line, lIdx) => (
-                              <p key={lIdx} className="text-justify">{line}</p>
-                            ))}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
+                      {/* Mục 8: Giờ kết thúc và thông qua biên bản */}
+                      <div className="mt-5 text-justify">
+                        {displayDeptMeetings.filter(m => m.minutes?.endHour).map(m => (
+                          <p key={m.departmentId} className="indent-6 italic text-[14px] text-slate-700">
+                            - Cuộc họp của <strong>{m.departmentName}</strong> kết thúc vào lúc {m.minutes!.endHour} giờ {m.minutes!.endMinute || '00'} phút cùng ngày; biên bản đã được thông qua toàn thể cuộc họp và thống nhất ký tên lưu hồ sơ./.
+                          </p>
+                        ))}
+                      </div>
+                    </>
+                  )}
 
                   {/* Chữ ký 2 bên */}
                   <div className="grid grid-cols-2 gap-4 mt-12 pt-6 text-center">

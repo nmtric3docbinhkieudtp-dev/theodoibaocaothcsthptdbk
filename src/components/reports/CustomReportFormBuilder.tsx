@@ -1071,7 +1071,10 @@ export const CustomReportFormBuilder: React.FC<CustomReportFormBuilderProps> = (
                 </div>
                 <div>
                   <div className="font-bold uppercase">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</div>
-                  <div className="font-bold underline">Độc lập - Tự do - Hạnh phúc</div>
+                  <div className="font-bold">Độc lập - Tự do - Hạnh phúc</div>
+                  <div className="flex justify-center mt-0.5">
+                    <div className="w-[140px] h-[1.2px] bg-black"></div>
+                  </div>
                   <div className="italic text-[11px] mt-1">
                     Đốc Binh Kiều, ngày {new Date().getDate()} tháng {new Date().getMonth() + 1} năm {new Date().getFullYear()}
                   </div>

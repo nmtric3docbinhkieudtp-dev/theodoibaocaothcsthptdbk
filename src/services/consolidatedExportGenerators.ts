@@ -462,29 +462,26 @@ export function renderConsolidatedDepartmentMeetingContent(
   schoolInfo: SchoolInfo,
   year: string = '2026'
 ): string {
-  // Lấy danh sách các cuộc họp tổ
-  let meetings = (data.deptMeetingMinutesList || []).filter(d => d.hasSubmitted && (d.minutes || d.reportContent));
-  if (meetings.length === 0) {
-    const sampleSubs = generateSampleDeptMeetingSubmissions(data.period?.id || 'sample', data.period?.title || data.periodTitle, []);
-    meetings = OFFICIAL_DEPARTMENTS.map((dept, idx) => {
-      const sub = sampleSubs.find(s => s.departmentId === dept.id);
-      return {
+  // Lấy danh sách các cuộc họp tổ thực tế từ dữ liệu
+  const allDepts = (data.deptMeetingMinutesList && data.deptMeetingMinutesList.length > 0)
+    ? data.deptMeetingMinutesList
+    : OFFICIAL_DEPARTMENTS.map((dept, idx) => ({
         stt: idx + 1,
         departmentId: dept.id,
         departmentName: dept.name,
         teacherName: dept.headUserName,
         roleTitle: 'Tổ trưởng chuyên môn',
-        hasSubmitted: true,
-        submittedAt: '2026-09-17T08:00:00Z',
-        submissionId: `sim-sub-dept-${dept.id}`,
-        minutes: sub?.structuredData?.departmentMeetingMinutes || null,
-        reportContent: sub?.content || ''
-      };
-    });
-  }
+        hasSubmitted: false,
+        submittedAt: null,
+        submissionId: null,
+        minutes: null,
+        reportContent: '',
+        submission: null
+      }));
 
-  const totalDepts = OFFICIAL_DEPARTMENTS.length || 7;
-  const submittedCount = meetings.length;
+  const submittedMeetings = allDepts.filter(d => d.hasSubmitted && (d.minutes || d.reportContent || d.submission));
+  const totalDepts = allDepts.length;
+  const submittedCount = submittedMeetings.length;
 
   return `
     <!-- PHẦN I: TÌNH HÌNH TỔ CHỨC HỌP CỦA CÁC TỔ CHUYÊN MÔN -->
@@ -496,24 +493,48 @@ export function renderConsolidatedDepartmentMeetingContent(
         - <b>Tổng số tổ chuyên môn:</b> ${totalDepts} tổ.
       </p>
       <p style="margin: 3px 0; text-indent: 15px;">
-        - <b>Số tổ đã tiến hành họp và hoàn thành nộp biên bản:</b> <b>${submittedCount} / ${totalDepts}</b> tổ (Tỷ lệ: <b>${Math.round((submittedCount / Math.max(1, totalDepts)) * 100)}%</b>).
+        - <b>Số tổ đã tiến hành họp và hoàn thành nộp biên bản:</b> <b>${submittedCount} / ${totalDepts}</b> tổ (Tỷ lệ: <b>${totalDepts > 0 ? Math.round((submittedCount / totalDepts) * 100) : 0}%</b>).
       </p>
       <p style="margin: 3px 0; text-indent: 15px;">
         - <b>Thời gian, địa điểm và quân số tham dự họp của từng tổ:</b>
       </p>
       <div style="padding-left: 15px; margin-top: 4px;">
-        ${meetings.map(m => {
-          const min = m.minutes;
-          const timeStr = min ? `vào lúc ${min.timeHour || '08'} giờ ${min.timeMinute || '00'} phút, ngày ${min.meetingDate || '17'} tháng ${min.meetingMonth || '9'} năm ${min.meetingYear || year}` : 'theo đúng kế hoạch';
-          const locStr = min?.location ? `tại ${min.location}` : '';
-          const chairStr = min?.chairPerson ? `Chủ trì: ${min.chairPerson} (${min.chairTitle || 'Tổ trưởng chuyên môn'})` : `Chủ trì: ${m.teacherName}`;
-          const secStr = min?.secretary ? `; Thư ký: ${min.secretary}` : '';
-          const memberStr = min ? `; Tổng số thành viên: ${min.totalMembers || '100%'}, có mặt: ${min.presentMembers || min.totalMembers}, vắng: ${min.absentCount || 0}${min.absentReason ? ` (Lý do: ${min.absentReason})` : ''}` : '';
-          return `
-            <p style="margin: 3px 0; text-align: justify;">
-              + <b>${m.departmentName}:</b> Họp ${timeStr} ${locStr}. ${chairStr}${secStr}${memberStr}.
-            </p>
-          `;
+        ${allDepts.map(d => {
+          if (!d.hasSubmitted) {
+            return `
+              <p style="margin: 3px 0; text-align: justify;">
+                + <b>${d.departmentName}:</b> <i>(Chưa nộp biên bản/báo cáo)</i>.
+              </p>
+            `;
+          }
+          const min = d.minutes;
+          if (min) {
+            const timeParts: string[] = [];
+            if (min.timeHour) timeParts.push(`vào lúc ${min.timeHour} giờ ${min.timeMinute || '00'} phút`);
+            if (min.meetingDate) timeParts.push(`ngày ${min.meetingDate} tháng ${min.meetingMonth || '9'} năm ${min.meetingYear || year}`);
+            const timeStr = timeParts.length > 0 ? timeParts.join(', ') : 'theo kế hoạch sinh hoạt tổ';
+            const locStr = min.location ? `tại ${min.location}` : '';
+            const chairStr = min.chairPerson ? `Chủ trì: ${min.chairPerson}${min.chairTitle ? ` (${min.chairTitle})` : ''}` : `Chủ trì: ${d.teacherName}`;
+            const secStr = min.secretary ? `; Thư ký: ${min.secretary}` : '';
+            const memParts: string[] = [];
+            if (min.totalMembers) memParts.push(`Tổng số thành viên: ${min.totalMembers}`);
+            if (min.presentMembers !== undefined && min.presentMembers !== null) memParts.push(`có mặt: ${min.presentMembers}`);
+            if (min.absentCount !== undefined && min.absentCount !== null) {
+              memParts.push(`vắng: ${min.absentCount}${min.absentReason ? ` (Lý do: ${min.absentReason})` : ''}`);
+            }
+            const memberStr = memParts.length > 0 ? `; ${memParts.join(', ')}` : '';
+            return `
+              <p style="margin: 3px 0; text-align: justify;">
+                + <b>${d.departmentName}:</b> Họp ${timeStr} ${locStr}. ${chairStr}${secStr}${memberStr}.
+              </p>
+            `;
+          } else {
+            return `
+              <p style="margin: 3px 0; text-align: justify;">
+                + <b>${d.departmentName}:</b> Đã nộp báo cáo chuyên môn (Người nộp: ${d.teacherName}${d.submittedAt ? `, thời gian: ${new Date(d.submittedAt).toLocaleString('vi-VN')}` : ''}).
+              </p>
+            `;
+          }
         }).join('')}
       </div>
     </div>
@@ -525,132 +546,171 @@ export function renderConsolidatedDepartmentMeetingContent(
       </span>
     </div>
 
-    <!-- MỤC 1: ĐÁNH GIÁ HOẠT ĐỘNG CỦA TỔ TRONG THỜI GIAN QUA -->
-    <div style="margin-top: 14px; text-align: justify; font-size: 13pt; line-height: 1.55;">
-      <p style="font-weight: bold; margin: 4px 0;">
-        1. Đánh giá hoạt động của tổ trong thời gian qua:
-      </p>
-      ${meetings.map(m => {
-        const min = m.minutes;
-        const strengths = min?.reviewStrengths || 'Tập thể giáo viên trong tổ chấp hành tốt quy chế chuyên môn, tham gia đầy đủ các buổi tập huấn; duy trì tốt nề nếp dạy và học.';
-        const weaknesses = min?.reviewWeaknesses || 'Không có';
-        const causes = min?.reviewCauses || 'Không có';
-        const solutions = min?.reviewSolutions || 'Tiếp tục phát huy tinh thần trách nhiệm và nâng cao chất lượng sinh hoạt chuyên môn.';
-        return `
-          <div style="margin: 8px 0 10px 15px; text-align: justify;">
-            <p style="margin: 2px 0; font-weight: bold;">
-              • ${m.departmentName}:
-            </p>
-            <div style="padding-left: 15px;">
-              <p style="margin: 2px 0;">- <i>Ưu điểm:</i> ${strengths}</p>
-              <p style="margin: 2px 0;">- <i>Hạn chế:</i> ${weaknesses}</p>
-              <p style="margin: 2px 0;">- <i>Nguyên nhân của hạn chế:</i> ${causes}</p>
-              <p style="margin: 2px 0;">- <i>Giải pháp khắc phục:</i> ${solutions}</p>
+    ${submittedCount === 0 ? `
+      <div style="margin: 20px 0; padding: 14px; background-color: #f8fafc; border: 1px dashed #94a3b8; text-align: center; font-style: italic; color: #475569;">
+        (Hiện tại chưa ghi nhận biên bản hoặc nội dung báo cáo nộp lên từ các tổ chuyên môn)
+      </div>
+    ` : `
+      <!-- MỤC 1: ĐÁNH GIÁ HOẠT ĐỘNG CỦA TỔ TRONG THỜI GIAN QUA -->
+      <div style="margin-top: 14px; text-align: justify; font-size: 13pt; line-height: 1.55;">
+        <p style="font-weight: bold; margin: 4px 0;">
+          1. Đánh giá hoạt động của tổ trong thời gian qua:
+        </p>
+        ${submittedMeetings.map(m => {
+          const min = m.minutes;
+          const strengths = min?.reviewStrengths?.trim() || '(Không ghi)';
+          const weaknesses = min?.reviewWeaknesses?.trim() || '(Không có)';
+          const causes = min?.reviewCauses?.trim() || '(Không có)';
+          const solutions = min?.reviewSolutions?.trim() || '(Không có)';
+          return `
+            <div style="margin: 8px 0 10px 15px; text-align: justify;">
+              <p style="margin: 2px 0; font-weight: bold;">
+                • ${m.departmentName}:
+              </p>
+              <div style="padding-left: 15px;">
+                <p style="margin: 2px 0;">- <i>Ưu điểm:</i> ${strengths}</p>
+                <p style="margin: 2px 0;">- <i>Hạn chế:</i> ${weaknesses}</p>
+                <p style="margin: 2px 0;">- <i>Nguyên nhân của hạn chế:</i> ${causes}</p>
+                <p style="margin: 2px 0;">- <i>Giải pháp khắc phục:</i> ${solutions}</p>
+              </div>
             </div>
-          </div>
-        `;
-      }).join('')}
-    </div>
+          `;
+        }).join('')}
+      </div>
 
-    <!-- MỤC 2: TRIỂN KHAI CÁC VĂN BẢN -->
-    <div style="margin-top: 16px; text-align: justify; font-size: 13pt; line-height: 1.55;">
-      <p style="font-weight: bold; margin: 4px 0;">
-        2. Triển khai các văn bản:
-      </p>
-      ${meetings.map(m => {
-        const docs = m.minutes?.documentsDeployed || DEFAULT_DEPARTMENT_MEETING_DOCUMENTS;
-        return `
-          <div style="margin: 8px 0 10px 15px; text-align: justify;">
-            <p style="margin: 2px 0; font-weight: bold;">
-              • ${m.departmentName}:
-            </p>
-            <div style="padding-left: 15px;">
-              ${renderSmartTextParagraphs(docs, false)}
+      <!-- MỤC 2: TRIỂN KHAI CÁC VĂN BẢN -->
+      <div style="margin-top: 16px; text-align: justify; font-size: 13pt; line-height: 1.55;">
+        <p style="font-weight: bold; margin: 4px 0;">
+          2. Triển khai các văn bản:
+        </p>
+        ${submittedMeetings.map(m => {
+          const docs = m.minutes?.documentsDeployed?.trim() || '';
+          return `
+            <div style="margin: 8px 0 10px 15px; text-align: justify;">
+              <p style="margin: 2px 0; font-weight: bold;">
+                • ${m.departmentName}:
+              </p>
+              <div style="padding-left: 15px;">
+                ${docs ? renderSmartTextParagraphs(docs, false) : '<p style="margin: 2px 0; font-style: italic; color: #555;">(Không ghi nhận)</p>'}
+              </div>
             </div>
-          </div>
-        `;
-      }).join('')}
-    </div>
+          `;
+        }).join('')}
+      </div>
 
-    <!-- MỤC 3: TRIỂN KHAI NỘI DUNG CÔNG VIỆC TRỌNG TÂM CỦA TRƯỜNG/TỔ -->
-    <div style="margin-top: 16px; text-align: justify; font-size: 13pt; line-height: 1.55;">
-      <p style="font-weight: bold; margin: 4px 0;">
-        3. Triển khai nội dung công việc trọng tâm của trường/tổ:
-      </p>
-      ${meetings.map(m => {
-        const tasks = m.minutes?.centralTasks || 'Thực hiện nghiêm túc kế hoạch giáo dục của nhà trường năm học 2026-2027; xây dựng kế hoạch bài dạy đúng hạn; tích cực đổi mới phương pháp dạy học theo định hướng phát triển phẩm chất, năng lực học sinh.';
-        return `
-          <div style="margin: 8px 0 10px 15px; text-align: justify;">
-            <p style="margin: 2px 0; font-weight: bold;">
-              • ${m.departmentName}:
-            </p>
-            <div style="padding-left: 15px;">
-              ${renderSmartTextParagraphs(tasks, false)}
+      <!-- MỤC 3: TRIỂN KHAI NỘI DUNG CÔNG VIỆC TRỌNG TÂM CỦA TRƯỜNG/TỔ -->
+      <div style="margin-top: 16px; text-align: justify; font-size: 13pt; line-height: 1.55;">
+        <p style="font-weight: bold; margin: 4px 0;">
+          3. Triển khai nội dung công việc trọng tâm của trường/tổ:
+        </p>
+        ${submittedMeetings.map(m => {
+          const tasks = m.minutes?.centralTasks?.trim() || '';
+          return `
+            <div style="margin: 8px 0 10px 15px; text-align: justify;">
+              <p style="margin: 2px 0; font-weight: bold;">
+                • ${m.departmentName}:
+              </p>
+              <div style="padding-left: 15px;">
+                ${tasks ? renderSmartTextParagraphs(tasks, false) : '<p style="margin: 2px 0; font-style: italic; color: #555;">(Không ghi nhận)</p>'}
+              </div>
             </div>
-          </div>
-        `;
-      }).join('')}
-    </div>
+          `;
+        }).join('')}
+      </div>
 
-    <!-- MỤC 4: Ý KIẾN CỦA CÁC THÀNH VIÊN TRONG CUỘC HỌP -->
-    <div style="margin-top: 16px; text-align: justify; font-size: 13pt; line-height: 1.55;">
-      <p style="font-weight: bold; margin: 4px 0;">
-        4. Ý kiến của các thành viên trong cuộc họp đối với trường/tổ/cá nhân:
-      </p>
-      ${meetings.map(m => {
-        const opinions = m.minutes?.memberOpinions || '- Toàn thể giáo viên trong tổ nhất trí cao với các nội dung đã triển khai; không có ý kiến thắc mắc thêm.';
-        return `
-          <div style="margin: 8px 0 10px 15px; text-align: justify;">
-            <p style="margin: 2px 0; font-weight: bold;">
-              • ${m.departmentName}:
-            </p>
-            <div style="padding-left: 15px;">
-              ${renderSmartTextParagraphs(opinions, false)}
+      <!-- MỤC 4: Ý KIẾN CỦA CÁC THÀNH VIÊN TRONG CUỘC HỌP -->
+      <div style="margin-top: 16px; text-align: justify; font-size: 13pt; line-height: 1.55;">
+        <p style="font-weight: bold; margin: 4px 0;">
+          4. Ý kiến của các thành viên trong cuộc họp đối với trường/tổ/cá nhân:
+        </p>
+        ${submittedMeetings.map(m => {
+          const opinions = m.minutes?.memberOpinions?.trim() || '';
+          return `
+            <div style="margin: 8px 0 10px 15px; text-align: justify;">
+              <p style="margin: 2px 0; font-weight: bold;">
+                • ${m.departmentName}:
+              </p>
+              <div style="padding-left: 15px;">
+                ${opinions ? renderSmartTextParagraphs(opinions, false) : '<p style="margin: 2px 0; font-style: italic; color: #555;">(Không có ý kiến)</p>'}
+              </div>
             </div>
-          </div>
-        `;
-      }).join('')}
-    </div>
+          `;
+        }).join('')}
+      </div>
 
-    <!-- MỤC 5: KẾT LUẬN CỦA CHỦ TRÌ -->
-    <div style="margin-top: 16px; text-align: justify; font-size: 13pt; line-height: 1.55;">
-      <p style="font-weight: bold; margin: 4px 0;">
-        5. Kết luận của chủ trì:
-      </p>
-      ${meetings.map(m => {
-        const conclusion = m.minutes?.conclusion || `Chủ trì cuộc họp kết luận: Toàn thể giáo viên trong tổ nghiêm túc thực hiện các nhiệm vụ chuyên môn được phân công; nộp kế hoạch bài dạy và hồ sơ chuyên môn đúng thời hạn.`;
-        return `
-          <div style="margin: 8px 0 10px 15px; text-align: justify;">
-            <p style="margin: 2px 0; font-weight: bold;">
-              • ${m.departmentName} (${m.teacherName} - Chủ trì):
-            </p>
-            <div style="padding-left: 15px;">
-              ${renderSmartTextParagraphs(conclusion, false)}
+      <!-- MỤC 5: KẾT LUẬN CỦA CHỦ TRÌ -->
+      <div style="margin-top: 16px; text-align: justify; font-size: 13pt; line-height: 1.55;">
+        <p style="font-weight: bold; margin: 4px 0;">
+          5. Kết luận của chủ trì:
+        </p>
+        ${submittedMeetings.map(m => {
+          const conclusion = m.minutes?.conclusion?.trim() || '';
+          const chairName = m.minutes?.chairPerson || m.teacherName;
+          return `
+            <div style="margin: 8px 0 10px 15px; text-align: justify;">
+              <p style="margin: 2px 0; font-weight: bold;">
+                • ${m.departmentName} (${chairName} - Chủ trì):
+              </p>
+              <div style="padding-left: 15px;">
+                ${conclusion ? renderSmartTextParagraphs(conclusion, false) : '<p style="margin: 2px 0; font-style: italic; color: #555;">(Không ghi nhận kết luận riêng)</p>'}
+              </div>
             </div>
-          </div>
-        `;
-      }).join('')}
-    </div>
+          `;
+        }).join('')}
+      </div>
 
-    <!-- MỤC 6: ĐỀ XUẤT, KIẾN NGHỊ VỚI NHÀ TRƯỜNG -->
-    <div style="margin-top: 16px; text-align: justify; font-size: 13pt; line-height: 1.55;">
-      <p style="font-weight: bold; margin: 4px 0;">
-        6. Đề xuất, kiến nghị với nhà trường:
-      </p>
-      ${meetings.map(m => {
-        const recs = m.minutes?.recommendations || '- Tổ không có đề xuất, kiến nghị thêm với Ban Giám hiệu.';
-        return `
-          <div style="margin: 8px 0 10px 15px; text-align: justify;">
-            <p style="margin: 2px 0; font-weight: bold;">
-              • ${m.departmentName}:
-            </p>
-            <div style="padding-left: 15px;">
-              ${renderSmartTextParagraphs(recs, false)}
+      <!-- MỤC 6: ĐỀ XUẤT, KIẾN NGHỊ VỚI NHÀ TRƯỜNG -->
+      <div style="margin-top: 16px; text-align: justify; font-size: 13pt; line-height: 1.55;">
+        <p style="font-weight: bold; margin: 4px 0;">
+          6. Đề xuất, kiến nghị với nhà trường:
+        </p>
+        ${submittedMeetings.map(m => {
+          const recs = m.minutes?.recommendations?.trim() || '';
+          return `
+            <div style="margin: 8px 0 10px 15px; text-align: justify;">
+              <p style="margin: 2px 0; font-weight: bold;">
+                • ${m.departmentName}:
+              </p>
+              <div style="padding-left: 15px;">
+                ${recs ? renderSmartTextParagraphs(recs, false) : '<p style="margin: 2px 0; font-style: italic; color: #555;">(Không có đề xuất, kiến nghị)</p>'}
+              </div>
             </div>
+          `;
+        }).join('')}
+      </div>
+
+      <!-- MỤC 7: NỘI DUNG VĂN BẢN BÁO CÁO BỔ SUNG CỦA TỔ (NẾU CÓ) -->
+      ${(() => {
+        const extraTextDepts = submittedMeetings.filter(m => m.reportContent && m.reportContent.trim());
+        if (extraTextDepts.length === 0) return '';
+        return `
+          <div style="margin-top: 16px; text-align: justify; font-size: 13pt; line-height: 1.55;">
+            <p style="font-weight: bold; margin: 4px 0;">
+              7. Nội dung báo cáo văn bản &amp; ý kiến bổ sung từ các tổ:
+            </p>
+            ${extraTextDepts.map(m => `
+              <div style="margin: 8px 0 10px 15px; text-align: justify;">
+                <p style="margin: 2px 0; font-weight: bold;">
+                  • ${m.departmentName} (Người gửi: ${m.teacherName}):
+                </p>
+                <div style="padding-left: 15px;">
+                  ${renderSmartTextParagraphs(m.reportContent || '', false)}
+                </div>
+              </div>
+            `).join('')}
           </div>
         `;
-      }).join('')}
-    </div>
+      })()}
+
+      <!-- MỤC 8: THỜI GIAN KẾT THÚC & THÔNG QUA BIÊN BẢN -->
+      <div style="margin-top: 16px; text-align: justify; font-size: 13pt; line-height: 1.55;">
+        ${submittedMeetings.filter(m => m.minutes?.endHour).map(m => `
+          <p style="margin: 3px 0; text-indent: 15px; font-style: italic;">
+            - Cuộc họp của <b>${m.departmentName}</b> kết thúc vào lúc ${m.minutes!.endHour} giờ ${m.minutes!.endMinute || '00'} phút cùng ngày; biên bản đã được thông qua toàn thể cuộc họp và thống nhất ký tên lưu hồ sơ./.
+          </p>
+        `).join('')}
+      </div>
+    `}
   `;
 }
 
@@ -1148,14 +1208,20 @@ export function generateConsolidatedWordHtml(
           <tr>
             <td style="width: 45%; text-align: center; vertical-align: top; border: none; padding: 0;">
               <div style="font-size: 11pt; text-transform: uppercase;">SỞ GDĐT TỈNH ĐỒNG THÁP</div>
-              <div style="font-size: 11.5pt; font-weight: bold; text-transform: uppercase; margin-top: 2px;">TRƯỜNG THCS VÀ THPT</div>
-              <div style="font-size: 11.5pt; font-weight: bold; text-transform: uppercase; margin-top: 1px;"><span style="text-decoration: underline;">ĐỐC BINH KIỀU</span></div>
-              <div style="font-size: 11pt; margin-top: 10px;">Số: &nbsp; &nbsp; /BC-THCS&amp;THPTĐBK</div>
+              <div style="font-size: 11.5pt; font-weight: bold; text-transform: uppercase; margin-top: 1px;">TRƯỜNG THCS VÀ THPT</div>
+              <div style="font-size: 11.5pt; font-weight: bold; text-transform: uppercase; margin-top: 1px;">ĐỐC BINH KIỀU</div>
+              <div style="text-align: center; font-size: 1pt; line-height: 1pt; margin-top: 4px; margin-bottom: 4px;">
+                <span style="display: inline-block; width: 90px; border-bottom: 1.5px solid #000; height: 1px; vertical-align: top;"></span>
+              </div>
+              <div style="font-size: 11pt; margin-top: 6px;">Số: &nbsp; &nbsp; /BC-THCS&amp;THPTĐBK</div>
             </td>
             <td style="width: 55%; text-align: center; vertical-align: top; border: none; padding: 0;">
               <div style="font-size: 11pt; font-weight: bold; text-transform: uppercase;">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</div>
-              <div style="font-size: 11.5pt; font-weight: bold; margin-top: 2px;"><span style="text-decoration: underline;">Độc lập – Tự do – Hạnh phúc</span></div>
-              <div style="font-size: 11pt; font-style: italic; margin-top: 10px;">Đồng Tháp, ngày &nbsp; &nbsp; &nbsp; &nbsp; tháng &nbsp; &nbsp; &nbsp; &nbsp; năm ${year || '2026'}</div>
+              <div style="font-size: 11.5pt; font-weight: bold; margin-top: 2px;">Độc lập – Tự do – Hạnh phúc</div>
+              <div style="text-align: center; font-size: 1pt; line-height: 1pt; margin-top: 4px; margin-bottom: 4px;">
+                <span style="display: inline-block; width: 170px; border-bottom: 1.5px solid #000; height: 1px; vertical-align: top;"></span>
+              </div>
+              <div style="font-size: 11pt; font-style: italic; margin-top: 6px;">Đồng Tháp, ngày &nbsp; &nbsp; &nbsp; &nbsp; tháng &nbsp; &nbsp; &nbsp; &nbsp; năm ${year || '2026'}</div>
             </td>
           </tr>
         </table>
@@ -1168,7 +1234,7 @@ export function generateConsolidatedWordHtml(
           <div style="font-size: 13.5pt; font-weight: bold; text-transform: uppercase; margin: 0; color: #000; line-height: 1.35;">
             ${reportTitleInfo.subTitle}
           </div>
-          <table align="center" style="border: none; border-collapse: collapse; margin: 5px auto 16px auto;">
+          <table align="center" style="border: none; border-collapse: collapse; margin: 6px auto 16px auto;">
             <tr>
               <td style="width: 220px; border-top: 1.5px solid #000; height: 1px; padding: 0; font-size: 1px; line-height: 1px;">&nbsp;</td>
             </tr>
@@ -1176,8 +1242,26 @@ export function generateConsolidatedWordHtml(
         </div>
 
         ${isMeetingMinutesReport ? `
-          <!-- BÁO CÁO TỔNG HỢP BIÊN BẢN HỌP CỦA CÁC TỔ CHUYÊN MÔN (DẠNG VĂN BẢN BÌNH THƯỜNG, KHÔNG KẺ Ô, LIỆT KÊ ĐẦY ĐỦ NỘI DUNG TỪ CÁC TỔ) -->
+          <!-- BÁO CÁO TỔNG HỢP BIÊN BẢN HỌP CỦA CÁC TỔ CHUYÊN MÔN -->
           ${renderConsolidatedDepartmentMeetingContent(data, currentUser, schoolInfo, year)}
+
+          ${formBreakdownHtml ? `
+            <div style="margin-top: 24px;">
+              <h3 style="font-size: 11.5pt; font-weight: bold; text-transform: uppercase; color: #000; border-bottom: 1.5px solid #000; padding-bottom: 4px;">
+                TỔNG HỢP CHI TIẾT THEO CÁC CÂU HỎI &amp; CHỈ SỐ BIỂU MẪU ĐỢT BÁO CÁO
+              </h3>
+              ${formBreakdownHtml}
+            </div>
+          ` : ''}
+
+          ${dynamicTablesHtml ? `
+            <div style="margin-top: 24px;">
+              <h3 style="font-size: 11.5pt; font-weight: bold; text-transform: uppercase; color: #000; border-bottom: 1.5px solid #000; padding-bottom: 4px;">
+                CÁC BẢNG SỐ LIỆU ĐỘNG TỔNG HỢP
+              </h3>
+              ${dynamicTablesHtml}
+            </div>
+          ` : ''}
         ` : `
           <!-- PHẦN I: TỔNG QUAN TIẾN ĐỘ -->
           <div style="margin-top: 14px;">
@@ -1546,6 +1630,46 @@ export function generateConsolidatedPrintHtml(
     `;
   }
 
+  // Render Dynamic Tables for Print
+  let dynamicTablesPrintHtml = '';
+  if (data.dynamicTables && data.dynamicTables.length > 0) {
+    dynamicTablesPrintHtml = data.dynamicTables.map((tbl, tIdx) => {
+      const meaningfulRows = tbl.rows.filter(r => isMeaningfulTableRow(r.data, tbl.headers));
+      if (meaningfulRows.length === 0) return '';
+      const ths = tbl.headers.map(h => `<th style="border: 1px solid #333; padding: 5px; text-align: left;">${h}</th>`).join('');
+      const trs = meaningfulRows.map((r, rIdx) => {
+        const tds = tbl.headers.map(h => `<td style="border: 1px solid #333; padding: 5px;">${(r.data && r.data[h] !== undefined) ? r.data[h] : ((r as any)[h] ?? '')}</td>`).join('');
+        return `
+          <tr>
+            <td style="border: 1px solid #333; padding: 5px; text-align: center;">${rIdx + 1}</td>
+            <td style="border: 1px solid #333; padding: 5px; font-weight: 500;">${r.className}</td>
+            <td style="border: 1px solid #333; padding: 5px;">${r.authorName}</td>
+            ${tds}
+          </tr>
+        `;
+      }).join('');
+
+      return `
+        <div style="margin-top: 14px; margin-bottom: 10px; page-break-inside: avoid;">
+          <div style="font-weight: bold; font-size: 10.5pt; color: #000;">Bảng ${tIdx + 1}: ${tbl.title}</div>
+          <table style="width: 100%; border-collapse: collapse; margin-top: 4px; font-size: 9pt;">
+            <thead>
+              <tr style="background-color: #f3f4f6;">
+                <th style="border: 1px solid #333; padding: 5px; width: 35px; text-align: center;">STT</th>
+                <th style="border: 1px solid #333; padding: 5px; width: 90px; text-align: left;">Lớp / Đơn Vị</th>
+                <th style="border: 1px solid #333; padding: 5px; width: 120px; text-align: left;">Người Báo Cáo</th>
+                ${ths}
+              </tr>
+            </thead>
+            <tbody>
+              ${trs}
+            </tbody>
+          </table>
+        </div>
+      `;
+    }).join('');
+  }
+
   return `
     <!DOCTYPE html>
     <html lang="vi">
@@ -1599,14 +1723,20 @@ export function generateConsolidatedPrintHtml(
         <tr>
           <td style="width: 45%; text-align: center; vertical-align: top; border: none; padding: 0;">
             <div style="font-size: 10pt; text-transform: uppercase;">SỞ GDĐT TỈNH ĐỒNG THÁP</div>
-            <div style="font-size: 10.5pt; font-weight: bold; text-transform: uppercase; margin-top: 2px;">TRƯỜNG THCS VÀ THPT</div>
-            <div style="font-size: 10.5pt; font-weight: bold; text-transform: uppercase; margin-top: 1px;"><span style="text-decoration: underline;">ĐỐC BINH KIỀU</span></div>
-            <div style="font-size: 10pt; margin-top: 8px;">Số: &nbsp; &nbsp; /BC-THCS&amp;THPTĐBK</div>
+            <div style="font-size: 10.5pt; font-weight: bold; text-transform: uppercase; margin-top: 1px;">TRƯỜNG THCS VÀ THPT</div>
+            <div style="font-size: 10.5pt; font-weight: bold; text-transform: uppercase; margin-top: 1px;">ĐỐC BINH KIỀU</div>
+            <div style="text-align: center; font-size: 1pt; line-height: 1pt; margin-top: 4px; margin-bottom: 4px;">
+              <span style="display: inline-block; width: 90px; border-bottom: 1.5px solid #000; height: 1px; vertical-align: top;"></span>
+            </div>
+            <div style="font-size: 10pt; margin-top: 6px;">Số: &nbsp; &nbsp; /BC-THCS&amp;THPTĐBK</div>
           </td>
           <td style="width: 55%; text-align: center; vertical-align: top; border: none; padding: 0;">
             <div style="font-size: 10pt; font-weight: bold; text-transform: uppercase;">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</div>
-            <div style="font-size: 10.5pt; font-weight: bold; margin-top: 2px;"><span style="text-decoration: underline;">Độc lập – Tự do – Hạnh phúc</span></div>
-            <div style="font-size: 10pt; font-style: italic; margin-top: 8px;">Đồng Tháp, ngày &nbsp; &nbsp; &nbsp; &nbsp; tháng &nbsp; &nbsp; &nbsp; &nbsp; năm ${year || '2026'}</div>
+            <div style="font-size: 10.5pt; font-weight: bold; margin-top: 2px;">Độc lập – Tự do – Hạnh phúc</div>
+            <div style="text-align: center; font-size: 1pt; line-height: 1pt; margin-top: 4px; margin-bottom: 4px;">
+              <span style="display: inline-block; width: 170px; border-bottom: 1.5px solid #000; height: 1px; vertical-align: top;"></span>
+            </div>
+            <div style="font-size: 10pt; font-style: italic; margin-top: 6px;">Đồng Tháp, ngày &nbsp; &nbsp; &nbsp; &nbsp; tháng &nbsp; &nbsp; &nbsp; &nbsp; năm ${year || '2026'}</div>
           </td>
         </tr>
       </table>
@@ -1619,14 +1749,32 @@ export function generateConsolidatedPrintHtml(
         <div style="font-size: 13pt; font-weight: bold; text-transform: uppercase; margin: 0; color: #000; line-height: 1.35;">
           ${reportTitleInfo.subTitle}
         </div>
-        <div style="text-align: center; margin-top: 4px; margin-bottom: 12px;">
-          <span style="display: inline-block; width: 220px; border-bottom: 1.5px solid #000;"></span>
+        <div style="text-align: center; margin-top: 5px; margin-bottom: 12px;">
+          <span style="display: inline-block; width: 200px; border-bottom: 1.5px solid #000;"></span>
         </div>
       </div>
 
       ${isMeetingMinutesReport ? `
-        <!-- NỘI DUNG TỔNG HỢP BIÊN BẢN HỌP CỦA CÁC TỔ CHUYÊN MÔN (DẠNG VĂN BẢN BÌNH THƯỜNG, KHÔNG KẺ Ô, LIỆT KÊ ĐẦY ĐỦ NỘI DUNG TỪ CÁC TỔ) -->
+        <!-- NỘI DUNG TỔNG HỢP BIÊN BẢN HỌP CỦA CÁC TỔ CHUYÊN MÔN -->
         ${renderConsolidatedDepartmentMeetingContent(data, currentUser, schoolInfo, year)}
+
+        ${printBreakdownHtml ? `
+          <div style="margin-top: 20px;">
+            <h3 style="font-size: 11pt; font-weight: bold; text-transform: uppercase; color: #000; border-bottom: 1px solid #000; padding-bottom: 3px; margin: 12px 0 6px 0;">
+              TỔNG HỢP CHI TIẾT THEO CÁC CÂU HỎI &amp; CHỈ SỐ BIỂU MẪU ĐỢT BÁO CÁO
+            </h3>
+            ${printBreakdownHtml}
+          </div>
+        ` : ''}
+
+        ${dynamicTablesPrintHtml ? `
+          <div style="margin-top: 20px;">
+            <h3 style="font-size: 11pt; font-weight: bold; text-transform: uppercase; color: #000; border-bottom: 1px solid #000; padding-bottom: 3px; margin: 12px 0 6px 0;">
+              CÁC BẢNG SỐ LIỆU ĐỘNG TỔNG HỢP
+            </h3>
+            ${dynamicTablesPrintHtml}
+          </div>
+        ` : ''}
       ` : `
         <!-- PHẦN I: TỔNG QUAN TIẾN ĐỘ -->
         <div>

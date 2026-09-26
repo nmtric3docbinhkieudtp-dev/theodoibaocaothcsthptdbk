@@ -325,14 +325,20 @@ export const ExportService = {
         <div class="header-grid" style="display: grid; grid-template-columns: 45% 55%; margin-bottom: 20px;">
           <div style="text-align: center;">
             <div style="font-size: 11pt; text-transform: uppercase;">SỞ GDĐT TỈNH ĐỒNG THÁP</div>
-            <div style="font-size: 11.5pt; font-weight: bold; text-transform: uppercase; margin-top: 2px;">TRƯỜNG THCS VÀ THPT</div>
-            <div style="font-size: 11.5pt; font-weight: bold; text-transform: uppercase; margin-top: 1px;"><span style="text-decoration: underline;">ĐỐC BINH KIỀU</span></div>
-            <div style="font-size: 11pt; margin-top: 10px;">Số: &nbsp; &nbsp; /BC-THCS&amp;THPTĐBK</div>
+            <div style="font-size: 11.5pt; font-weight: bold; text-transform: uppercase; margin-top: 1px;">TRƯỜNG THCS VÀ THPT</div>
+            <div style="font-size: 11.5pt; font-weight: bold; text-transform: uppercase; margin-top: 1px;">ĐỐC BINH KIỀU</div>
+            <div style="text-align: center; font-size: 1pt; line-height: 1pt; margin-top: 4px; margin-bottom: 4px;">
+              <span style="display: inline-block; width: 90px; border-bottom: 1.5px solid #000; height: 1px; vertical-align: top;"></span>
+            </div>
+            <div style="font-size: 11pt; margin-top: 6px;">Số: &nbsp; &nbsp; /BC-THCS&amp;THPTĐBK</div>
           </div>
           <div style="text-align: center;">
             <div style="font-size: 11pt; font-weight: bold; text-transform: uppercase;">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</div>
-            <div style="font-size: 11.5pt; font-weight: bold; margin-top: 2px;"><span style="text-decoration: underline;">Độc lập – Tự do – Hạnh phúc</span></div>
-            <div style="font-size: 11pt; font-style: italic; margin-top: 10px;">Đồng Tháp, ngày &nbsp; &nbsp; &nbsp; &nbsp; tháng &nbsp; &nbsp; &nbsp; &nbsp; năm ${todayStr.split('/')[2] || '2026'}</div>
+            <div style="font-size: 11.5pt; font-weight: bold; margin-top: 2px;">Độc lập – Tự do – Hạnh phúc</div>
+            <div style="text-align: center; font-size: 1pt; line-height: 1pt; margin-top: 4px; margin-bottom: 4px;">
+              <span style="display: inline-block; width: 170px; border-bottom: 1.5px solid #000; height: 1px; vertical-align: top;"></span>
+            </div>
+            <div style="font-size: 11pt; font-style: italic; margin-top: 6px;">Đồng Tháp, ngày &nbsp; &nbsp; &nbsp; &nbsp; tháng &nbsp; &nbsp; &nbsp; &nbsp; năm ${todayStr.split('/')[2] || '2026'}</div>
           </div>
         </div>
 

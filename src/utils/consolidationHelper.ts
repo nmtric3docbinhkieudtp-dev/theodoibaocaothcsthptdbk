@@ -25,6 +25,7 @@ export interface ConsolidatedDeptMeeting {
   submissionId: string | null;
   minutes: DepartmentMeetingMinutesData | null;
   reportContent?: string;
+  submission?: ReportSubmission | null;
 }
 
 export interface ConsolidatedDeptHeadStat {
@@ -1222,7 +1223,8 @@ export function aggregatePeriodReportData(
       submittedAt: sub?.submittedAt || null,
       submissionId: sub?.id || null,
       minutes,
-      reportContent: sub?.content || ''
+      reportContent: sub?.content || '',
+      submission: sub || null
     });
 
     processedDeptKeys.add(dept.id);
@@ -1246,7 +1248,8 @@ export function aggregatePeriodReportData(
           submittedAt: s.submittedAt || null,
           submissionId: s.id,
           minutes,
-          reportContent: s.content || ''
+          reportContent: s.content || '',
+          submission: s
         });
         if (dId) processedDeptKeys.add(dId);
         if (dName) processedDeptKeys.add(dName.toLowerCase());
