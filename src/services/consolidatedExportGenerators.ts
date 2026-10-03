@@ -483,20 +483,20 @@ export function renderConsolidatedDepartmentMeetingContent(
   const totalDepts = allDepts.length;
   const submittedCount = submittedMeetings.length;
 
-  const getDeptAnswer = (m: ConsolidatedDeptMeeting, kw: string, excludeKw: string | null = null): string => {
+  const getDeptAnswer = (m: any, kw: string, excludeKw: string | null = null): string => {
     if (m.detailedAnswers) {
       for (const [key, val] of Object.entries(m.detailedAnswers)) {
         const kLower = key.toLowerCase();
         if (kLower.includes(kw.toLowerCase())) {
           if (excludeKw && kLower.includes(excludeKw.toLowerCase())) continue;
-          if (val && val.trim()) return val.trim();
+          if (val && typeof val === 'string' && val.trim()) return val.trim();
         }
       }
     }
     const customValues = m.submission?.structuredData?.customFieldValues || {};
-    const fList = m.submission?.structuredData?.customFields || data.period?.fields || [];
-    const f = fList.find(item => {
-      const l = item.label.toLowerCase();
+    const fList = m.submission?.structuredData?.customFields || (data.period as any)?.fields || (data.period as any)?.formTemplate?.fields || [];
+    const f = fList.find((item: any) => {
+      const l = (item.label || '').toLowerCase();
       if (!l.includes(kw.toLowerCase())) return false;
       if (excludeKw && l.includes(excludeKw.toLowerCase())) return false;
       return true;

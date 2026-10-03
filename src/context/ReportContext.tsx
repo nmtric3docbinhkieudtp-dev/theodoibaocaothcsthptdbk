@@ -380,34 +380,67 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       const localSubs = StorageService.getSubmissions();
       // Batch sync client submissions with server store
       const serverMerged = await ApiService.batchSyncSubmissions(localSubs);
-      if (serverMerged && Array.isArray(serverMerged) && serverMerged.length > 0) {
-        setSubmissions(serverMerged);
-        setLocal('dbk_submissions_data', serverMerged);
-      } else {
-        const fetched = await ApiService.fetchSubmissions();
-        if (fetched && Array.isArray(fetched) && fetched.length > 0) {
-          setSubmissions(fetched);
-          setLocal('dbk_submissions_data', fetched);
-        }
+      const incomingSubs = (serverMerged && Array.isArray(serverMerged) && serverMerged.length > 0)
+        ? serverMerged
+        : await ApiService.fetchSubmissions();
+
+      if (incomingSubs && Array.isArray(incomingSubs)) {
+        const deletedIds = getDeletedSubmissionIds();
+        const map = new Map<string, ReportSubmission>();
+        localSubs.forEach(s => {
+          if (!deletedIds.has(s.id)) {
+            const key = `${s.periodId || 'default'}_${s.authorId || s.authorEmail || s.authorName}`;
+            map.set(key, s);
+          }
+        });
+        incomingSubs.forEach(s => {
+          if (!deletedIds.has(s.id)) {
+            const key = `${s.periodId || 'default'}_${s.authorId || s.authorEmail || s.authorName}`;
+            const existing = map.get(key);
+            if (!existing) {
+              map.set(key, s);
+            } else {
+              const t1 = new Date(existing.updatedAt || existing.submittedAt || 0).getTime();
+              const t2 = new Date(s.updatedAt || s.submittedAt || 0).getTime();
+              if (t2 >= t1) map.set(key, s);
+            }
+          }
+        });
+        const mergedList = Array.from(map.values());
+        mergedList.sort((a, b) => new Date(b.updatedAt || b.submittedAt || 0).getTime() - new Date(a.updatedAt || a.submittedAt || 0).getTime());
+        setSubmissions(mergedList);
+        setLocal('dbk_submissions_data', mergedList);
       }
 
       // Sync periods with server (batch merge without wiping local/firestore periods)
       const localPeriods = StorageService.getPeriods();
       const serverMergedPeriods = await ApiService.batchSyncPeriods(localPeriods);
-      if (serverMergedPeriods && Array.isArray(serverMergedPeriods) && serverMergedPeriods.length > 0) {
-        setPeriods(serverMergedPeriods);
-        setLocal('dbk_periods_data', serverMergedPeriods);
-      } else {
-        const fetched = await ApiService.fetchPeriods();
-        if (fetched && Array.isArray(fetched) && fetched.length > 0) {
-          const currentMap = new Map(localPeriods.map(p => [p.id, p]));
-          fetched.forEach(p => {
-            if (!currentMap.has(p.id)) currentMap.set(p.id, p);
-          });
-          const merged = Array.from(currentMap.values());
-          setPeriods(merged);
-          setLocal('dbk_periods_data', merged);
-        }
+      const incomingPeriods = (serverMergedPeriods && Array.isArray(serverMergedPeriods) && serverMergedPeriods.length > 0)
+        ? serverMergedPeriods
+        : await ApiService.fetchPeriods();
+
+      if (incomingPeriods && Array.isArray(incomingPeriods) && incomingPeriods.length > 0) {
+        const periodMap = new Map(localPeriods.map(p => [p.id, p]));
+        incomingPeriods.forEach(p => {
+          if (p && p.id) {
+            const existing = periodMap.get(p.id);
+            if (!existing) {
+              periodMap.set(p.id, p);
+            } else {
+              const t1 = new Date((existing as any).updatedAt || existing.createdAt || 0).getTime();
+              const t2 = new Date((p as any).updatedAt || p.createdAt || 0).getTime();
+              if (t2 >= t1) periodMap.set(p.id, p);
+            }
+          }
+        });
+        const merged = Array.from(periodMap.values());
+        merged.sort((a, b) => {
+          if (a.status === 'active' && b.status !== 'active') return -1;
+          if (a.status !== 'active' && b.status === 'active') return 1;
+          return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
+        });
+        setPeriods(merged);
+        setLocal('dbk_periods_data', merged);
       }
     } catch (e) {
       console.warn('[ReportContext] Server sync warning:', e);

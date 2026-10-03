@@ -3,6 +3,7 @@ import { User, UserRole } from '../types';
 import { StorageService, ADMIN_MASTER_PASSWORD_DEFAULT, setLocal } from '../services/storage';
 import { getFirebaseInstance } from '../services/firebase';
 import { collection, doc, getDoc, getDocs } from 'firebase/firestore';
+import { toUsername } from '../utils/userUtils';
 
 interface AuthContextType {
   currentUser: User;
@@ -126,23 +127,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       };
     }
 
+    // Clean identifier: username (lowercase, no accents, no spaces)
+    const cleanUsername = toUsername(identifier);
+    const rawId = identifier.trim().toLowerCase();
+
     // Refresh users
     const currentUsers = StorageService.getUsers();
     setUsers(currentUsers);
 
-    // Match by email, staff ID (e.g. staff-2), orderNo, or exact name
-    const foundUser = currentUsers.find(u => 
-      u.email.toLowerCase() === cleanId ||
-      u.id.toLowerCase() === cleanId ||
-      `tt${u.orderNo}` === cleanId ||
-      `cbgv${u.orderNo}` === cleanId ||
-      u.name.toLowerCase() === cleanId
-    );
+    // Match by username (e.g. nguyenminhtri), email, staff ID (staff-2), orderNo (tt2), or name
+    const foundUser = currentUsers.find(u => {
+      const uUsername = toUsername(u.name);
+      return (
+        uUsername === cleanUsername ||
+        u.email.toLowerCase() === rawId ||
+        u.id.toLowerCase() === rawId ||
+        `tt${u.orderNo}` === rawId ||
+        `cbgv${u.orderNo}` === rawId ||
+        u.name.toLowerCase() === rawId ||
+        (u.email && u.email.split('@')[0].toLowerCase() === rawId)
+      );
+    });
 
     if (!foundUser) {
       return { 
         success: false, 
-        message: 'Không tìm thấy tài khoản cán bộ/giáo viên. Vui lòng kiểm tra lại email hoặc họ tên.' 
+        message: 'Không tìm thấy tài khoản cán bộ/giáo viên. Tên đăng nhập là họ và tên viết liền không dấu (Ví dụ: Nguyễn Minh Trí → nguyenminhtri).' 
       };
     }
 
@@ -242,15 +252,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (cleanPass !== userPass) {
         return {
           success: false,
-          message: 'Mật khẩu không chính xác! Vui lòng nhập đúng mật khẩu cá nhân của Thầy/Cô hoặc liên hệ Quản trị viên để đặt lại.'
+          message: 'Mật khẩu không chính xác! Vui lòng nhập đúng mật khẩu cá nhân Thầy/Cô đã thay đổi (hoặc liên hệ Quản trị viên để đặt lại).'
         };
       }
     } else {
-      // Must match initial default password
-      if (cleanPass !== '123456') {
+      // Must match default password
+      const acceptedDefaults = ['123456', 'c3dbk@2026', 'C3dbk@2026', userPass].filter(Boolean);
+      if (!acceptedDefaults.includes(cleanPass)) {
         return {
           success: false,
-          message: 'Mật khẩu không chính xác! Mật khẩu khởi tạo ban đầu cho tài khoản chưa đổi là 123456.'
+          message: 'Mật khẩu không chính xác! Mật khẩu mặc định cho tài khoản chưa đổi là 123456 (hoặc mật khẩu Thầy/Cô đã đổi).'
         };
       }
     }

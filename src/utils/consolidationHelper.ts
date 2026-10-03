@@ -1200,7 +1200,7 @@ export function aggregatePeriodReportData(
     if (!subItem) return { minutes: null, detailedAnswers };
 
     const customValues = subItem.structuredData?.customFieldValues || {};
-    const fList = subItem.structuredData?.customFields || period?.fields || [];
+    const fList = subItem.structuredData?.customFields || (period as any)?.fields || (period as any)?.formTemplate?.fields || [];
 
     // Map all fields into detailedAnswers by key (field id & normalized label)
     fList.forEach(f => {

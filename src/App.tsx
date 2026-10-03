@@ -19,6 +19,7 @@ import { PeriodConsolidationModal } from './components/reports/PeriodConsolidati
 import { UnsubmittedUsersModal } from './components/periods/UnsubmittedUsersModal';
 import { FirebaseSettingsModal } from './components/admin/FirebaseSettingsModal';
 import { LogoManagementModal } from './components/admin/LogoManagementModal';
+import { TeacherSimplifiedView } from './components/teacher/TeacherSimplifiedView';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { StorageService } from './services/storage';
 import { isFirestoreWriteQuotaExceeded } from './services/firebase';
@@ -26,6 +27,7 @@ import { ReportSubmission } from './types';
 
 const MainLayout: React.FC = () => {
   const { currentUser, isAdmin, isPrincipal, isImpersonating, returnToAdmin } = useAuth();
+  const isRegularUser = !isAdmin && !isPrincipal;
   const [activeView, setActiveView] = useState<NavTab>('dashboard');
   const [isSubmitModalOpen, setIsSubmitModalOpen] = useState(false);
   const [isCreatePeriodModalOpen, setIsCreatePeriodModalOpen] = useState(false);
@@ -156,29 +158,31 @@ const MainLayout: React.FC = () => {
         </aside>
       )}
 
-      {/* Top High-Density Header */}
+      {/* Top Header */}
       <Header
         onOpenSubmit={() => handleOpenSubmit()}
         onOpenCreatePeriod={handleOpenCreatePeriod}
         onOpenReportDetail={handleOpenReportDetail}
-        onToggleMobileMenu={() => setIsMobileSidebarOpen(true)}
+        onToggleMobileMenu={(isAdmin || isPrincipal) ? () => setIsMobileSidebarOpen(true) : undefined}
         onNavigate={handleNavigate}
         onOpenChangePassword={() => setIsChangePasswordOpen(true)}
         onOpenLogoModal={() => setIsLogoModalOpen(true)}
       />
 
-      {/* Slide-out Navigation Drawer (Appears when clicking hamburger menu ☰) */}
-      <Sidebar
-        activeView={activeView}
-        onNavigate={handleNavigate}
-        onOpenSubmit={() => handleOpenSubmit()}
-        onOpenCreatePeriod={handleOpenCreatePeriod}
-        isMobileOpen={isMobileSidebarOpen}
-        onCloseMobile={() => setIsMobileSidebarOpen(false)}
-        onOpenLogoModal={() => setIsLogoModalOpen(true)}
-      />
+      {/* Slide-out Navigation Drawer (Only for Admin & Principal) */}
+      {(isAdmin || isPrincipal) && (
+        <Sidebar
+          activeView={activeView}
+          onNavigate={handleNavigate}
+          onOpenSubmit={() => handleOpenSubmit()}
+          onOpenCreatePeriod={handleOpenCreatePeriod}
+          isMobileOpen={isMobileSidebarOpen}
+          onCloseMobile={() => setIsMobileSidebarOpen(false)}
+          onOpenLogoModal={() => setIsLogoModalOpen(true)}
+        />
+      )}
 
-      {/* Main Container: Full width clean layout */}
+      {/* Main Container */}
       <div className="flex-1 w-full max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6">
         {isQuotaExceeded && !dismissedQuotaBanner && (
           <div className="mb-4 p-3 sm:p-4 rounded-2xl bg-amber-50/90 border border-amber-200/80 text-amber-900 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
@@ -210,61 +214,74 @@ const MainLayout: React.FC = () => {
         )}
 
         <main className="w-full min-w-0">
-          {activeView === 'dashboard' && (
-            <Dashboard
+          {/* TÀI KHOẢN THƯỜNG (GIÁO VIÊN, NHÂN VIÊN TOÀN TRƯỜNG):
+              Chỉ có duy nhất 1 việc: Danh sách các đợt báo cáo hiện lên và bấm nộp báo cáo!
+              Toàn bộ menu, sidebar và tính năng phức tạp khác được ẩn hoàn toàn để tối giản tuyệt đối. */}
+          {isRegularUser ? (
+            <TeacherSimplifiedView
               onOpenSubmit={(periodId) => handleOpenSubmit(periodId)}
-              onOpenCreatePeriod={handleOpenCreatePeriod}
-              onOpenReportDetail={handleOpenReportDetail}
-              onOpenConsolidation={(isAdmin || isPrincipal) ? handleOpenConsolidation : undefined}
-              onOpenUnsubmittedUsers={handleOpenUnsubmitted}
-              onNavigate={handleNavigate}
-            />
-          )}
-
-          {activeView === 'reports' && (
-            <ReportList
-              onOpenSubmit={() => handleOpenSubmit()}
               onOpenDetail={handleOpenReportDetail}
-              onOpenConsolidation={(isAdmin || isPrincipal) ? () => handleOpenConsolidation() : undefined}
+              onOpenChangePassword={() => setIsChangePasswordOpen(true)}
             />
-          )}
+          ) : (
+            <>
+              {activeView === 'dashboard' && (
+                <Dashboard
+                  onOpenSubmit={(periodId) => handleOpenSubmit(periodId)}
+                  onOpenCreatePeriod={handleOpenCreatePeriod}
+                  onOpenReportDetail={handleOpenReportDetail}
+                  onOpenConsolidation={(isAdmin || isPrincipal) ? handleOpenConsolidation : undefined}
+                  onOpenUnsubmittedUsers={handleOpenUnsubmitted}
+                  onNavigate={handleNavigate}
+                />
+              )}
 
-          {activeView === 'approvals' && (
-            <ApprovalQueue
-              onOpenDetail={handleOpenReportDetail}
-            />
-          )}
+              {activeView === 'reports' && (
+                <ReportList
+                  onOpenSubmit={() => handleOpenSubmit()}
+                  onOpenDetail={handleOpenReportDetail}
+                  onOpenConsolidation={(isAdmin || isPrincipal) ? () => handleOpenConsolidation() : undefined}
+                />
+              )}
 
-          {activeView === 'periods' && (
-            <PeriodManagement
-              onOpenSubmit={(periodId) => handleOpenSubmit(periodId)}
-              onOpenConsolidation={(isAdmin || isPrincipal) ? handleOpenConsolidation : undefined}
-              onOpenUnsubmittedUsers={handleOpenUnsubmitted}
-            />
-          )}
+              {activeView === 'approvals' && (
+                <ApprovalQueue
+                  onOpenDetail={handleOpenReportDetail}
+                />
+              )}
 
-          {(activeView === 'departments' || activeView === 'progress') && (
-            <DepartmentProgress
-              onOpenDetail={handleOpenReportDetail}
-              onOpenUnsubmittedUsers={handleOpenUnsubmitted}
-            />
-          )}
+              {activeView === 'periods' && (
+                <PeriodManagement
+                  onOpenSubmit={(periodId) => handleOpenSubmit(periodId)}
+                  onOpenConsolidation={(isAdmin || isPrincipal) ? handleOpenConsolidation : undefined}
+                  onOpenUnsubmittedUsers={handleOpenUnsubmitted}
+                />
+              )}
 
-          {activeView === 'personnel' && (
-            <PersonnelRosterView />
-          )}
+              {(activeView === 'departments' || activeView === 'progress') && (
+                <DepartmentProgress
+                  onOpenDetail={handleOpenReportDetail}
+                  onOpenUnsubmittedUsers={handleOpenUnsubmitted}
+                />
+              )}
 
-          {activeView === 'export' && (isAdmin || isPrincipal) && (
-            <AdminReportsExport
-              onOpenConsolidation={handleOpenConsolidation}
-              onOpenDetail={handleOpenReportDetail}
-            />
-          )}
+              {activeView === 'personnel' && (
+                <PersonnelRosterView />
+              )}
 
-          {activeView === 'settings' && isAdmin && (
-            <FirebaseSettingsModal
-              onOpenLogoModal={() => setIsLogoModalOpen(true)}
-            />
+              {activeView === 'export' && (isAdmin || isPrincipal) && (
+                <AdminReportsExport
+                  onOpenConsolidation={handleOpenConsolidation}
+                  onOpenDetail={handleOpenReportDetail}
+                />
+              )}
+
+              {activeView === 'settings' && isAdmin && (
+                <FirebaseSettingsModal
+                  onOpenLogoModal={() => setIsLogoModalOpen(true)}
+                />
+              )}
+            </>
           )}
         </main>
       </div>

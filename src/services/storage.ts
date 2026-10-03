@@ -768,13 +768,6 @@ export async function pushSingleSubmissionToFirestore(
   if (!isReady || !db) {
     return { success: false, error: 'Firebase chưa được kích hoạt hoặc chưa sẵn sàng.' };
   }
-  if (isFirestoreWriteQuotaExceeded()) {
-    return { 
-      success: false, 
-      quotaExceeded: true, 
-      error: 'Hạn ngạch ghi Firestore hôm nay đã đạt giới hạn 20.000 lượt. Bài nộp đã lưu an toàn trong máy.' 
-    };
-  }
 
   const cleanPayload = cleanFirestorePayload(submission);
   return await safeFirestoreWrite('submit_single_report', () =>
