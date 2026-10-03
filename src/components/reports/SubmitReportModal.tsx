@@ -142,12 +142,14 @@ export const SubmitReportModal: React.FC<SubmitReportModalProps> = ({
 
   // Check if current period is related to Department Meeting
   const isDeptMeetingPeriod = Boolean(
-    currentPeriod?.targetAudience === 'dept_heads_only' ||
-    currentPeriod?.title?.toLowerCase().includes('họp tổ') ||
-    currentPeriod?.title?.toLowerCase().includes('sinh hoạt tổ') ||
-    currentPeriod?.title?.toLowerCase().includes('chuyên môn') ||
-    currentUser.role === 'dept_head' ||
-    currentUser.roleTitle?.toLowerCase().includes('tổ trưởng')
+    (currentPeriod?.targetAudience === 'dept_heads_only' ||
+     currentPeriod?.title?.toLowerCase().includes('họp tổ') ||
+     currentPeriod?.title?.toLowerCase().includes('sinh hoạt tổ') ||
+     (currentPeriod?.title?.toLowerCase().includes('chuyên môn') && !currentPeriod?.title?.toLowerCase().includes('chủ nhiệm'))) &&
+    currentPeriod?.targetAudience !== 'homeroom_teachers' &&
+    currentPeriod?.targetAudience !== 'gvcn_diem_chinh' &&
+    currentPeriod?.targetAudience !== 'gvcn_doc_binh_kieu' &&
+    currentPeriod?.targetAudience !== 'gvcn_tan_kieu'
   );
 
   const isDeptMinutesActive = formMode === 'dept_minutes' || (formMode === 'auto' && isDeptMeetingPeriod && !hasFormTemplate && !isSpecificLegacyHomeroomMinutes);
@@ -570,9 +572,35 @@ export const SubmitReportModal: React.FC<SubmitReportModalProps> = ({
                 )}
               </div>
 
-              <h2 className="text-base sm:text-lg font-black text-slate-900 leading-tight">
-                {currentPeriod.title}
-              </h2>
+              {eligiblePeriods.length > 1 ? (
+                <div className="mt-1">
+                  <div className="flex items-center gap-1.5 text-xs text-slate-500 font-semibold mb-1">
+                    <span>Đang chọn đợt báo cáo:</span>
+                    <span className="text-[10px] text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded-md border border-emerald-200">
+                      Có {eligiblePeriods.length} đợt dành cho Thầy/Cô
+                    </span>
+                  </div>
+                  <select
+                    value={currentPeriod.id}
+                    onChange={(e) => setSelectedPeriodId(e.target.value)}
+                    className="w-full text-sm font-bold text-slate-900 bg-white border-2 border-emerald-500 rounded-xl px-3 py-2 shadow-xs focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                  >
+                    {eligiblePeriods.map(p => {
+                      const hasSub = submissions.some(s => s.periodId === p.id && s.authorId === currentUser.id && s.status !== 'draft');
+                      return (
+                        <option key={p.id} value={p.id}>
+                          {hasSub ? '✅ [Đã nộp] ' : p.status === 'active' ? '📢 [Đang mở] ' : '🔒 [Đã đóng] '}
+                          {p.title}
+                        </option>
+                      );
+                    })}
+                  </select>
+                </div>
+              ) : (
+                <h2 className="text-base sm:text-lg font-black text-slate-900 leading-tight">
+                  {currentPeriod.title}
+                </h2>
+              )}
 
               {currentPeriod.description && (
                 <p className="text-xs text-slate-600 mt-1 leading-relaxed line-clamp-2">
@@ -649,18 +677,20 @@ export const SubmitReportModal: React.FC<SubmitReportModalProps> = ({
           {/* Bộ chuyển đổi mẫu báo cáo */}
           <div className="flex items-center gap-1.5 flex-wrap">
             <span className="text-[11px] font-bold text-slate-500 uppercase mr-1">Mẫu báo cáo:</span>
-            <button
-              type="button"
-              onClick={() => setFormMode('dept_minutes')}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-2xs ${
-                isDeptMinutesActive
-                  ? 'bg-emerald-700 text-white shadow-xs'
-                  : 'bg-white text-slate-700 hover:bg-slate-50 border border-slate-200'
-              }`}
-            >
-              <Users className="w-3.5 h-3.5" />
-              <span>Biên Bản Họp Tổ Chuyên Môn</span>
-            </button>
+            {isDeptMeetingPeriod && (
+              <button
+                type="button"
+                onClick={() => setFormMode('dept_minutes')}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-2xs ${
+                  isDeptMinutesActive
+                    ? 'bg-emerald-700 text-white shadow-xs'
+                    : 'bg-white text-slate-700 hover:bg-slate-50 border border-slate-200'
+                }`}
+              >
+                <Users className="w-3.5 h-3.5" />
+                <span>Biên Bản Họp Tổ Chuyên Môn</span>
+              </button>
+            )}
 
             {hasFormTemplate && (
               <button

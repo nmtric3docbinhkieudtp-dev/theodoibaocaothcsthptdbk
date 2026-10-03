@@ -63,8 +63,15 @@ export const AdminReportsExport: React.FC<AdminReportsExportProps> = ({
   // 1. STRICT PERIOD SELECTION - Default to the first available period or homeroom period
   const [selectedPeriodId, setSelectedPeriodId] = useState<string>(() => {
     if (periods.length === 0) return '';
-    const homeroom = periods.find(p => p.id.includes('gvcn') || p.title.toLowerCase().includes('chủ nhiệm') || p.title.toLowerCase().includes('tập trung'));
-    return homeroom?.id || periods[0]?.id || '';
+    const sorted = [...periods].sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+    const homeroom = sorted.find(p => 
+      p.targetAudience === 'homeroom_teachers' || 
+      p.id.includes('gvcn') || 
+      p.title.toLowerCase().includes('chủ nhiệm') || 
+      p.title.toLowerCase().includes('phụ huynh') ||
+      p.title.toLowerCase().includes('tập trung')
+    );
+    return homeroom?.id || sorted[0]?.id || '';
   });
 
   // Ensure valid selectedPeriodId if periods change

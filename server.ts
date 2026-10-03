@@ -105,7 +105,8 @@ async function startServer() {
 
   // Get all submissions
   app.get('/api/submissions', (req, res) => {
-    const list = readSubmissions();
+    const deletedIds = readDeletedIds();
+    const list = readSubmissions().filter(s => !deletedIds.has(s.id));
     res.json(list);
   });
 
@@ -308,6 +309,44 @@ async function startServer() {
     }
     savePeriods(list);
     res.json({ success: true, period });
+  });
+
+  // Batch sync periods
+  app.post('/api/periods/batch-sync', (req, res) => {
+    const clientPeriods: any[] = req.body?.periods || [];
+    const serverPeriods = readPeriods();
+    const periodMap = new Map<string, any>();
+    
+    serverPeriods.forEach(p => {
+      if (p && p.id) periodMap.set(p.id, p);
+    });
+    
+    clientPeriods.forEach(cp => {
+      if (!cp || !cp.id) return;
+      if (!periodMap.has(cp.id)) {
+        periodMap.set(cp.id, cp);
+      } else {
+        const existing = periodMap.get(cp.id);
+        const existingTime = new Date(existing.updatedAt || existing.createdAt || 0).getTime();
+        const clientTime = new Date(cp.updatedAt || cp.createdAt || 0).getTime();
+        if (clientTime >= existingTime) {
+          periodMap.set(cp.id, cp);
+        }
+      }
+    });
+
+    const merged = Array.from(periodMap.values());
+    merged.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+    savePeriods(merged);
+    res.json({ success: true, total: merged.length, periods: merged });
+  });
+
+  // Delete period
+  app.delete('/api/periods/:id', (req, res) => {
+    const { id } = req.params;
+    const list = readPeriods().filter(p => p.id !== id);
+    savePeriods(list);
+    res.json({ success: true, id, remainingCount: list.length });
   });
 
   // Vite middleware for development vs static serve for production

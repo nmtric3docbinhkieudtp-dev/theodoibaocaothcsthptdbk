@@ -69,11 +69,24 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
   // Pending reviews for current user
   const pendingApprovals = submissions.filter((s: ReportSubmission) => {
-    if (isDeptHead && currentUser.role === 'dept_head') {
-      return s.departmentId === currentUser.departmentId && s.status === 'submitted';
+    if (isAdmin) {
+      return s.status === 'submitted' || s.status === 'dept_approved';
     }
+    const isHomeroomSub = Boolean(
+      s.isHomeroomReport || 
+      s.periodTitle?.toLowerCase().includes('chủ nhiệm') || 
+      s.periodTitle?.toLowerCase().includes('phụ huynh') || 
+      s.periodTitle?.toLowerCase().includes('53 lớp')
+    );
     if (isPrincipal) {
-      return s.status === 'dept_approved';
+      if (isHomeroomSub) {
+        return s.status === 'submitted' || s.status === 'dept_approved';
+      }
+      return s.status === 'dept_approved' || (s.departmentId === 'bgh' && s.status === 'submitted');
+    }
+    if (isDeptHead && currentUser.role === 'dept_head') {
+      if (isHomeroomSub) return false;
+      return s.departmentId === currentUser.departmentId && s.status === 'submitted';
     }
     return false;
   });

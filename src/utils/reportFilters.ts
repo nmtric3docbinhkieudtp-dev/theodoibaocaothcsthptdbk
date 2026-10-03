@@ -1,4 +1,5 @@
 import { User, ReportPeriod, ReportSubmission, TargetAudienceType } from '../types';
+import { HOMEROOM_ROSTER_53 } from '../data/staffRoster';
 
 function normalizeIdentity(value?: string): string {
   return (value || '').trim().toLocaleLowerCase('vi-VN').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
@@ -26,24 +27,37 @@ export function isUserEligibleForPeriod(user: User, period: ReportPeriod): boole
     return Boolean(period.targetUserIds && period.targetUserIds.includes(user.id));
   }
 
+  // Resilient Homeroom Teacher verification (checks flag, assigned class, and official 53 roster)
+  const isHomeroom = Boolean(
+    user.isHomeroomTeacher || 
+    (user.homeroomClass && user.homeroomClass.trim().length > 0) ||
+    HOMEROOM_ROSTER_53.some(h => normalizeIdentity(h.teacherName) === normalizeIdentity(user.name))
+  );
+
   // 1. Homeroom Teachers target
   if (period.targetAudience === 'homeroom_teachers') {
-    return Boolean(user.isHomeroomTeacher);
+    return isHomeroom;
   }
 
   // 1a. GVCN Điểm chính (14 lớp THPT: 10CB1-10CB5, 11CB1-11CB4, 12CB1-12CB5)
   if (period.targetAudience === 'gvcn_diem_chinh') {
-    return Boolean(user.isHomeroomTeacher && (user.homeroomCampus === 'THPT' || user.homeroomCampus === 'DiemChinh'));
+    const hr = HOMEROOM_ROSTER_53.find(h => normalizeIdentity(h.teacherName) === normalizeIdentity(user.name));
+    const campus = user.homeroomCampus || hr?.campus;
+    return isHomeroom && (campus === 'THPT' || campus === 'DiemChinh');
   }
 
   // 1b. GVCN Điểm Đốc Binh Kiều (24 lớp THCS: 6A1-6A6, 7A1-7A6, 8A1-8A6, 9A1-9A6)
   if (period.targetAudience === 'gvcn_doc_binh_kieu') {
-    return Boolean(user.isHomeroomTeacher && (user.homeroomCampus === 'DBK' || user.homeroomCampus === 'DocBinhKieu'));
+    const hr = HOMEROOM_ROSTER_53.find(h => normalizeIdentity(h.teacherName) === normalizeIdentity(user.name));
+    const campus = user.homeroomCampus || hr?.campus;
+    return isHomeroom && (campus === 'DBK' || campus === 'DocBinhKieu');
   }
 
   // 1c. GVCN Điểm Tân Kiều (15 lớp THCS: 6A7-6A10, 7A7-7A9, 8A7-8A10, 9A7-9A10)
   if (period.targetAudience === 'gvcn_tan_kieu') {
-    return Boolean(user.isHomeroomTeacher && (user.homeroomCampus === 'TK' || user.homeroomCampus === 'TanKieu'));
+    const hr = HOMEROOM_ROSTER_53.find(h => normalizeIdentity(h.teacherName) === normalizeIdentity(user.name));
+    const campus = user.homeroomCampus || hr?.campus;
+    return isHomeroom && (campus === 'TK' || campus === 'TanKieu');
   }
 
   // 2. Department heads only (Chỉ Tổ trưởng & Tổ phó chuyên môn - 19 Thầy/Cô)

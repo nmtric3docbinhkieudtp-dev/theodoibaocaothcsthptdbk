@@ -26,6 +26,7 @@ export interface ConsolidatedDeptMeeting {
   minutes: DepartmentMeetingMinutesData | null;
   reportContent?: string;
   submission?: ReportSubmission | null;
+  detailedAnswers?: Record<string, string>;
 }
 
 export interface ConsolidatedDeptHeadStat {
@@ -1191,13 +1192,120 @@ export function aggregatePeriodReportData(
     };
   });
 
+  // Helper: Trích xuất tự động thông tin biên bản họp tổ từ các trường biểu mẫu (Form fields)
+  function extractMeetingMinutesFromSubmission(
+    subItem: ReportSubmission | null | undefined
+  ): { minutes: DepartmentMeetingMinutesData | null; detailedAnswers: Record<string, string> } {
+    const detailedAnswers: Record<string, string> = {};
+    if (!subItem) return { minutes: null, detailedAnswers };
+
+    const customValues = subItem.structuredData?.customFieldValues || {};
+    const fList = subItem.structuredData?.customFields || period?.fields || [];
+
+    // Map all fields into detailedAnswers by key (field id & normalized label)
+    fList.forEach(f => {
+      const val = customValues[f.id];
+      if (val !== undefined && val !== null && String(val).trim()) {
+        detailedAnswers[f.id] = String(val).trim();
+        detailedAnswers[f.label.trim().toLowerCase()] = String(val).trim();
+      }
+    });
+
+    if (subItem.structuredData?.departmentMeetingMinutes) {
+      return { minutes: subItem.structuredData.departmentMeetingMinutes, detailedAnswers };
+    }
+
+    if (Object.keys(customValues).length === 0) {
+      return { minutes: null, detailedAnswers };
+    }
+
+    const getVal = (kw: string, excludeKw: string | null = null): string => {
+      const f = fList.find(item => {
+        const l = item.label.toLowerCase();
+        if (!l.includes(kw.toLowerCase())) return false;
+        if (excludeKw && l.includes(excludeKw.toLowerCase())) return false;
+        return true;
+      });
+      return f && customValues[f.id] !== undefined && customValues[f.id] !== null
+        ? String(customValues[f.id]).trim()
+        : '';
+    };
+
+    const timeStr = getVal('thời gian họp') || getVal('thời gian');
+    let timeHour = '';
+    let timeMinute = '';
+    if (timeStr) {
+      const m = timeStr.match(/(\d{1,2})\s*(?:giờ|h|g|:)\s*(\d{1,2})?/i);
+      if (m) {
+        timeHour = m[1];
+        timeMinute = m[2] || '00';
+      } else {
+        timeHour = timeStr;
+      }
+    }
+
+    const endTimeStr = getVal('kết thúc');
+    let endHour = '';
+    let endMinute = '';
+    if (endTimeStr) {
+      const m = endTimeStr.match(/(\d{1,2})\s*(?:giờ|h|g|:)\s*(\d{1,2})?/i);
+      if (m) {
+        endHour = m[1];
+        endMinute = m[2] || '00';
+      }
+    }
+
+    const absentWithPermStr = getVal('vắng có phép');
+    const absentNoPermStr = getVal('vắng không phép');
+
+    const minutes: DepartmentMeetingMinutesData = {
+      departmentName: subItem.departmentName || '',
+      meetingNumber: 'Lần 2',
+      academicYear: '2026 - 2027',
+      timeHour: timeHour || '15',
+      timeMinute: timeMinute || '30',
+      meetingDate: '17',
+      meetingMonth: '9',
+      meetingYear: '2026',
+      location: getVal('địa điểm') || getVal('phòng'),
+      totalMembers: getVal('tổng số thành viên của tổ') || getVal('tổng số thành viên'),
+      presentMembers: getVal('tổng số thành viên tham dự') || getVal('tham dự'),
+      absentCount: absentWithPermStr || '0',
+      absentWithPermission: absentWithPermStr,
+      absentReason: absentWithPermStr,
+      absentWithoutPermission: absentNoPermStr,
+      chairPerson: getVal('chủ trì') || subItem.authorName,
+      chairTitle: 'Tổ trưởng chuyên môn',
+      secretary: getVal('thư ký'),
+      reviewStrengths: getVal('ưu điểm'),
+      reviewWeaknesses: getVal('hạn chế', 'nguyên nhân'),
+      reviewCauses: getVal('nguyên nhân'),
+      reviewSolutions: getVal('giải pháp'),
+      documentsDeployed: getVal('triển khai các văn bản') || getVal('văn bản'),
+      centralTasks: [
+        getVal('dự thảo kế hoạch giáo dục'),
+        getVal('kế hoạch bài dạy') || getVal('phân phối chương trình'),
+        getVal('sinh hoạt chuyên môn'),
+        getVal('hòa nhập'),
+        getVal('kiểm tra đánh giá')
+      ].filter(Boolean).join('\n\n'),
+      memberOpinions: getVal('ý kiến của các thành viên trong cuộc họp') || getVal('ý kiến của các thành viên'),
+      conclusion: getVal('5. kết luận') || getVal('kết luận'),
+      recommendations: getVal('kiến nghị với nhà trường') || getVal('đề xuất, kiến nghị'),
+      endHour,
+      endMinute
+    };
+
+    return { minutes, detailedAnswers };
+  }
+
   // 7. Xử lý biên bản họp tổ chuyên môn nếu có
   const isDeptMeetingAudience = 
     (period?.title || periodTitle).toLowerCase().includes('họp tổ') ||
     (period?.title || periodTitle).toLowerCase().includes('biên bản') ||
     (period?.title || periodTitle).toLowerCase().includes('chuyên môn') ||
     period?.targetAudience === 'dept_heads_only' ||
-    periodSubs.some(s => !!s.structuredData?.departmentMeetingMinutes);
+    periodSubs.some(s => !!s.structuredData?.departmentMeetingMinutes || !!s.structuredData?.customFieldValues);
 
   const deptMeetingMinutesList: ConsolidatedDeptMeeting[] = [];
   const processedDeptKeys = new Set<string>();
@@ -1211,7 +1319,7 @@ export function aggregatePeriodReportData(
       (s.authorName && s.authorName.trim().toLowerCase() === dept.headUserName.trim().toLowerCase())
     );
     const sub = userSubs.find(s => s.status !== 'draft') || userSubs[0];
-    const minutes = sub?.structuredData?.departmentMeetingMinutes || null;
+    const { minutes, detailedAnswers } = extractMeetingMinutesFromSubmission(sub);
 
     deptMeetingMinutesList.push({
       stt: idx + 1,
@@ -1224,32 +1332,34 @@ export function aggregatePeriodReportData(
       submissionId: sub?.id || null,
       minutes,
       reportContent: sub?.content || '',
-      submission: sub || null
+      submission: sub || null,
+      detailedAnswers
     });
 
     processedDeptKeys.add(dept.id);
     processedDeptKeys.add(dept.name.toLowerCase());
   });
 
-  // Bổ sung các submission có minutes từ các tổ khác (nếu có)
+  // Bổ sung các submission có minutes hoặc customFieldValues từ các tổ khác (nếu có)
   periodSubs.forEach(s => {
     if (s.status !== 'draft') {
-      const minutes = s.structuredData?.departmentMeetingMinutes;
+      const { minutes, detailedAnswers } = extractMeetingMinutesFromSubmission(s);
       const dName = minutes?.departmentName || s.departmentName || '';
       const dId = s.departmentId || '';
-      if (minutes && (!processedDeptKeys.has(dId) && !processedDeptKeys.has(dName.toLowerCase()))) {
+      if ((minutes || s.content) && (!processedDeptKeys.has(dId) && !processedDeptKeys.has(dName.toLowerCase()))) {
         deptMeetingMinutesList.push({
           stt: deptMeetingMinutesList.length + 1,
           departmentId: dId || `dept-other-${deptMeetingMinutesList.length + 1}`,
           departmentName: dName ? (dName.toLowerCase().startsWith('tổ') ? dName : `Tổ ${dName}`) : 'Tổ Chuyên Môn',
-          teacherName: minutes.chairPerson || s.authorName,
+          teacherName: minutes?.chairPerson || s.authorName,
           roleTitle: s.authorRoleTitle || 'Tổ trưởng chuyên môn',
           hasSubmitted: true,
           submittedAt: s.submittedAt || null,
           submissionId: s.id,
           minutes,
           reportContent: s.content || '',
-          submission: s
+          submission: s,
+          detailedAnswers
         });
         if (dId) processedDeptKeys.add(dId);
         if (dName) processedDeptKeys.add(dName.toLowerCase());

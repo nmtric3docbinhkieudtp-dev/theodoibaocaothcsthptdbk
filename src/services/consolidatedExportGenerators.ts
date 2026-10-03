@@ -483,6 +483,66 @@ export function renderConsolidatedDepartmentMeetingContent(
   const totalDepts = allDepts.length;
   const submittedCount = submittedMeetings.length;
 
+  const getDeptAnswer = (m: ConsolidatedDeptMeeting, kw: string, excludeKw: string | null = null): string => {
+    if (m.detailedAnswers) {
+      for (const [key, val] of Object.entries(m.detailedAnswers)) {
+        const kLower = key.toLowerCase();
+        if (kLower.includes(kw.toLowerCase())) {
+          if (excludeKw && kLower.includes(excludeKw.toLowerCase())) continue;
+          if (val && val.trim()) return val.trim();
+        }
+      }
+    }
+    const customValues = m.submission?.structuredData?.customFieldValues || {};
+    const fList = m.submission?.structuredData?.customFields || data.period?.fields || [];
+    const f = fList.find(item => {
+      const l = item.label.toLowerCase();
+      if (!l.includes(kw.toLowerCase())) return false;
+      if (excludeKw && l.includes(excludeKw.toLowerCase())) return false;
+      return true;
+    });
+    if (f && customValues[f.id] !== undefined && customValues[f.id] !== null) {
+      return String(customValues[f.id]).trim();
+    }
+    return '';
+  };
+
+  // Subtopics for Section 3
+  const subTasks = [
+    {
+      id: 'khgd',
+      title: '3.1. Ý kiến về dự thảo Kế hoạch giáo dục nhà trường',
+      kw: 'dự thảo kế hoạch giáo dục'
+    },
+    {
+      id: 'ppct',
+      title: '3.2. Ý kiến về xây dựng Kế hoạch giáo dục của tổ chuyên môn, Kế hoạch bài dạy (KHBD), Phân phối chương trình (PPCT)',
+      kw: 'kế hoạch bài dạy'
+    },
+    {
+      id: 'shcm',
+      title: '3.3. Ý kiến về triển khai văn bản hướng dẫn nội dung sinh hoạt chuyên môn',
+      kw: 'sinh hoạt chuyên môn'
+    },
+    {
+      id: 'hoanhap',
+      title: '3.4. Ý kiến về công tác giáo dục hòa nhập (học sinh khuyết tật)',
+      kw: 'hòa nhập'
+    },
+    {
+      id: 'ktdg',
+      title: '3.5. Ý kiến về thực hiện công tác kiểm tra đánh giá',
+      kw: 'kiểm tra đánh giá'
+    }
+  ];
+
+  const hasSubTasks = subTasks.some(st => 
+    submittedMeetings.some(m => {
+      const ans = getDeptAnswer(m, st.kw);
+      return ans && ans !== 'Không' && ans !== 'Không ý kiến' && ans !== 'Không có';
+    })
+  );
+
   return `
     <!-- PHẦN I: TÌNH HÌNH TỔ CHỨC HỌP CỦA CÁC TỔ CHUYÊN MÔN -->
     <div style="margin-top: 14px; text-align: justify; font-size: 13pt; line-height: 1.55;">
@@ -509,23 +569,24 @@ export function renderConsolidatedDepartmentMeetingContent(
           }
           const min = d.minutes;
           if (min) {
-            const timeParts: string[] = [];
-            if (min.timeHour) timeParts.push(`vào lúc ${min.timeHour} giờ ${min.timeMinute || '00'} phút`);
-            if (min.meetingDate) timeParts.push(`ngày ${min.meetingDate} tháng ${min.meetingMonth || '9'} năm ${min.meetingYear || year}`);
-            const timeStr = timeParts.length > 0 ? timeParts.join(', ') : 'theo kế hoạch sinh hoạt tổ';
+            const timeStr = min.timeHour 
+              ? (min.timeHour.includes('giờ') || min.timeHour.includes('h') ? min.timeHour : `${min.timeHour} giờ ${min.timeMinute || '00'} phút`)
+              : 'theo kế hoạch sinh hoạt tổ';
             const locStr = min.location ? `tại ${min.location}` : '';
             const chairStr = min.chairPerson ? `Chủ trì: ${min.chairPerson}${min.chairTitle ? ` (${min.chairTitle})` : ''}` : `Chủ trì: ${d.teacherName}`;
             const secStr = min.secretary ? `; Thư ký: ${min.secretary}` : '';
             const memParts: string[] = [];
             if (min.totalMembers) memParts.push(`Tổng số thành viên: ${min.totalMembers}`);
-            if (min.presentMembers !== undefined && min.presentMembers !== null) memParts.push(`có mặt: ${min.presentMembers}`);
-            if (min.absentCount !== undefined && min.absentCount !== null) {
-              memParts.push(`vắng: ${min.absentCount}${min.absentReason ? ` (Lý do: ${min.absentReason})` : ''}`);
+            if (min.presentMembers !== undefined && min.presentMembers !== null && min.presentMembers !== '') {
+              memParts.push(`có mặt: ${min.presentMembers}`);
+            }
+            if (min.absentCount && min.absentCount !== '0' && min.absentCount !== 'Không') {
+              memParts.push(`vắng: ${min.absentCount}`);
             }
             const memberStr = memParts.length > 0 ? `; ${memParts.join(', ')}` : '';
             return `
               <p style="margin: 3px 0; text-align: justify;">
-                + <b>${d.departmentName}:</b> Họp ${timeStr} ${locStr}. ${chairStr}${secStr}${memberStr}.
+                + <b>${d.departmentName}:</b> Họp ${timeStr ? `vào lúc ${timeStr}` : ''} ${locStr}. ${chairStr}${secStr}${memberStr}.
               </p>
             `;
           } else {
@@ -556,22 +617,25 @@ export function renderConsolidatedDepartmentMeetingContent(
         <p style="font-weight: bold; margin: 4px 0;">
           1. Đánh giá hoạt động của tổ trong thời gian qua:
         </p>
-        ${submittedMeetings.map(m => {
+        ${submittedMeetings.filter(m => {
           const min = m.minutes;
-          const strengths = min?.reviewStrengths?.trim() || '(Không ghi)';
-          const weaknesses = min?.reviewWeaknesses?.trim() || '(Không có)';
-          const causes = min?.reviewCauses?.trim() || '(Không có)';
-          const solutions = min?.reviewSolutions?.trim() || '(Không có)';
+          return !!(min?.reviewStrengths?.trim() || min?.reviewWeaknesses?.trim());
+        }).map(m => {
+          const min = m.minutes;
+          const strengths = min?.reviewStrengths?.trim() || '';
+          const weaknesses = min?.reviewWeaknesses?.trim() || '';
+          const causes = min?.reviewCauses?.trim() || '';
+          const solutions = min?.reviewSolutions?.trim() || '';
           return `
             <div style="margin: 8px 0 10px 15px; text-align: justify;">
               <p style="margin: 2px 0; font-weight: bold;">
                 • ${m.departmentName}:
               </p>
               <div style="padding-left: 15px;">
-                <p style="margin: 2px 0;">- <i>Ưu điểm:</i> ${strengths}</p>
-                <p style="margin: 2px 0;">- <i>Hạn chế:</i> ${weaknesses}</p>
-                <p style="margin: 2px 0;">- <i>Nguyên nhân của hạn chế:</i> ${causes}</p>
-                <p style="margin: 2px 0;">- <i>Giải pháp khắc phục:</i> ${solutions}</p>
+                ${strengths ? `<div style="margin: 2px 0;">- <i>Ưu điểm:</i> ${renderSmartTextParagraphs(strengths, false)}</div>` : ''}
+                ${weaknesses && weaknesses !== 'Không' && weaknesses !== 'Không có' ? `<div style="margin: 2px 0;">- <i>Hạn chế:</i> ${renderSmartTextParagraphs(weaknesses, false)}</div>` : (weaknesses === 'Không' || weaknesses === 'Không có' ? `<p style="margin: 2px 0;">- <i>Hạn chế:</i> Không</p>` : '')}
+                ${causes && causes !== 'Không' && causes !== 'Không có' ? `<div style="margin: 2px 0;">- <i>Nguyên nhân của hạn chế:</i> ${renderSmartTextParagraphs(causes, false)}</div>` : ''}
+                ${solutions && solutions !== 'Không' && solutions !== 'Không có' ? `<div style="margin: 2px 0;">- <i>Giải pháp khắc phục:</i> ${renderSmartTextParagraphs(solutions, false)}</div>` : ''}
               </div>
             </div>
           `;
@@ -583,7 +647,7 @@ export function renderConsolidatedDepartmentMeetingContent(
         <p style="font-weight: bold; margin: 4px 0;">
           2. Triển khai các văn bản:
         </p>
-        ${submittedMeetings.map(m => {
+        ${submittedMeetings.filter(m => !!m.minutes?.documentsDeployed?.trim()).map(m => {
           const docs = m.minutes?.documentsDeployed?.trim() || '';
           return `
             <div style="margin: 8px 0 10px 15px; text-align: justify;">
@@ -591,7 +655,7 @@ export function renderConsolidatedDepartmentMeetingContent(
                 • ${m.departmentName}:
               </p>
               <div style="padding-left: 15px;">
-                ${docs ? renderSmartTextParagraphs(docs, false) : '<p style="margin: 2px 0; font-style: italic; color: #555;">(Không ghi nhận)</p>'}
+                ${renderSmartTextParagraphs(docs, false)}
               </div>
             </div>
           `;
@@ -603,7 +667,33 @@ export function renderConsolidatedDepartmentMeetingContent(
         <p style="font-weight: bold; margin: 4px 0;">
           3. Triển khai nội dung công việc trọng tâm của trường/tổ:
         </p>
-        ${submittedMeetings.map(m => {
+        ${hasSubTasks ? subTasks.map(st => {
+          const deptsWithAns = submittedMeetings.filter(m => {
+            const ans = getDeptAnswer(m, st.kw);
+            return ans && ans !== 'Không' && ans !== 'Không ý kiến' && ans !== 'Không có' && ans !== 'Chưa nhập';
+          });
+          if (deptsWithAns.length === 0) return '';
+          return `
+            <div style="margin: 10px 0 8px 10px; text-align: justify;">
+              <p style="margin: 4px 0; font-weight: bold; color: #1e3a8a;">
+                ${st.title}:
+              </p>
+              <div style="padding-left: 12px;">
+                ${deptsWithAns.map(m => {
+                  const ans = getDeptAnswer(m, st.kw);
+                  return `
+                    <div style="margin: 6px 0;">
+                      <p style="margin: 2px 0; font-weight: bold;">• ${m.departmentName}:</p>
+                      <div style="padding-left: 15px;">
+                        ${renderSmartTextParagraphs(ans, false)}
+                      </div>
+                    </div>
+                  `;
+                }).join('')}
+              </div>
+            </div>
+          `;
+        }).join('') : submittedMeetings.filter(m => !!m.minutes?.centralTasks?.trim()).map(m => {
           const tasks = m.minutes?.centralTasks?.trim() || '';
           return `
             <div style="margin: 8px 0 10px 15px; text-align: justify;">
@@ -611,7 +701,7 @@ export function renderConsolidatedDepartmentMeetingContent(
                 • ${m.departmentName}:
               </p>
               <div style="padding-left: 15px;">
-                ${tasks ? renderSmartTextParagraphs(tasks, false) : '<p style="margin: 2px 0; font-style: italic; color: #555;">(Không ghi nhận)</p>'}
+                ${renderSmartTextParagraphs(tasks, false)}
               </div>
             </div>
           `;
@@ -623,7 +713,10 @@ export function renderConsolidatedDepartmentMeetingContent(
         <p style="font-weight: bold; margin: 4px 0;">
           4. Ý kiến của các thành viên trong cuộc họp đối với trường/tổ/cá nhân:
         </p>
-        ${submittedMeetings.map(m => {
+        ${submittedMeetings.filter(m => {
+          const op = m.minutes?.memberOpinions?.trim();
+          return op && op !== 'Không' && op !== 'Không.' && op !== 'Không có' && op !== 'Không ý kiến';
+        }).map(m => {
           const opinions = m.minutes?.memberOpinions?.trim() || '';
           return `
             <div style="margin: 8px 0 10px 15px; text-align: justify;">
@@ -631,7 +724,7 @@ export function renderConsolidatedDepartmentMeetingContent(
                 • ${m.departmentName}:
               </p>
               <div style="padding-left: 15px;">
-                ${opinions ? renderSmartTextParagraphs(opinions, false) : '<p style="margin: 2px 0; font-style: italic; color: #555;">(Không có ý kiến)</p>'}
+                ${renderSmartTextParagraphs(opinions, false)}
               </div>
             </div>
           `;
@@ -643,7 +736,10 @@ export function renderConsolidatedDepartmentMeetingContent(
         <p style="font-weight: bold; margin: 4px 0;">
           5. Kết luận của chủ trì:
         </p>
-        ${submittedMeetings.map(m => {
+        ${submittedMeetings.filter(m => {
+          const conc = m.minutes?.conclusion?.trim();
+          return conc && conc !== 'Không' && conc !== 'Chưa nhập';
+        }).map(m => {
           const conclusion = m.minutes?.conclusion?.trim() || '';
           const chairName = m.minutes?.chairPerson || m.teacherName;
           return `
@@ -652,7 +748,7 @@ export function renderConsolidatedDepartmentMeetingContent(
                 • ${m.departmentName} (${chairName} - Chủ trì):
               </p>
               <div style="padding-left: 15px;">
-                ${conclusion ? renderSmartTextParagraphs(conclusion, false) : '<p style="margin: 2px 0; font-style: italic; color: #555;">(Không ghi nhận kết luận riêng)</p>'}
+                ${renderSmartTextParagraphs(conclusion, false)}
               </div>
             </div>
           `;
@@ -664,7 +760,10 @@ export function renderConsolidatedDepartmentMeetingContent(
         <p style="font-weight: bold; margin: 4px 0;">
           6. Đề xuất, kiến nghị với nhà trường:
         </p>
-        ${submittedMeetings.map(m => {
+        ${submittedMeetings.filter(m => {
+          const rec = m.minutes?.recommendations?.trim();
+          return rec && rec !== 'Không' && rec !== 'Không có' && rec !== 'Chưa nhập';
+        }).map(m => {
           const recs = m.minutes?.recommendations?.trim() || '';
           return `
             <div style="margin: 8px 0 10px 15px; text-align: justify;">
@@ -672,43 +771,28 @@ export function renderConsolidatedDepartmentMeetingContent(
                 • ${m.departmentName}:
               </p>
               <div style="padding-left: 15px;">
-                ${recs ? renderSmartTextParagraphs(recs, false) : '<p style="margin: 2px 0; font-style: italic; color: #555;">(Không có đề xuất, kiến nghị)</p>'}
+                ${renderSmartTextParagraphs(recs, false)}
               </div>
             </div>
           `;
         }).join('')}
       </div>
 
-      <!-- MỤC 7: NỘI DUNG VĂN BẢN BÁO CÁO BỔ SUNG CỦA TỔ (NẾU CÓ) -->
-      ${(() => {
-        const extraTextDepts = submittedMeetings.filter(m => m.reportContent && m.reportContent.trim());
-        if (extraTextDepts.length === 0) return '';
-        return `
-          <div style="margin-top: 16px; text-align: justify; font-size: 13pt; line-height: 1.55;">
-            <p style="font-weight: bold; margin: 4px 0;">
-              7. Nội dung báo cáo văn bản &amp; ý kiến bổ sung từ các tổ:
-            </p>
-            ${extraTextDepts.map(m => `
-              <div style="margin: 8px 0 10px 15px; text-align: justify;">
-                <p style="margin: 2px 0; font-weight: bold;">
-                  • ${m.departmentName} (Người gửi: ${m.teacherName}):
-                </p>
-                <div style="padding-left: 15px;">
-                  ${renderSmartTextParagraphs(m.reportContent || '', false)}
-                </div>
-              </div>
-            `).join('')}
-          </div>
-        `;
-      })()}
-
-      <!-- MỤC 8: THỜI GIAN KẾT THÚC & THÔNG QUA BIÊN BẢN -->
+      <!-- THỜI GIAN KẾT THÚC & THÔNG QUA BIÊN BẢN -->
       <div style="margin-top: 16px; text-align: justify; font-size: 13pt; line-height: 1.55;">
-        ${submittedMeetings.filter(m => m.minutes?.endHour).map(m => `
-          <p style="margin: 3px 0; text-indent: 15px; font-style: italic;">
-            - Cuộc họp của <b>${m.departmentName}</b> kết thúc vào lúc ${m.minutes!.endHour} giờ ${m.minutes!.endMinute || '00'} phút cùng ngày; biên bản đã được thông qua toàn thể cuộc họp và thống nhất ký tên lưu hồ sơ./.
-          </p>
-        `).join('')}
+        ${submittedMeetings.filter(m => {
+          const end = m.minutes?.endHour || getDeptAnswer(m, 'kết thúc');
+          return !!end;
+        }).map(m => {
+          const endText = m.minutes?.endHour 
+            ? `${m.minutes.endHour} giờ ${m.minutes.endMinute || '00'} phút cùng ngày`
+            : getDeptAnswer(m, 'kết thúc');
+          return `
+            <p style="margin: 3px 0; text-indent: 15px; font-style: italic;">
+              - Cuộc họp của <b>${m.departmentName}</b> kết thúc vào lúc ${endText}; biên bản đã được thông qua toàn thể cuộc họp và thống nhất lưu hồ sơ./.
+            </p>
+          `;
+        }).join('')}
       </div>
     `}
   `;
@@ -1242,17 +1326,8 @@ export function generateConsolidatedWordHtml(
         </div>
 
         ${isMeetingMinutesReport ? `
-          <!-- BÁO CÁO TỔNG HỢP BIÊN BẢN HỌP CỦA CÁC TỔ CHUYÊN MÔN -->
+          <!-- BÁO CÁO TỔNG HỢP BIÊN BẢN HỌP CỦA CÁC TỔ CHUYÊN MÔN (ĐÃ TỔNG HỢP TRỌN VẸN THEO CÁC MỤC BIỂU MẪU) -->
           ${renderConsolidatedDepartmentMeetingContent(data, currentUser, schoolInfo, year)}
-
-          ${formBreakdownHtml ? `
-            <div style="margin-top: 24px;">
-              <h3 style="font-size: 11.5pt; font-weight: bold; text-transform: uppercase; color: #000; border-bottom: 1.5px solid #000; padding-bottom: 4px;">
-                TỔNG HỢP CHI TIẾT THEO CÁC CÂU HỎI &amp; CHỈ SỐ BIỂU MẪU ĐỢT BÁO CÁO
-              </h3>
-              ${formBreakdownHtml}
-            </div>
-          ` : ''}
 
           ${dynamicTablesHtml ? `
             <div style="margin-top: 24px;">
@@ -1755,17 +1830,8 @@ export function generateConsolidatedPrintHtml(
       </div>
 
       ${isMeetingMinutesReport ? `
-        <!-- NỘI DUNG TỔNG HỢP BIÊN BẢN HỌP CỦA CÁC TỔ CHUYÊN MÔN -->
+        <!-- NỘI DUNG TỔNG HỢP BIÊN BẢN HỌP CỦA CÁC TỔ CHUYÊN MÔN (ĐÃ TỔNG HỢP TRỌN VẸN THEO CÁC MỤC BIỂU MẪU) -->
         ${renderConsolidatedDepartmentMeetingContent(data, currentUser, schoolInfo, year)}
-
-        ${printBreakdownHtml ? `
-          <div style="margin-top: 20px;">
-            <h3 style="font-size: 11pt; font-weight: bold; text-transform: uppercase; color: #000; border-bottom: 1px solid #000; padding-bottom: 3px; margin: 12px 0 6px 0;">
-              TỔNG HỢP CHI TIẾT THEO CÁC CÂU HỎI &amp; CHỈ SỐ BIỂU MẪU ĐỢT BÁO CÁO
-            </h3>
-            ${printBreakdownHtml}
-          </div>
-        ` : ''}
 
         ${dynamicTablesPrintHtml ? `
           <div style="margin-top: 20px;">

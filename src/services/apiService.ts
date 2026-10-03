@@ -122,5 +122,31 @@ export const ApiService = {
       console.warn('[ApiService] Failed to save period via server API:', e);
       return null;
     }
+  },
+
+  async batchSyncPeriods(localPeriods: ReportPeriod[]): Promise<ReportPeriod[] | null> {
+    try {
+      const res = await fetch('/api/periods/batch-sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ periods: localPeriods })
+      });
+      if (!res.ok) return null;
+      const data = await res.json();
+      return data.periods || null;
+    } catch (e) {
+      console.warn('[ApiService] Failed to batch-sync periods:', e);
+      return null;
+    }
+  },
+
+  async deletePeriod(id: string): Promise<boolean> {
+    try {
+      const res = await fetch(`/api/periods/${id}`, { method: 'DELETE' });
+      return res.ok;
+    } catch (e) {
+      console.warn('[ApiService] Failed to delete period via server API:', e);
+      return false;
+    }
   }
 };

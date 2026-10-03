@@ -41,24 +41,40 @@ export const ApprovalQueue: React.FC<ApprovalQueueProps> = ({
 
   // Filter submissions based on role
   const pendingApprovals = submissions.filter((sub) => {
-    if (isDeptHead && currentUser.role === 'dept_head') {
-      return sub.departmentId === currentUser.departmentId && sub.status === 'submitted';
-    }
-    if (isPrincipal) {
-      return sub.status === 'dept_approved' || (sub.departmentId === 'bgh' && sub.status === 'submitted');
-    }
+    // 1. Admin has supreme oversight: sees all submissions waiting for approval (both submitted and dept_approved)
     if (isAdmin) {
       return sub.status === 'submitted' || sub.status === 'dept_approved';
+    }
+    // 2. Homeroom reports (53 GVCN) go straight to Principal / BGH without waiting for subject department head
+    const isHomeroomSub = Boolean(
+      sub.isHomeroomReport || 
+      sub.periodTitle?.toLowerCase().includes('chủ nhiệm') || 
+      sub.periodTitle?.toLowerCase().includes('phụ huynh') || 
+      sub.periodTitle?.toLowerCase().includes('53 lớp')
+    );
+    if (isPrincipal) {
+      if (isHomeroomSub) {
+        return sub.status === 'submitted' || sub.status === 'dept_approved';
+      }
+      return sub.status === 'dept_approved' || (sub.departmentId === 'bgh' && sub.status === 'submitted');
+    }
+    // 3. Department heads only review subject reports of their own department (not homeroom reports)
+    if (isDeptHead && currentUser.role === 'dept_head') {
+      if (isHomeroomSub) return false;
+      return sub.departmentId === currentUser.departmentId && sub.status === 'submitted';
     }
     return false;
   });
 
   const reviewedApprovals = submissions.filter((sub) => {
-    if (isDeptHead && currentUser.role === 'dept_head') {
-      return sub.departmentId === currentUser.departmentId && sub.status !== 'submitted' && sub.status !== 'draft';
+    if (isAdmin) {
+      return sub.status === 'principal_approved' || sub.status === 'principal_rejected' || sub.status === 'dept_approved';
     }
     if (isPrincipal) {
       return sub.status === 'principal_approved' || sub.status === 'principal_rejected';
+    }
+    if (isDeptHead && currentUser.role === 'dept_head') {
+      return sub.departmentId === currentUser.departmentId && sub.status !== 'submitted' && sub.status !== 'draft';
     }
     return false;
   });

@@ -61,9 +61,16 @@ export const PeriodConsolidationModal: React.FC<PeriodConsolidationModalProps> =
   // Selected period state
   const [selectedPeriodId, setSelectedPeriodId] = useState<string>(() => {
     if (defaultPeriodId) return defaultPeriodId;
-    // Prefer period with 'gvcn' or 'tập trung' or first active
-    const homeroomPeriod = periods.find(p => p.id.includes('gvcn') || p.title.toLowerCase().includes('chủ nhiệm') || p.title.toLowerCase().includes('tập trung'));
-    return homeroomPeriod?.id || periods[0]?.id || 'all';
+    // Prefer the latest homeroom period (sorted by createdAt descending)
+    const sortedPeriods = [...periods].sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+    const homeroomPeriod = sortedPeriods.find(p => 
+      p.targetAudience === 'homeroom_teachers' || 
+      p.id.includes('gvcn') || 
+      p.title.toLowerCase().includes('chủ nhiệm') || 
+      p.title.toLowerCase().includes('phụ huynh') ||
+      p.title.toLowerCase().includes('tập trung')
+    );
+    return homeroomPeriod?.id || sortedPeriods[0]?.id || 'all';
   });
 
   // Active tab state

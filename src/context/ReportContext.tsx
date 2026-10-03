@@ -10,7 +10,7 @@ import {
   ReviewHistory,
   SubmissionStatus
 } from '../types';
-import { StorageService, setLocal, VALID_DEPT_IDS, cleanFirestorePayload, pushSingleSubmissionToFirestore } from '../services/storage';
+import { StorageService, setLocal, VALID_DEPT_IDS, cleanFirestorePayload, pushSingleSubmissionToFirestore, getDeletedSubmissionIds, deleteSingleSubmissionFromFirestore } from '../services/storage';
 import { 
   getStoredFirebaseConfig, 
   saveStoredFirebaseConfig, 
@@ -20,7 +20,7 @@ import {
   isFirestoreWriteQuotaExceeded,
   clearFirestoreWriteQuotaStatus
 } from '../services/firebase';
-import { collection, doc, onSnapshot, getDocs, getDoc } from 'firebase/firestore';
+import { collection, doc, onSnapshot, getDocs, getDoc, setDoc, deleteDoc } from 'firebase/firestore';
 import { OFFICIAL_DEPARTMENTS, OFFICIAL_USERS } from '../data/staffRoster';
 import { INITIAL_SUBMISSIONS, INITIAL_PERIODS } from '../data/initialData';
 import { EmailService } from '../services/emailService';
@@ -271,15 +271,17 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       // Realtime listener for Submissions
       try {
         unsubscribeSubs = onSnapshot(collection(db, 'submissions'), (snapshot) => {
+          const deletedIds = getDeletedSubmissionIds();
           const rawList: ReportSubmission[] = !snapshot.empty 
             ? snapshot.docs
                 .map(d => d.data() as ReportSubmission)
-                .filter(s => validStaffIds.has(s.authorId))
+                .filter(s => validStaffIds.has(s.authorId) && !deletedIds.has(s.id))
             : [];
           
           // Enforce strictly 1 submission per teacher per period
           const map = new Map<string, ReportSubmission>();
           for (const s of rawList) {
+            if (deletedIds.has(s.id)) continue;
             const key = `${s.periodId || 'default'}_${s.authorId || s.authorEmail || s.authorName}`;
             const existing = map.get(key);
             if (!existing) {
@@ -299,7 +301,7 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           try {
             const currentLocal = StorageService.getSubmissions();
             currentLocal.forEach(localSub => {
-              if (!localSub || !localSub.id) return;
+              if (!localSub || !localSub.id || deletedIds.has(localSub.id)) return;
               const key = `${localSub.periodId || 'default'}_${localSub.authorId || localSub.authorEmail || localSub.authorName}`;
               const inFirestore = map.get(key);
               if (!inFirestore) {
@@ -389,11 +391,23 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         }
       }
 
-      // Sync periods
-      const serverPeriods = await ApiService.fetchPeriods();
-      if (serverPeriods && Array.isArray(serverPeriods) && serverPeriods.length > 0) {
-        setPeriods(serverPeriods);
-        setLocal('dbk_periods_data', serverPeriods);
+      // Sync periods with server (batch merge without wiping local/firestore periods)
+      const localPeriods = StorageService.getPeriods();
+      const serverMergedPeriods = await ApiService.batchSyncPeriods(localPeriods);
+      if (serverMergedPeriods && Array.isArray(serverMergedPeriods) && serverMergedPeriods.length > 0) {
+        setPeriods(serverMergedPeriods);
+        setLocal('dbk_periods_data', serverMergedPeriods);
+      } else {
+        const fetched = await ApiService.fetchPeriods();
+        if (fetched && Array.isArray(fetched) && fetched.length > 0) {
+          const currentMap = new Map(localPeriods.map(p => [p.id, p]));
+          fetched.forEach(p => {
+            if (!currentMap.has(p.id)) currentMap.set(p.id, p);
+          });
+          const merged = Array.from(currentMap.values());
+          setPeriods(merged);
+          setLocal('dbk_periods_data', merged);
+        }
       }
     } catch (e) {
       console.warn('[ReportContext] Server sync warning:', e);
@@ -671,12 +685,18 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     } catch (e) {
       console.warn('ApiService delete error:', e);
     }
+    try {
+      await deleteSingleSubmissionFromFirestore(id);
+    } catch (fsErr) {
+      console.warn('Firestore delete error:', fsErr);
+    }
   };
 
   const bulkDeleteReports = async (ids: string[]) => {
     let current = submissions;
     for (const id of ids) {
       current = StorageService.deleteSubmission(id);
+      deleteSingleSubmissionFromFirestore(id).catch(() => {});
     }
     setSubmissions(current);
     setLocal('dbk_submissions_data', current);
@@ -866,9 +886,21 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       id: 'period-' + Date.now(),
       createdAt: new Date().toISOString()
     };
-    const updated = StorageService.savePeriod(newPeriod);
+    const cleanPeriod = cleanFirestorePayload(newPeriod);
+    const updated = StorageService.savePeriod(cleanPeriod);
     setPeriods(updated);
     markUnsyncedChanges(1);
+
+    // Save to server API immediately
+    ApiService.savePeriod(cleanPeriod).catch(e => console.warn('ApiService savePeriod error:', e));
+
+    // Push to Firestore immediately
+    const { db, isReady } = getFirebaseInstance();
+    if (isReady && db) {
+      safeFirestoreWrite('create_period', () =>
+        setDoc(doc(db, 'periods', newPeriod.id), cleanPeriod)
+      ).catch(fsErr => console.warn('Firestore period push notice:', fsErr));
+    }
 
     // Broadcast notification to school
     StorageService.addNotification({
@@ -888,10 +920,23 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const updatePeriod = (id: string, periodData: Partial<ReportPeriod>): ReportPeriod => {
     const existing = periods.find(p => p.id === id);
     if (!existing) throw new Error('Không tìm thấy đợt báo cáo');
-    const updatedPeriod = { ...existing, ...periodData };
-    const updated = StorageService.savePeriod(updatedPeriod);
+    const updatedPeriod = { ...existing, ...periodData, updatedAt: new Date().toISOString() };
+    const cleanPeriod = cleanFirestorePayload(updatedPeriod);
+    const updated = StorageService.savePeriod(cleanPeriod);
     setPeriods(updated);
     markUnsyncedChanges(1);
+
+    // Save to server API immediately
+    ApiService.savePeriod(cleanPeriod).catch(e => console.warn('ApiService savePeriod error:', e));
+
+    // Push to Firestore immediately
+    const { db, isReady } = getFirebaseInstance();
+    if (isReady && db) {
+      safeFirestoreWrite('update_period', () =>
+        setDoc(doc(db, 'periods', updatedPeriod.id), cleanPeriod)
+      ).catch(fsErr => console.warn('Firestore period update notice:', fsErr));
+    }
+
     return updatedPeriod;
   };
 
@@ -907,6 +952,17 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     const updated = StorageService.deletePeriod(id);
     setPeriods(updated);
     markUnsyncedChanges(1);
+
+    // Delete from server API immediately
+    ApiService.deletePeriod(id).catch(e => console.warn('ApiService deletePeriod error:', e));
+
+    // Delete from Firestore immediately
+    const { db, isReady } = getFirebaseInstance();
+    if (isReady && db) {
+      safeFirestoreWrite('delete_period', () =>
+        deleteDoc(doc(db, 'periods', id))
+      ).catch(fsErr => console.warn('Firestore period delete notice:', fsErr));
+    }
   };
 
   const clearAllPeriods = async (): Promise<{ count: number }> => {

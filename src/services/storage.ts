@@ -16,7 +16,7 @@ import {
   INITIAL_NOTIFICATIONS 
 } from '../data/initialData';
 import { getFirebaseInstance, safeFirestoreWrite, isFirestoreWriteQuotaExceeded, markFirestoreWriteQuotaExceeded, withTimeout } from './firebase';
-import { collection, doc, getDoc, getDocs, setDoc, writeBatch } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, setDoc, deleteDoc, writeBatch } from 'firebase/firestore';
 
 const STORAGE_KEYS = {
   USERS: 'dbk_users_data',
@@ -24,12 +24,35 @@ const STORAGE_KEYS = {
   DEPARTMENTS: 'dbk_departments_data',
   PERIODS: 'dbk_periods_data',
   SUBMISSIONS: 'dbk_submissions_data',
+  DELETED_SUBMISSION_IDS: 'dbk_deleted_submission_ids',
   NOTIFICATIONS: 'dbk_notifications_data',
   EMAIL_LOGS: 'dbk_email_logs_data',
   SCHOOL_INFO: 'dbk_school_info_data',
   SCHOOL_LOGO: 'dbk_school_custom_logo',
   SEEDED: 'dbk_seeded_v18_persistent_password_fix'
 };
+
+// Known deleted submission IDs that should never be resurrected
+export const PERMANENTLY_DELETED_SUBMISSION_IDS: string[] = [
+  'sub-1789543693690-whpw', // Minh Tho - Hop to chuyen mon lan 2
+  'sub-1789542790475-038o', // Nguyen Thi Kim Ngoc - Hop to chuyen mon lan 2
+  'sub-1789532531578-3vc5'  // Pham Thi Le Huyen - Hop to chuyen mon lan 2
+];
+
+export function getDeletedSubmissionIds(): Set<string> {
+  const localList = getLocal<string[]>(STORAGE_KEYS.DELETED_SUBMISSION_IDS, []);
+  const combined = Array.from(new Set([...PERMANENTLY_DELETED_SUBMISSION_IDS, ...localList]));
+  return new Set(combined);
+}
+
+export function markSubmissionAsDeleted(submissionId: string): void {
+  if (!submissionId) return;
+  const current = getLocal<string[]>(STORAGE_KEYS.DELETED_SUBMISSION_IDS, []);
+  if (!current.includes(submissionId)) {
+    current.push(submissionId);
+    setLocal(STORAGE_KEYS.DELETED_SUBMISSION_IDS, current);
+  }
+}
 
 // Safe LocalStorage helpers
 export function cleanFirestorePayload<T>(obj: T): T {
@@ -388,9 +411,11 @@ export const StorageService = {
   // --- SUBMISSIONS ---
   getSubmissions(): ReportSubmission[] {
     initializeDatabaseIfNeeded();
-    const raw = getLocal<ReportSubmission[]>(STORAGE_KEYS.SUBMISSIONS, []);
+    const deletedIds = getDeletedSubmissionIds();
+    const raw = getLocal<ReportSubmission[]>(STORAGE_KEYS.SUBMISSIONS, []).filter(s => !deletedIds.has(s.id));
     const map = new Map<string, ReportSubmission>();
     for (const s of raw) {
+      if (deletedIds.has(s.id)) continue;
       const key = `${s.periodId || 'default'}_${s.authorId || s.authorEmail || s.authorName}`;
       const existing = map.get(key);
       if (!existing) {
@@ -431,6 +456,7 @@ export const StorageService = {
   },
 
   deleteSubmission(submissionId: string): ReportSubmission[] {
+    markSubmissionAsDeleted(submissionId);
     const subs = this.getSubmissions().filter(s => s.id !== submissionId);
     setLocal(STORAGE_KEYS.SUBMISSIONS, subs);
     return subs;
@@ -625,6 +651,15 @@ export const StorageService = {
         stagedCount++;
       }
 
+      // Check and delete any remote submissions that were deleted locally
+      const deletedIds = getDeletedSubmissionIds();
+      for (const [remoteId] of remoteSubmissions.entries()) {
+        if (deletedIds.has(remoteId)) {
+          batch.delete(doc(db, 'submissions', remoteId));
+          stagedCount++;
+        }
+      }
+
       const schoolPayload = cleanFirestorePayload(schoolInfo);
       if (!remoteSchoolSnap.exists() || JSON.stringify(cleanFirestorePayload(remoteSchoolSnap.data())) !== JSON.stringify(schoolPayload)) {
         batch.set(doc(db, 'metadata', 'schoolInfo'), schoolPayload);
@@ -746,4 +781,27 @@ export async function pushSingleSubmissionToFirestore(
     setDoc(doc(db, 'submissions', submission.id), cleanPayload)
   );
 }
+
+/**
+ * Xóa vĩnh viễn 1 bài nộp trên Cloud Firestore.
+ */
+export async function deleteSingleSubmissionFromFirestore(
+  submissionId: string
+): Promise<{ success: boolean; error?: any }> {
+  markSubmissionAsDeleted(submissionId);
+  const { db, isReady } = getFirebaseInstance();
+  if (!isReady || !db) {
+    return { success: false, error: 'Firebase chưa được kích hoạt.' };
+  }
+  try {
+    await safeFirestoreWrite('delete_single_report', () =>
+      deleteDoc(doc(db, 'submissions', submissionId))
+    );
+    return { success: true };
+  } catch (e: any) {
+    console.warn('deleteSingleSubmissionFromFirestore error:', e);
+    return { success: false, error: e };
+  }
+}
+
 

@@ -178,7 +178,11 @@ export const ReportList: React.FC<ReportListProps> = ({
       if (selectedPeriod !== 'all' && sub.periodId !== selectedPeriod) return false;
 
       // Department filter
-      if (selectedDepartment !== 'all' && sub.departmentId !== selectedDepartment) return false;
+      if (selectedDepartment === 'gvcn') {
+        if (!sub.isHomeroomReport && !sub.homeroomClass && !sub.periodTitle?.toLowerCase().includes('chủ nhiệm') && !sub.periodTitle?.toLowerCase().includes('phụ huynh')) return false;
+      } else if (selectedDepartment !== 'all' && sub.departmentId !== selectedDepartment) {
+        return false;
+      }
 
       // Status filter
       if (selectedStatus !== 'all' && sub.status !== selectedStatus) return false;
@@ -524,6 +528,7 @@ export const ReportList: React.FC<ReportListProps> = ({
               className="w-full text-xs px-2.5 py-2 rounded-xl border border-slate-300 bg-white focus:outline-emerald-600"
             >
               <option value="all">Tất cả tổ / phòng ban</option>
+              <option value="gvcn">🎓 Báo cáo GV Chủ nhiệm (53 lớp)</option>
               {departments.map(d => (
                 <option key={d.id} value={d.id}>{d.name}</option>
               ))}

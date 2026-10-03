@@ -80,14 +80,24 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   // Calculate pending reviews for current user
   const pendingReviewsCount = submissions.filter(sub => {
-    if (isDeptHead && currentUser.role === 'dept_head') {
-      return sub.departmentId === currentUser.departmentId && sub.status === 'submitted';
-    }
-    if (isPrincipal) {
-      return sub.status === 'dept_approved' || (sub.departmentId === 'bgh' && sub.status === 'submitted');
-    }
     if (isAdmin) {
       return sub.status === 'submitted' || sub.status === 'dept_approved';
+    }
+    const isHomeroomSub = Boolean(
+      sub.isHomeroomReport || 
+      sub.periodTitle?.toLowerCase().includes('chủ nhiệm') || 
+      sub.periodTitle?.toLowerCase().includes('phụ huynh') || 
+      sub.periodTitle?.toLowerCase().includes('53 lớp')
+    );
+    if (isPrincipal) {
+      if (isHomeroomSub) {
+        return sub.status === 'submitted' || sub.status === 'dept_approved';
+      }
+      return sub.status === 'dept_approved' || (sub.departmentId === 'bgh' && sub.status === 'submitted');
+    }
+    if (isDeptHead && currentUser.role === 'dept_head') {
+      if (isHomeroomSub) return false;
+      return sub.departmentId === currentUser.departmentId && sub.status === 'submitted';
     }
     return false;
   }).length;
