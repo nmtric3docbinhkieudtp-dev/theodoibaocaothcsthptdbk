@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Modal } from '../common/Modal';
 import { useReports } from '../../context/ReportContext';
 import { useAuth } from '../../context/AuthContext';
+import { ApiService } from '../../services/apiService';
 import { 
   Send, 
   Paperclip, 
@@ -332,37 +333,26 @@ export const SubmitReportModal: React.FC<SubmitReportModalProps> = ({
     }
   };
 
-  const processFiles = async (files: File[]) => {
-    const filePromises = files.map(file => {
-      return new Promise<ReportAttachment>((resolve) => {
-        const reader = new FileReader();
-        if (file.size <= 2.5 * 1024 * 1024) {
-          reader.onload = () => {
-            resolve({
-              id: 'att-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6),
-              name: file.name,
-              size: file.size,
-              type: file.type || file.name.split('.').pop() || 'unknown',
-              url: typeof reader.result === 'string' ? reader.result : '',
-              uploadedAt: new Date().toISOString()
-            });
-          };
-          reader.readAsDataURL(file);
-        } else {
-          resolve({
-            id: 'att-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6),
-            name: file.name,
-            size: file.size,
-            type: file.type || file.name.split('.').pop() || 'unknown',
-            url: '',
-            uploadedAt: new Date().toISOString()
-          });
-        }
-      });
-    });
+  const MAX_FILE_SIZE = 15 * 1024 * 1024; // 15 MB limit per attachment
 
-    const newAttachments = await Promise.all(filePromises);
-    setAttachments(prev => [...prev, ...newAttachments]);
+  const processFiles = async (files: File[]) => {
+    const validFiles: File[] = [];
+    for (const f of files) {
+      if (f.size > MAX_FILE_SIZE) {
+        alert(`Tệp "${f.name}" (${(f.size / (1024 * 1024)).toFixed(1)} MB) vượt quá dung lượng tối đa cho phép là 15 MB. Vui lòng nén hoặc chọn tệp nhỏ hơn.`);
+      } else {
+        validFiles.push(f);
+      }
+    }
+
+    if (validFiles.length === 0) return;
+
+    for (const file of validFiles) {
+      const att = await ApiService.uploadFile(file);
+      if (att) {
+        setAttachments(prev => [...prev, att]);
+      }
+    }
   };
 
   const removeAttachment = (id: string) => {
@@ -864,8 +854,8 @@ export const SubmitReportModal: React.FC<SubmitReportModalProps> = ({
                 <p className="text-xs font-semibold text-slate-800">
                   Kéo thả tệp vào đây hoặc <span className="text-emerald-700 underline">bấm để chọn tệp</span>
                 </p>
-                <p className="text-[10px] text-slate-400 mt-0.5">
-                  Hỗ trợ tệp Word (.docx, .doc), Excel (.xlsx, .xls), PDF, PowerPoint, Ảnh minh chứng
+                <p className="text-[10px] text-slate-500 mt-0.5">
+                  Hỗ trợ Word (.docx, .doc), Excel (.xlsx, .xls), PDF, PowerPoint, Ảnh minh chứng • Dung lượng tối đa 15 MB / tệp
                 </p>
               </div>
 

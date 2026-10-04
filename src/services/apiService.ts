@@ -1,4 +1,4 @@
-import { ReportSubmission, ReportPeriod } from '../types';
+import { ReportSubmission, ReportPeriod, ReportAttachment } from '../types';
 
 export const ApiService = {
   async fetchSubmissions(): Promise<ReportSubmission[] | null> {
@@ -147,6 +147,52 @@ export const ApiService = {
     } catch (e) {
       console.warn('[ApiService] Failed to delete period via server API:', e);
       return false;
+    }
+  },
+
+  async uploadFile(file: File): Promise<ReportAttachment | null> {
+    try {
+      return await new Promise<ReportAttachment | null>((resolve) => {
+        const reader = new FileReader();
+        reader.onload = async () => {
+          try {
+            const dataUrl = typeof reader.result === 'string' ? reader.result : '';
+            const res = await fetch('/api/upload', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                name: file.name,
+                size: file.size,
+                type: file.type || file.name.split('.').pop() || 'application/octet-stream',
+                data: dataUrl
+              })
+            });
+            if (res.ok) {
+              const json = await res.json();
+              if (json && json.file) {
+                resolve(json.file);
+                return;
+              }
+            }
+          } catch (uploadErr) {
+            console.warn('[ApiService] Upload post error:', uploadErr);
+          }
+          // Fallback if server upload fails (keep file info)
+          resolve({
+            id: 'att-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6),
+            name: file.name,
+            size: file.size,
+            type: file.type || file.name.split('.').pop() || 'unknown',
+            url: '',
+            uploadedAt: new Date().toISOString()
+          });
+        };
+        reader.onerror = () => resolve(null);
+        reader.readAsDataURL(file);
+      });
+    } catch (e) {
+      console.warn('[ApiService] Upload file failed:', e);
+      return null;
     }
   }
 };

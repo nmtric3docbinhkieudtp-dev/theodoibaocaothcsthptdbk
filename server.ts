@@ -15,10 +15,14 @@ const DATA_DIR = path.join(process.cwd(), 'data');
 const SUBMISSIONS_FILE = path.join(DATA_DIR, 'submissions.json');
 const PERIODS_FILE = path.join(DATA_DIR, 'periods.json');
 const DELETED_FILE = path.join(DATA_DIR, 'deleted_submissions.json');
+const UPLOADS_DIR = path.join(DATA_DIR, 'uploads');
 
-// Ensure data directory exists
+// Ensure data and uploads directories exist
 if (!fs.existsSync(DATA_DIR)) {
   fs.mkdirSync(DATA_DIR, { recursive: true });
+}
+if (!fs.existsSync(UPLOADS_DIR)) {
+  fs.mkdirSync(UPLOADS_DIR, { recursive: true });
 }
 
 function readDeletedIds(): Set<string> {
@@ -101,6 +105,63 @@ async function startServer() {
   // Health check
   app.get('/api/health', (req, res) => {
     res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  });
+
+  // Upload report attachment endpoint (supports up to 15MB file uploads safely on server)
+  app.post('/api/upload', (req, res) => {
+    try {
+      const { name, size, type, data } = req.body || {};
+      if (!name || !data) {
+        return res.status(400).json({ error: 'Thiếu tên tệp hoặc dữ liệu tệp' });
+      }
+
+      const fileId = 'att-' + Date.now() + '-' + Math.random().toString(36).substring(2, 8);
+      const safeName = (name || 'file').replace(/[^a-zA-Z0-9._-]/g, '_');
+      const filename = `${fileId}_${safeName}`;
+      const filePath = path.join(UPLOADS_DIR, filename);
+
+      // Extract base64 content
+      const base64Data = data.includes(';base64,') ? data.split(';base64,')[1] : data;
+      const buffer = Buffer.from(base64Data, 'base64');
+      fs.writeFileSync(filePath, buffer);
+
+      const fileMeta = {
+        id: fileId,
+        name: name,
+        size: size || buffer.length,
+        type: type || 'application/octet-stream',
+        url: `/api/files/${fileId}`,
+        uploadedAt: new Date().toISOString()
+      };
+
+      res.json({ success: true, file: fileMeta });
+    } catch (e: any) {
+      console.error('File upload error:', e);
+      res.status(500).json({ error: e.message || 'Lỗi lưu tệp lên máy chủ' });
+    }
+  });
+
+  // Serve uploaded report attachment file
+  app.get('/api/files/:fileId', (req, res) => {
+    try {
+      const { fileId } = req.params;
+      if (!fileId || !fs.existsSync(UPLOADS_DIR)) {
+        return res.status(404).send('Không tìm thấy tệp đính kèm');
+      }
+
+      const files = fs.readdirSync(UPLOADS_DIR);
+      const matched = files.find(f => f.startsWith(fileId));
+      if (!matched) {
+        return res.status(404).send('Không tìm thấy tệp đính kèm');
+      }
+
+      const fullPath = path.join(UPLOADS_DIR, matched);
+      const originalName = matched.includes('_') ? matched.split('_').slice(1).join('_') : matched;
+      res.download(fullPath, originalName);
+    } catch (e: any) {
+      console.error('File serve error:', e);
+      res.status(500).send('Lỗi tải tệp đính kèm');
+    }
   });
 
   // Get all submissions

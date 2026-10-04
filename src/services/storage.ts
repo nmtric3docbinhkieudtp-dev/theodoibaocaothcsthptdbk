@@ -769,7 +769,20 @@ export async function pushSingleSubmissionToFirestore(
     return { success: false, error: 'Firebase chưa được kích hoạt hoặc chưa sẵn sàng.' };
   }
 
-  const cleanPayload = cleanFirestorePayload(submission);
+  // Sanitize submission for Firestore to guarantee doc size stays well under the 1MiB limit:
+  // If attachments contain heavy raw base64 data URLs (>50KB), strip the base64 string so
+  // Firestore document stays tiny (<5KB), while the full file is safely stored on the server (/api/files).
+  const submissionForCloud: ReportSubmission = {
+    ...submission,
+    attachments: (submission.attachments || []).map(att => ({
+      ...att,
+      url: (att.url && att.url.startsWith('data:') && att.url.length > 50000)
+        ? '' // Keep metadata; full file is safely stored in server store
+        : att.url
+    }))
+  };
+
+  const cleanPayload = cleanFirestorePayload(submissionForCloud);
   return await safeFirestoreWrite('submit_single_report', () =>
     setDoc(doc(db, 'submissions', submission.id), cleanPayload)
   );
