@@ -144,6 +144,7 @@ export interface ReportPeriod {
   createdAt: string;
   defaultTemplateContent?: string;
   formTemplate?: PeriodFormTemplate;
+  allowMultipleSubmissions?: boolean; // Cho phép mỗi giáo viên nộp nhiều lần (vd: Đơn xin nghỉ phép, Phiếu đề xuất...)
 }
 
 export interface ReviewHistory {
@@ -168,6 +169,9 @@ export interface ReportSubmission {
   authorRoleTitle: string;
   departmentId: string;
   departmentName: string;
+  
+  // Dành cho đợt cho phép nộp nhiều lần (Đơn xin nghỉ phép...)
+  submissionSequence?: number; // Lần nộp thứ 1, 2, 3...
   
   // Dành cho báo cáo GVCN
   isHomeroomReport?: boolean;

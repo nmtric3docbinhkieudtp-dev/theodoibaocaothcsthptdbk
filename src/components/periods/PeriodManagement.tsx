@@ -531,6 +531,13 @@ export const PeriodManagement: React.FC<PeriodManagementProps> = ({
                           {getAudienceLabel(period.targetAudience, period.targetDepartmentIds, period.targetUserIds)}
                         </span>
                       )}
+
+                      {period.allowMultipleSubmissions && (
+                        <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-teal-50 text-teal-800 border border-teal-300 flex items-center gap-1">
+                          <Sparkles className="w-3 h-3 text-teal-600" />
+                          <span>Nộp nhiều lần (Đơn phát sinh)</span>
+                        </span>
+                      )}
                     </div>
 
                     <span className="text-[11px] text-slate-400 font-semibold shrink-0">
@@ -575,9 +582,14 @@ export const PeriodManagement: React.FC<PeriodManagementProps> = ({
                     </div>
 
                     <div className="flex items-center justify-between">
-                      <span>Tiến độ đã nộp:</span>
+                      <span>{period.allowMultipleSubmissions ? 'Người đã gửi đơn:' : 'Tiến độ đã nộp:'}</span>
                       <span className={`font-bold ${isCompleted ? 'text-emerald-700 font-black' : 'text-emerald-700'}`}>
                         {submittedCount} / {requiredUsers.length} người ({stats.completionRate}%)
+                        {period.allowMultipleSubmissions && (
+                          <span className="text-teal-700 ml-1 font-extrabold">
+                            ({submissions.filter(s => s.periodId === period.id && s.status !== 'draft').length} đơn)
+                          </span>
+                        )}
                       </span>
                     </div>
 

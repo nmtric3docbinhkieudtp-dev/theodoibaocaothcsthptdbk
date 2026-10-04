@@ -38,6 +38,7 @@ interface ReportContextType {
   
   // Actions for Submissions
   submitReport: (data: {
+    submissionId?: string;
     periodId: string;
     title: string;
     content: string;
@@ -267,11 +268,16 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
                 .filter(s => validStaffIds.has(s.authorId) && !deletedIds.has(s.id))
             : [];
           
-          // Enforce strictly 1 submission per teacher per period
+          // Preserve multiple submissions for periods that allow multiple submissions (Leave requests, proposals...),
+          // while deduplicating normal periodic single-submission reports
           const map = new Map<string, ReportSubmission>();
           for (const s of rawList) {
             if (deletedIds.has(s.id)) continue;
-            const key = `${s.periodId || 'default'}_${s.authorId || s.authorEmail || s.authorName}`;
+            const isAllowMultiple = s.submissionSequence !== undefined || 
+              Boolean(s.periodTitle && (s.periodTitle.toLowerCase().includes('nghỉ phép') || s.periodTitle.toLowerCase().includes('xin phép')));
+            const key = isAllowMultiple 
+              ? s.id 
+              : `${s.periodId || 'default'}_${s.authorId || s.authorEmail || s.authorName}`;
             const existing = map.get(key);
             if (!existing) {
               map.set(key, s);
@@ -291,7 +297,11 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             const currentLocal = StorageService.getSubmissions();
             currentLocal.forEach(localSub => {
               if (!localSub || !localSub.id || deletedIds.has(localSub.id)) return;
-              const key = `${localSub.periodId || 'default'}_${localSub.authorId || localSub.authorEmail || localSub.authorName}`;
+              const isAllowMultiple = localSub.submissionSequence !== undefined || 
+                Boolean(localSub.periodTitle && (localSub.periodTitle.toLowerCase().includes('nghỉ phép') || localSub.periodTitle.toLowerCase().includes('xin phép')));
+              const key = isAllowMultiple 
+                ? localSub.id 
+                : `${localSub.periodId || 'default'}_${localSub.authorId || localSub.authorEmail || localSub.authorName}`;
               const inFirestore = map.get(key);
               if (!inFirestore) {
                 map.set(key, localSub);
@@ -316,7 +326,18 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         // Realtime listener for Periods
         unsubscribePeriods = onSnapshot(collection(db, 'periods'), (snapshot) => {
           if (!snapshot.empty) {
-            const list: ReportPeriod[] = snapshot.docs.map(d => d.data() as ReportPeriod);
+            const rawList: ReportPeriod[] = snapshot.docs.map(d => d.data() as ReportPeriod);
+            const list: ReportPeriod[] = rawList.map(p => {
+              const isLeave = Boolean(
+                p.allowMultipleSubmissions ||
+                p.title?.toLowerCase().includes('nghỉ phép') ||
+                p.title?.toLowerCase().includes('xin phép')
+              );
+              return {
+                ...p,
+                allowMultipleSubmissions: isLeave
+              };
+            });
             list.sort((a, b) => {
               if (a.status === 'active' && b.status !== 'active') return -1;
               if (a.status !== 'active' && b.status === 'active') return 1;
@@ -378,13 +399,17 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         const map = new Map<string, ReportSubmission>();
         localSubs.forEach(s => {
           if (!deletedIds.has(s.id)) {
-            const key = `${s.periodId || 'default'}_${s.authorId || s.authorEmail || s.authorName}`;
+            const isAllowMultiple = s.submissionSequence !== undefined || 
+              Boolean(s.periodTitle && (s.periodTitle.toLowerCase().includes('nghỉ phép') || s.periodTitle.toLowerCase().includes('xin phép')));
+            const key = isAllowMultiple ? s.id : `${s.periodId || 'default'}_${s.authorId || s.authorEmail || s.authorName}`;
             map.set(key, s);
           }
         });
         incomingSubs.forEach(s => {
           if (!deletedIds.has(s.id)) {
-            const key = `${s.periodId || 'default'}_${s.authorId || s.authorEmail || s.authorName}`;
+            const isAllowMultiple = s.submissionSequence !== undefined || 
+              Boolean(s.periodTitle && (s.periodTitle.toLowerCase().includes('nghỉ phép') || s.periodTitle.toLowerCase().includes('xin phép')));
+            const key = isAllowMultiple ? s.id : `${s.periodId || 'default'}_${s.authorId || s.authorEmail || s.authorName}`;
             const existing = map.get(key);
             if (!existing) {
               map.set(key, s);
@@ -471,6 +496,7 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   // Submit a report
   const submitReport = async (data: {
+    submissionId?: string;
     periodId: string;
     title: string;
     content: string;
@@ -503,16 +529,41 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
 
     const targetAuthorId = data.authorId || currentUser.id;
+    const isAllowMultiple = Boolean(
+      period?.allowMultipleSubmissions || 
+      period?.title?.toLowerCase().includes('nghỉ phép') || 
+      period?.title?.toLowerCase().includes('xin phép')
+    );
+
     // Kiểm tra xem người dùng đã có bài nộp hoặc bản nháp nào cho đợt báo cáo này chưa
     const existingSubs = submissions.filter(s => 
       s.authorId === targetAuthorId && 
       s.periodId === data.periodId
     );
-    const existingSub = existingSubs.find(s => s.status !== 'draft') || existingSubs[0];
 
-    const submissionId = existingSub 
-      ? existingSub.id 
-      : ('sub-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6));
+    let submissionId: string;
+    let existingSub: ReportSubmission | undefined;
+    let sequenceNumber = 1;
+
+    if (isAllowMultiple) {
+      if (data.submissionId) {
+        // Cập nhật lại một đơn cụ thể trước đó
+        existingSub = existingSubs.find(s => s.id === data.submissionId);
+        submissionId = data.submissionId;
+        sequenceNumber = existingSub?.submissionSequence || 1;
+      } else {
+        // Tạo một đơn mới hoàn toàn (Lần 1, Lần 2, Lần 3...)
+        existingSub = undefined;
+        submissionId = 'sub-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6);
+        sequenceNumber = existingSubs.filter(s => s.status !== 'draft').length + 1;
+      }
+    } else {
+      existingSub = existingSubs.find(s => s.status !== 'draft') || existingSubs[0];
+      submissionId = existingSub 
+        ? existingSub.id 
+        : ('sub-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6));
+      sequenceNumber = 1;
+    }
 
     const newSub: ReportSubmission = {
       id: submissionId,
@@ -525,6 +576,7 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       authorRoleTitle: currentUser.roleTitle,
       departmentId: data.departmentId || currentUser.departmentId,
       departmentName: data.departmentName || currentUser.departmentName,
+      submissionSequence: isAllowMultiple ? sequenceNumber : undefined,
       isHomeroomReport: data.isHomeroomReport ?? (
         period?.targetAudience === 'homeroom_teachers' || 
         period?.targetAudience === 'gvcn_diem_chinh' ||
@@ -554,8 +606,9 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
     let updated = StorageService.saveSubmission(cleanSub);
 
-    // Nếu người dùng nộp chính thức, dọn dẹp triệt để bất kỳ bản ghi thừa/nháp cũ nào của người này trong cùng đợt
-    if (!isDraft && existingSubs.length > 0) {
+    // Nếu người dùng nộp chính thức cho đợt 1 lần thông thường, dọn dẹp các bản nháp/bản ghi thừa cũ
+    // TUYỆT ĐỐI KHÔNG xóa đối với đợt cho phép nộp nhiều lần (Đơn xin nghỉ phép, Phiếu đề xuất...)
+    if (!isDraft && existingSubs.length > 0 && !isAllowMultiple) {
       existingSubs.forEach(s => {
         if (s.id !== submissionId) {
           updated = StorageService.deleteSubmission(s.id);
@@ -917,8 +970,14 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   // Period management
   const createPeriod = (periodData: Omit<ReportPeriod, 'id' | 'createdAt'>): ReportPeriod => {
+    const isLeave = Boolean(
+      periodData.allowMultipleSubmissions !== undefined
+        ? periodData.allowMultipleSubmissions
+        : (periodData.title?.toLowerCase().includes('nghỉ phép') || periodData.title?.toLowerCase().includes('xin phép'))
+    );
     const newPeriod: ReportPeriod = {
       ...periodData,
+      allowMultipleSubmissions: isLeave,
       id: 'period-' + Date.now(),
       createdAt: new Date().toISOString()
     };
@@ -958,7 +1017,16 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const updatePeriod = (id: string, periodData: Partial<ReportPeriod>): ReportPeriod => {
     const existing = periods.find(p => p.id === id);
     if (!existing) throw new Error('Không tìm thấy đợt báo cáo');
-    const updatedPeriod = { ...existing, ...periodData, updatedAt: new Date().toISOString() };
+    const isLeave = Boolean(
+      periodData.allowMultipleSubmissions !== undefined
+        ? periodData.allowMultipleSubmissions
+        : (
+            (periodData.title && (periodData.title.toLowerCase().includes('nghỉ phép') || periodData.title.toLowerCase().includes('xin phép'))) ||
+            existing.allowMultipleSubmissions ||
+            (existing.title && (existing.title.toLowerCase().includes('nghỉ phép') || existing.title.toLowerCase().includes('xin phép')))
+          )
+    );
+    const updatedPeriod = { ...existing, ...periodData, allowMultipleSubmissions: isLeave, updatedAt: new Date().toISOString() };
     const cleanPeriod = cleanFirestorePayload(updatedPeriod);
     const updated = StorageService.savePeriod(cleanPeriod);
     setPeriods(updated);

@@ -157,13 +157,33 @@ export const SubmitReportModal: React.FC<SubmitReportModalProps> = ({
   const isHomeroomActive = formMode === 'homeroom_minutes' || (formMode === 'auto' && isSpecificLegacyHomeroomMinutes);
   const isCustomFormActive = formMode === 'custom_form' || (formMode === 'auto' && hasFormTemplate && !isDeptMinutesActive && !isHomeroomActive);
 
+  const isMultiple = Boolean(
+    currentPeriod?.allowMultipleSubmissions ||
+    currentPeriod?.title?.toLowerCase().includes('nghỉ phép') ||
+    currentPeriod?.title?.toLowerCase().includes('xin phép')
+  );
+
+  const userSubs = useMemo(() => {
+    if (!currentPeriod) return [];
+    return submissions.filter(s => s.authorId === currentUser.id && s.periodId === currentPeriod.id);
+  }, [submissions, currentUser.id, currentPeriod]);
+
   // Load period form template or previous user draft/submission if available
   useEffect(() => {
     if (!isOpen || !currentPeriod) return;
 
     // Tìm xem người dùng hiện tại đã có bản nháp hoặc bài nộp nào cho đợt này chưa
-    const userSubs = submissions.filter(s => s.authorId === currentUser.id && s.periodId === currentPeriod.id);
-    const existingSub = userSubs.find(s => s.status !== 'draft') || userSubs[0];
+    const userSubsForPeriod = submissions.filter(s => s.authorId === currentUser.id && s.periodId === currentPeriod.id);
+    const isMulti = Boolean(
+      currentPeriod?.allowMultipleSubmissions ||
+      currentPeriod?.title?.toLowerCase().includes('nghỉ phép') ||
+      currentPeriod?.title?.toLowerCase().includes('xin phép')
+    );
+
+    // Nếu đợt cho phép nộp nhiều lần (như đơn nghỉ phép), chỉ tải bản nháp nếu có, KHÔNG ghi đè đơn đã nộp cũ vào form mới
+    const existingSub = isMulti 
+      ? userSubsForPeriod.find(s => s.status === 'draft')
+      : (userSubsForPeriod.find(s => s.status !== 'draft') || userSubsForPeriod[0]);
 
     if (existingSub) {
       setContent(existingSub.content || currentPeriod.defaultTemplateContent || '');
@@ -212,18 +232,17 @@ export const SubmitReportModal: React.FC<SubmitReportModalProps> = ({
   }, [isOpen, currentPeriod?.id]);
 
   // Check if current submission is past deadline
-  const isPastDeadline = currentPeriod 
+  const isPastDeadline = currentPeriod && !isMultiple 
     ? new Date(currentPeriod.deadline).getTime() < Date.now() 
     : false;
 
   const userExistingSub = useMemo(() => {
-    if (!currentPeriod) return null;
-    const userSubs = submissions.filter(s => s.authorId === currentUser.id && s.periodId === currentPeriod.id);
+    if (!currentPeriod || isMultiple) return null;
     return userSubs.find(s => s.status !== 'draft') || userSubs[0] || null;
-  }, [submissions, currentUser.id, currentPeriod]);
+  }, [userSubs, isMultiple, currentPeriod]);
 
-  const hasAlreadySubmitted = Boolean(userExistingSub && userExistingSub.status !== 'draft');
-  const isApprovedByPrincipal = userExistingSub?.status === 'principal_approved';
+  const hasAlreadySubmitted = !isMultiple && Boolean(userExistingSub && userExistingSub.status !== 'draft');
+  const isApprovedByPrincipal = !isMultiple && userExistingSub?.status === 'principal_approved';
 
   // Auto-generate title based on user, role, and period
   const getAutoTitle = () => {
@@ -237,7 +256,8 @@ export const SubmitReportModal: React.FC<SubmitReportModalProps> = ({
     }
     if (currentPeriod) {
       const classSuffix = currentUser.isHomeroomTeacher && currentUser.homeroomClass ? ` - Lớp ${currentUser.homeroomClass}` : '';
-      return `${currentPeriod.title}${classSuffix} - ${currentUser.name}`;
+      const prefix = isMultiple ? `[Lần ${userSubs.filter(s => s.status !== 'draft').length + 1}] ` : '';
+      return `${prefix}${currentPeriod.title}${classSuffix} - ${currentUser.name}`;
     }
     return `Báo cáo công tác - ${currentUser.name} (${currentUser.departmentName})`;
   };
@@ -617,7 +637,21 @@ export const SubmitReportModal: React.FC<SubmitReportModalProps> = ({
         </div>
 
         {/* THÔNG BÁO TÌNH TRẠNG BẢN GHI ĐÃ LƯU / ĐÃ NỘP */}
-        {userExistingSub && (
+        {isMultiple ? (
+          <div className="p-3.5 rounded-xl border border-teal-300 bg-teal-50/80 text-xs shadow-2xs text-teal-950 flex items-start gap-2.5">
+            <Sparkles className="w-5 h-5 text-teal-600 shrink-0 mt-0.5" />
+            <div>
+              <div className="font-bold text-sm text-teal-900">
+                Chế độ nộp nhiều lần: {userSubs.filter(s => s.status !== 'draft').length > 0 
+                  ? `Thầy/Cô đã nộp ${userSubs.filter(s => s.status !== 'draft').length} đơn trước đó` 
+                  : 'Sẵn sàng soạn đơn mới'}
+              </div>
+              <div className="mt-1 text-xs text-teal-800 leading-relaxed">
+                Đợt này cho phép Thầy/Cô gửi đơn xin nghỉ phép nhiều lần trong năm (Lần 1, Lần 2, Lần 3...). Thầy/Cô đang tạo một đơn mới, Ban Giám Hiệu sẽ phê duyệt độc lập cho từng lần gửi mà không bị đè mất đơn cũ.
+              </div>
+            </div>
+          </div>
+        ) : userExistingSub && (
           <div className={`p-3.5 rounded-xl border text-xs shadow-2xs ${
             userExistingSub.status === 'draft'
               ? 'bg-amber-50/90 border-amber-300 text-amber-900'
@@ -971,7 +1005,13 @@ export const SubmitReportModal: React.FC<SubmitReportModalProps> = ({
                 title="Nhấn để lưu dữ liệu lên đám mây và gửi về Ban Giám Hiệu"
               >
                 <Send className="w-4 h-4" />
-                <span>{isSubmitting ? 'Đang lưu lên đám mây...' : 'Gửi Báo Cáo'}</span>
+                <span>
+                  {isSubmitting 
+                    ? 'Đang lưu lên đám mây...' 
+                    : isMultiple 
+                    ? `Gửi Đơn Nghỉ Phép (Lần ${userSubs.filter(s => s.status !== 'draft').length + 1})` 
+                    : 'Gửi Báo Cáo'}
+                </span>
               </button>
             )}
           </div>

@@ -268,11 +268,20 @@ async function startServer() {
   app.post('/api/submissions/deduplicate', (req, res) => {
     const list = readSubmissions();
     const deletedIds = readDeletedIds();
+    const periodsList = readPeriods();
+    const multiplePeriodIds = new Set(
+      periodsList.filter(p => p.allowMultipleSubmissions || p.title?.toLowerCase().includes('nghỉ phép') || p.title?.toLowerCase().includes('xin phép')).map(p => p.id)
+    );
     
     // Group submissions by periodId + authorId
     const groups = new Map<string, any[]>();
     for (const sub of list) {
-      const key = `${sub.periodId || 'default'}_${sub.authorId || sub.authorEmail || sub.authorName}`;
+      const isMulti = multiplePeriodIds.has(sub.periodId) || 
+        sub.submissionSequence !== undefined ||
+        (sub.periodTitle && (sub.periodTitle.toLowerCase().includes('nghỉ phép') || sub.periodTitle.toLowerCase().includes('xin phép')));
+      
+      // If period allows multiple submissions, each submission has its own group key so it is never merged or removed
+      const key = isMulti ? sub.id : `${sub.periodId || 'default'}_${sub.authorId || sub.authorEmail || sub.authorName}`;
       if (!groups.has(key)) groups.set(key, []);
       groups.get(key)!.push(sub);
     }

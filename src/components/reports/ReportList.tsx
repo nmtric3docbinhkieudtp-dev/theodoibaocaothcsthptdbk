@@ -89,10 +89,17 @@ export const ReportList: React.FC<ReportListProps> = ({
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '');
 
-  // Detect duplicate submissions by author + period
+  // Detect duplicate submissions by author + period (excluding periods allowing multiple submissions)
   const duplicateStats = useMemo(() => {
+    const multiPeriodIds = new Set(
+      periods.filter(p => p.allowMultipleSubmissions || p.title?.toLowerCase().includes('nghỉ phép') || p.title?.toLowerCase().includes('xin phép')).map(p => p.id)
+    );
     const authorPeriodMap = new Map<string, ReportSubmission[]>();
     submissions.forEach(s => {
+      const isMulti = multiPeriodIds.has(s.periodId) || 
+        s.submissionSequence !== undefined ||
+        (s.periodTitle && (s.periodTitle.toLowerCase().includes('nghỉ phép') || s.periodTitle.toLowerCase().includes('xin phép')));
+      if (isMulti) return; // Legitimate multiple submissions (Leave requests, etc.)
       const key = `${s.periodId || 'default'}_${s.authorId || s.authorEmail || s.authorName}`;
       if (!authorPeriodMap.has(key)) authorPeriodMap.set(key, []);
       authorPeriodMap.get(key)!.push(s);
@@ -108,7 +115,7 @@ export const ReportList: React.FC<ReportListProps> = ({
     });
 
     return { dupCount, duplicatedTeachers };
-  }, [submissions]);
+  }, [submissions, periods]);
 
   // Detect late submissions
   const lateStats = useMemo(() => {
