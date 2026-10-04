@@ -889,15 +889,18 @@ export const PersonnelRosterView: React.FC = () => {
                 Đóng
               </button>
 
-              <button
-                onClick={() => {
-                  switchUser(selectedUserDetail.id);
-                  setSelectedUserDetail(null);
-                }}
-                className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition cursor-pointer shadow-2xs"
-              >
-                Đăng nhập thử vai trò cán bộ này
-              </button>
+              {canSwitchUser && (
+                <button
+                  onClick={() => {
+                    switchUser(selectedUserDetail.id);
+                    setSelectedUserDetail(null);
+                  }}
+                  className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition cursor-pointer shadow-2xs"
+                  title="Chỉ Quản trị viên mới có quyền chuyển xem tài khoản này"
+                >
+                  Đăng nhập xem báo cáo cán bộ này
+                </button>
+              )}
             </div>
           </div>
         </div>

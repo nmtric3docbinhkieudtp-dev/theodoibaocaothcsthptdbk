@@ -17,7 +17,8 @@ import {
   Pencil,
   Image as ImageIcon,
   Cloud,
-  RefreshCw
+  RefreshCw,
+  ArrowLeft
 } from 'lucide-react';
 import { UserRole } from '../../types';
 
@@ -292,190 +293,249 @@ export const Header: React.FC<HeaderProps> = ({
             )}
           </div>
 
-          {/* User & Role Switcher */}
-          <div className="relative">
-            <button
-              id="btn-role-switcher"
-              onClick={() => {
-                setShowRoleMenu(!showRoleMenu);
-                setShowNotifMenu(false);
-              }}
-              className="flex items-center gap-2 p-1 sm:px-2.5 sm:py-1 rounded-xl border border-slate-200 hover:border-slate-300 bg-white hover:bg-slate-50 transition cursor-pointer shadow-2xs"
-            >
-              <img
-                src={currentUser.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100'}
-                alt={currentUser.name}
-                className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg object-cover border border-slate-200"
-              />
-              <div className="hidden text-left sm:block">
-                <div className="text-xs font-bold text-slate-900 leading-tight max-w-[120px] truncate">
-                  {currentUser.name}
-                </div>
-                <div className="text-[10px] text-slate-500 truncate max-w-[120px]">
-                  {currentUser.roleTitle}
-                </div>
-              </div>
-              <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
-            </button>
+          {/* User Display: Restricted so regular teachers only see their own name, switching is EXCLUSIVELY for Admin */}
+          {canSwitchUser ? (
+            /* ADMIN ONLY: Privileged account switcher to inspect reports of any teacher */
+            <div className="flex items-center gap-2">
+              {isImpersonating && (
+                <button
+                  type="button"
+                  onClick={returnToAdmin}
+                  className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-bold text-white bg-amber-600 hover:bg-amber-700 active:scale-95 shadow-xs transition cursor-pointer"
+                  title="Trở về tài khoản Quản trị viên"
+                >
+                  <ArrowLeft className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Về Quản trị</span>
+                  <span className="sm:hidden">Về Admin</span>
+                </button>
+              )}
 
-            {/* Role Switcher Menu Popup */}
-            {showRoleMenu && (
-              <div className="absolute right-0 mt-2 w-80 rounded-2xl bg-white border border-slate-200 shadow-xl py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
-                <div className="px-4 py-2.5 border-b border-slate-100">
-                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                    Tài khoản đang đăng nhập:
-                  </div>
-                  <div className="flex items-center gap-2 mt-1.5">
-                    <span className={`px-2 py-0.5 rounded-full text-xs font-bold border ${getRoleBadgeColor(currentUser.role)}`}>
-                      {currentUser.roleTitle}
-                    </span>
-                    <span className="text-xs text-slate-600 font-medium truncate">
-                      {currentUser.departmentName}
-                    </span>
-                  </div>
-
-                  {isImpersonating && (
-                    <div className="mt-2.5 p-2 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs">
-                      <div className="font-bold text-[11px] text-amber-800">⚡ Đặc quyền Quản trị viên</div>
-                      <div className="text-[11px] text-amber-700 mt-0.5 leading-snug">
-                        Thầy Nguyễn Minh Trí đang truy cập tài khoản của <strong>{currentUser.name}</strong>.
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setShowRoleMenu(false);
-                          returnToAdmin();
-                        }}
-                        className="mt-2 w-full py-1.5 px-2.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs shadow-xs transition flex items-center justify-center gap-1 cursor-pointer"
-                      >
-                        <span>← Trở về tài khoản Quản trị</span>
-                      </button>
+              <div className="relative">
+                <button
+                  id="btn-admin-role-switcher"
+                  onClick={() => {
+                    setShowRoleMenu(!showRoleMenu);
+                    setShowNotifMenu(false);
+                  }}
+                  className={`flex items-center gap-2 p-1 sm:px-2.5 sm:py-1 rounded-xl border transition cursor-pointer shadow-2xs ${
+                    isImpersonating
+                      ? 'bg-amber-50 border-amber-300 hover:bg-amber-100 text-amber-950 ring-1 ring-amber-400/40'
+                      : 'bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50'
+                  }`}
+                  title={isImpersonating ? `Đang xem với tư cách: ${currentUser.name}. Nhấn để chọn giáo viên khác hoặc về Admin.` : "Nhấn để chuyển sang xem tài khoản giáo viên"}
+                >
+                  <img
+                    src={currentUser.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100'}
+                    alt={currentUser.name}
+                    className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg object-cover border border-slate-200 shrink-0"
+                  />
+                  <div className="hidden text-left sm:block">
+                    <div className="text-xs font-bold text-slate-900 leading-tight max-w-[130px] truncate">
+                      {currentUser.name}
                     </div>
-                  )}
-                </div>
-
-                {/* Only Admin or Impersonating Admin can see and switch to other users */}
-                {canSwitchUser ? (
-                  <div className="px-3 py-2">
-                    <div className="text-[11px] font-bold text-slate-700 mb-1.5 flex items-center justify-between">
-                      <span>⚡ Chuyển tài khoản cán bộ ({allUsers.length}):</span>
-                      <span className="text-[10px] text-purple-700 bg-purple-50 px-1.5 py-0.5 rounded font-bold border border-purple-200">Chỉ Admin</span>
-                    </div>
-
-                    {/* Search inside popup */}
-                    <div className="mb-2">
-                      <input
-                        type="text"
-                        placeholder="Tìm tên giáo viên, môn, tổ..."
-                        value={userSearch}
-                        onChange={(e) => setUserSearch(e.target.value)}
-                        className="w-full px-2.5 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:outline-emerald-600"
-                      />
-                    </div>
-
-                    <div className="space-y-1 max-h-56 overflow-y-auto pr-1 scrollbar-thin">
-                      {filteredSwitcherUsers.length === 0 ? (
-                        <div className="text-center py-4 text-xs text-slate-400">
-                          Không tìm thấy cán bộ phù hợp
-                        </div>
+                    <div className="text-[10px] text-slate-500 truncate max-w-[130px] font-semibold">
+                      {isImpersonating ? (
+                        <span className="text-amber-700">⚡ Đang xem GV</span>
                       ) : (
-                        filteredSwitcherUsers.map((user) => {
-                          const isSelected = user.id === currentUser.id;
-                          return (
-                            <button
-                              key={user.id}
-                              onClick={() => {
-                                switchUser(user.id);
-                                setShowRoleMenu(false);
-                                setUserSearch('');
-                              }}
-                              className={`w-full text-left px-2.5 py-2 rounded-xl text-xs flex items-center gap-2.5 transition cursor-pointer ${
-                                isSelected 
-                                  ? 'bg-emerald-50 text-emerald-950 font-bold border border-emerald-200' 
-                                  : 'hover:bg-slate-50 text-slate-700'
-                              }`}
-                            >
-                              <div className="w-6 h-6 rounded-md bg-slate-200 text-slate-700 flex items-center justify-center font-bold text-[10px] shrink-0">
-                                {user.name.slice(0, 2).toUpperCase()}
-                              </div>
-                              <div className="min-w-0 flex-1">
-                                <div className="font-semibold truncate flex items-center gap-1.5">
-                                  <span>{user.name}</span>
-                                  {user.partyMember && (
-                                    <span className="px-1 py-0.1 text-[8px] bg-red-100 text-red-700 rounded font-black">ĐV</span>
-                                  )}
-                                  {isSelected && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />}
-                                </div>
-                                <div className="text-[10px] text-slate-500 truncate">
-                                  {user.roleTitle} • {user.departmentName}
-                                </div>
-                              </div>
-                            </button>
-                          );
-                        })
+                        <span className="text-purple-700">Quản trị viên • Đổi xem GV</span>
                       )}
                     </div>
                   </div>
-                ) : (
-                  <div className="px-4 py-3 text-xs text-slate-600 bg-slate-50/60">
-                    <div className="flex items-center gap-1.5 text-emerald-700 font-bold mb-1">
-                      <ShieldCheck className="w-4 h-4" />
-                      <span>Bảo mật tài khoản cá nhân</span>
+                  <ChevronDown className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                </button>
+
+                {/* Role Switcher Menu Popup (Admin Exclusive) */}
+                {showRoleMenu && (
+                  <div className="absolute right-0 mt-2 w-80 sm:w-96 rounded-2xl bg-white border border-slate-200 shadow-xl py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
+                    <div className="px-4 py-2.5 border-b border-slate-100">
+                      <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                        Tài khoản đang đăng nhập / xem:
+                      </div>
+                      <div className="flex items-center gap-2 mt-1.5">
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-bold border ${getRoleBadgeColor(currentUser.role)}`}>
+                          {currentUser.roleTitle}
+                        </span>
+                        <span className="text-xs text-slate-600 font-medium truncate">
+                          {currentUser.departmentName}
+                        </span>
+                      </div>
+
+                      {isImpersonating && (
+                        <div className="mt-2.5 p-2 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs">
+                          <div className="font-bold text-[11px] text-amber-800">⚡ Đặc quyền Quản trị viên</div>
+                          <div className="text-[11px] text-amber-700 mt-0.5 leading-snug">
+                            Thầy Nguyễn Minh Trí đang truy cập tài khoản của <strong>{currentUser.name}</strong>.
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setShowRoleMenu(false);
+                              returnToAdmin();
+                            }}
+                            className="mt-2 w-full py-1.5 px-2.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs shadow-xs transition flex items-center justify-center gap-1 cursor-pointer"
+                          >
+                            <span>← Trở về tài khoản Quản trị</span>
+                          </button>
+                        </div>
+                      )}
                     </div>
-                    <p className="text-[11px] text-slate-500 leading-relaxed">
-                      Thầy/Cô đang đăng nhập vào đúng tài khoản của chính mình. Vui lòng bấm <strong>Đăng xuất</strong> khi không sử dụng trên thiết bị chung.
-                    </p>
+
+                    {/* Switcher list for Admin to inspect reports */}
+                    <div className="px-3 py-2">
+                      <div className="text-[11px] font-bold text-slate-700 mb-1.5 flex items-center justify-between">
+                        <span>⚡ Chuyển tài khoản cán bộ ({allUsers.length}):</span>
+                        <span className="text-[10px] text-purple-700 bg-purple-50 px-1.5 py-0.5 rounded font-bold border border-purple-200">Chỉ Quản trị viên</span>
+                      </div>
+
+                      {/* Search inside popup */}
+                      <div className="mb-2">
+                        <input
+                          type="text"
+                          placeholder="Tìm tên giáo viên, môn, tổ để vào xem..."
+                          value={userSearch}
+                          onChange={(e) => setUserSearch(e.target.value)}
+                          className="w-full px-2.5 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:outline-emerald-600"
+                        />
+                      </div>
+
+                      <div className="space-y-1 max-h-56 overflow-y-auto pr-1 scrollbar-thin">
+                        {filteredSwitcherUsers.length === 0 ? (
+                          <div className="text-center py-4 text-xs text-slate-400">
+                            Không tìm thấy cán bộ phù hợp
+                          </div>
+                        ) : (
+                          filteredSwitcherUsers.map((user) => {
+                            const isSelected = user.id === currentUser.id;
+                            return (
+                              <button
+                                key={user.id}
+                                onClick={() => {
+                                  switchUser(user.id);
+                                  setShowRoleMenu(false);
+                                  setUserSearch('');
+                                }}
+                                className={`w-full text-left px-2.5 py-2 rounded-xl text-xs flex items-center gap-2.5 transition cursor-pointer ${
+                                  isSelected 
+                                    ? 'bg-emerald-50 text-emerald-950 font-bold border border-emerald-200' 
+                                    : 'hover:bg-slate-50 text-slate-700'
+                                }`}
+                              >
+                                <div className="w-6 h-6 rounded-md bg-slate-200 text-slate-700 flex items-center justify-center font-bold text-[10px] shrink-0">
+                                  {user.name.slice(0, 2).toUpperCase()}
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                  <div className="font-semibold truncate flex items-center gap-1.5">
+                                    <span>{user.name}</span>
+                                    {user.partyMember && (
+                                      <span className="px-1 py-0.1 text-[8px] bg-red-100 text-red-700 rounded font-black">ĐV</span>
+                                    )}
+                                    {isSelected && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />}
+                                  </div>
+                                  <div className="text-[10px] text-slate-500 truncate">
+                                    {user.roleTitle} • {user.departmentName}
+                                  </div>
+                                </div>
+                              </button>
+                            );
+                          })
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Dropdown footer with Change Password & Logout actions */}
+                    <div className="p-2 border-t border-slate-100 bg-slate-50/70 space-y-1.5">
+                      {isAdmin && onOpenLogoModal && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowRoleMenu(false);
+                            onOpenLogoModal();
+                          }}
+                          className="w-full px-2.5 py-1.5 rounded-lg text-xs font-bold text-emerald-800 hover:text-emerald-950 bg-emerald-50 hover:bg-emerald-100/80 border border-emerald-200 transition flex items-center gap-2 cursor-pointer"
+                          title="Chỉnh sửa và đổi logo nhà trường"
+                        >
+                          <ImageIcon className="w-3.5 h-3.5 text-emerald-700" />
+                          <span>Đổi logo nhà trường (Admin)</span>
+                        </button>
+                      )}
+
+                      <div className="flex items-center justify-between gap-2">
+                        {onOpenChangePassword && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setShowRoleMenu(false);
+                              onOpenChangePassword();
+                            }}
+                            className="px-2.5 py-1.5 rounded-lg text-xs font-bold text-slate-700 hover:text-emerald-800 bg-white hover:bg-emerald-50 border border-slate-200 hover:border-emerald-200 transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                            title="Đổi mật khẩu tài khoản"
+                          >
+                            <KeyRound className="w-3.5 h-3.5 text-emerald-600" />
+                            <span>Đổi mật khẩu</span>
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowRoleMenu(false);
+                            logout();
+                          }}
+                          className="px-3 py-1.5 rounded-lg text-xs font-bold text-rose-700 hover:text-white bg-rose-50 hover:bg-rose-600 transition flex items-center gap-1.5 cursor-pointer shadow-2xs ml-auto"
+                        >
+                          <LogOut className="w-3.5 h-3.5" />
+                          <span>Đăng xuất</span>
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 )}
-
-                {/* Dropdown footer with Change Password & Logout actions */}
-                <div className="p-2 border-t border-slate-100 bg-slate-50/70 space-y-1.5">
-                  {isAdmin && onOpenLogoModal && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setShowRoleMenu(false);
-                        onOpenLogoModal();
-                      }}
-                      className="w-full px-2.5 py-1.5 rounded-lg text-xs font-bold text-emerald-800 hover:text-emerald-950 bg-emerald-50 hover:bg-emerald-100/80 border border-emerald-200 transition flex items-center gap-2 cursor-pointer"
-                      title="Chỉnh sửa và đổi logo nhà trường"
-                    >
-                      <ImageIcon className="w-3.5 h-3.5 text-emerald-700" />
-                      <span>Đổi logo nhà trường (Admin)</span>
-                    </button>
-                  )}
-
-                  <div className="flex items-center justify-between gap-2">
-                    {onOpenChangePassword && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setShowRoleMenu(false);
-                          onOpenChangePassword();
-                        }}
-                        className="px-2.5 py-1.5 rounded-lg text-xs font-bold text-slate-700 hover:text-emerald-800 bg-white hover:bg-emerald-50 border border-slate-200 hover:border-emerald-200 transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
-                        title="Đổi mật khẩu tài khoản"
-                      >
-                        <KeyRound className="w-3.5 h-3.5 text-emerald-600" />
-                        <span>Đổi mật khẩu</span>
-                      </button>
-                    )}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setShowRoleMenu(false);
-                        logout();
-                      }}
-                      className="px-3 py-1.5 rounded-lg text-xs font-bold text-rose-700 hover:text-white bg-rose-50 hover:bg-rose-600 transition flex items-center gap-1.5 cursor-pointer shadow-2xs ml-auto"
-                    >
-                      <LogOut className="w-3.5 h-3.5" />
-                      <span>Đăng xuất</span>
-                    </button>
+              </div>
+            </div>
+          ) : (
+            /* REGULAR USER / TEACHER: Strictly ONLY shows their own name, NO account switching allowed */
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <div 
+                className="flex items-center gap-2 px-2.5 py-1 rounded-xl bg-slate-50 border border-slate-200/90 text-left select-none shadow-2xs"
+                title={`Tài khoản: ${currentUser.name} (${currentUser.roleTitle} - ${currentUser.departmentName})`}
+              >
+                <img
+                  src={currentUser.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100'}
+                  alt={currentUser.name}
+                  className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg object-cover border border-slate-200 shrink-0"
+                />
+                <div className="text-left">
+                  <div className="text-xs font-extrabold text-slate-900 leading-tight max-w-[110px] sm:max-w-[160px] truncate">
+                    {currentUser.name}
+                  </div>
+                  <div className="text-[10px] text-emerald-800 font-semibold truncate max-w-[110px] sm:max-w-[160px]">
+                    {currentUser.homeroomClass ? `GVCN Lớp ${currentUser.homeroomClass}` : currentUser.roleTitle}
                   </div>
                 </div>
               </div>
-            )}
-          </div>
+
+              {onOpenChangePassword && (
+                <button
+                  type="button"
+                  onClick={onOpenChangePassword}
+                  className="p-1.5 sm:px-2.5 sm:py-1.5 rounded-xl border border-slate-200 hover:border-slate-300 bg-white hover:bg-slate-50 text-slate-700 hover:text-emerald-700 transition cursor-pointer text-xs font-semibold flex items-center gap-1 shadow-2xs"
+                  title="Đổi mật khẩu tài khoản"
+                >
+                  <KeyRound className="w-3.5 h-3.5 text-slate-500" />
+                  <span className="hidden md:inline">Đổi MK</span>
+                </button>
+              )}
+
+              <button
+                type="button"
+                onClick={logout}
+                className="p-1.5 sm:px-2.5 sm:py-1.5 rounded-xl border border-rose-200 hover:border-rose-300 bg-rose-50 hover:bg-rose-100 text-rose-700 transition cursor-pointer text-xs font-bold flex items-center gap-1 shadow-2xs"
+                title="Đăng xuất khỏi hệ thống"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Đăng xuất</span>
+              </button>
+            </div>
+          )}
 
         </div>
       </div>
