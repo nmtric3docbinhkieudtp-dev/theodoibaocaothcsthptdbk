@@ -127,27 +127,8 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [schoolInfo, setSchoolInfo] = useState<SchoolInfo>(() => StorageService.getSchoolInfo());
   const [firebaseConfig, setFirebaseConfig] = useState<FirebaseConfig>(() => getStoredFirebaseConfig());
 
-  // Track unsynced changes to trigger flashing sync reminders
-  const [unsyncedChangesCount, setUnsyncedChangesCount] = useState<number>(() => {
-    try {
-      const stored = localStorage.getItem('dbk_unsynced_changes_count');
-      if (stored) {
-        const parsed = parseInt(stored, 10);
-        if (!isNaN(parsed) && parsed > 0) return parsed;
-      }
-      const lastSync = localStorage.getItem('dbk_last_firebase_sync_timestamp');
-      if (!lastSync) {
-        const localPeriods = StorageService.getPeriods();
-        if (localPeriods.length > 0) return localPeriods.length;
-      } else {
-        const lastSyncTime = parseInt(lastSync, 10);
-        const localPeriods = StorageService.getPeriods();
-        const pendingPeriods = localPeriods.filter(p => new Date(p.createdAt || '').getTime() > lastSyncTime);
-        if (pendingPeriods.length > 0) return pendingPeriods.length;
-      }
-    } catch {}
-    return 0;
-  });
+  // Track unsynced changes to trigger flashing sync reminders ONLY when a write fails/offline
+  const [unsyncedChangesCount, setUnsyncedChangesCount] = useState<number>(0);
 
   const hasUnsyncedChanges = unsyncedChangesCount > 0;
 
@@ -164,10 +145,18 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const clearUnsyncedChanges = () => {
     setUnsyncedChangesCount(0);
     try {
-      localStorage.setItem('dbk_unsynced_changes_count', '0');
+      localStorage.removeItem('dbk_unsynced_changes_count');
       localStorage.setItem('dbk_last_firebase_sync_timestamp', String(Date.now()));
     } catch {}
   };
+
+  // Clean any stale/false sync counters on mount
+  useEffect(() => {
+    try {
+      localStorage.removeItem('dbk_unsynced_changes_count');
+      localStorage.setItem('dbk_last_firebase_sync_timestamp', String(Date.now()));
+    } catch {}
+  }, []);
 
   // Real-time Firestore sync & Auto bootstrap
   useEffect(() => {
@@ -442,6 +431,8 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         setPeriods(merged);
         setLocal('dbk_periods_data', merged);
       }
+      // If sync succeeded without error, clear any unsynced counts
+      clearUnsyncedChanges();
     } catch (e) {
       console.warn('[ReportContext] Server sync warning:', e);
     }
@@ -585,6 +576,7 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         await pushSingleSubmissionToFirestore(cleanSub);
       } catch (fsErr) {
         console.warn('[ReportContext] Firestore single push notice:', fsErr);
+        markUnsyncedChanges(1);
       }
     }
 
@@ -625,10 +617,6 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           });
         }
       }
-    }
-
-    if (!isDraft) {
-      markUnsyncedChanges(1);
     }
 
     return newSub;
@@ -679,7 +667,14 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     const updated = StorageService.saveSubmission(cleanSub);
     setSubmissions(updated);
     setLocal('dbk_submissions_data', updated);
-    markUnsyncedChanges(1);
+
+    // Save to Firestore immediately
+    try {
+      await pushSingleSubmissionToFirestore(cleanSub);
+    } catch (fsErr) {
+      console.warn('Firestore push error in confirmSubmissionForTeacher:', fsErr);
+      markUnsyncedChanges(1);
+    }
 
     // Save to server API immediately
     try {
@@ -704,7 +699,14 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
     const updated = StorageService.saveSubmission(updatedSub);
     setSubmissions(updated);
-    markUnsyncedChanges(1);
+
+    try {
+      await pushSingleSubmissionToFirestore(updatedSub);
+    } catch (fsErr) {
+      console.warn('Firestore update error in updateReport:', fsErr);
+      markUnsyncedChanges(1);
+    }
+    ApiService.saveSubmission(updatedSub).catch(() => {});
     return updatedSub;
   };
 
@@ -712,7 +714,6 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     const updated = StorageService.deleteSubmission(id);
     setSubmissions(updated);
     setLocal('dbk_submissions_data', updated);
-    markUnsyncedChanges(1);
     try {
       await ApiService.deleteSubmission(id);
     } catch (e) {
@@ -722,6 +723,7 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       await deleteSingleSubmissionFromFirestore(id);
     } catch (fsErr) {
       console.warn('Firestore delete error:', fsErr);
+      markUnsyncedChanges(1);
     }
   };
 
@@ -729,11 +731,12 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     let current = submissions;
     for (const id of ids) {
       current = StorageService.deleteSubmission(id);
-      deleteSingleSubmissionFromFirestore(id).catch(() => {});
+      deleteSingleSubmissionFromFirestore(id).catch(() => {
+        markUnsyncedChanges(1);
+      });
     }
     setSubmissions(current);
     setLocal('dbk_submissions_data', current);
-    markUnsyncedChanges(1);
     try {
       await ApiService.batchDeleteSubmissions(ids);
     } catch (e) {
@@ -922,7 +925,6 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     const cleanPeriod = cleanFirestorePayload(newPeriod);
     const updated = StorageService.savePeriod(cleanPeriod);
     setPeriods(updated);
-    markUnsyncedChanges(1);
 
     // Save to server API immediately
     ApiService.savePeriod(cleanPeriod).catch(e => console.warn('ApiService savePeriod error:', e));
@@ -932,7 +934,10 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     if (isReady && db) {
       safeFirestoreWrite('create_period', () =>
         setDoc(doc(db, 'periods', newPeriod.id), cleanPeriod)
-      ).catch(fsErr => console.warn('Firestore period push notice:', fsErr));
+      ).catch(fsErr => {
+        console.warn('Firestore period push notice:', fsErr);
+        markUnsyncedChanges(1);
+      });
     }
 
     // Broadcast notification to school
@@ -957,7 +962,6 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     const cleanPeriod = cleanFirestorePayload(updatedPeriod);
     const updated = StorageService.savePeriod(cleanPeriod);
     setPeriods(updated);
-    markUnsyncedChanges(1);
 
     // Save to server API immediately
     ApiService.savePeriod(cleanPeriod).catch(e => console.warn('ApiService savePeriod error:', e));
@@ -967,7 +971,10 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     if (isReady && db) {
       safeFirestoreWrite('update_period', () =>
         setDoc(doc(db, 'periods', updatedPeriod.id), cleanPeriod)
-      ).catch(fsErr => console.warn('Firestore period update notice:', fsErr));
+      ).catch(fsErr => {
+        console.warn('Firestore period update notice:', fsErr);
+        markUnsyncedChanges(1);
+      });
     }
 
     return updatedPeriod;
@@ -984,7 +991,6 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const deletePeriod = async (id: string) => {
     const updated = StorageService.deletePeriod(id);
     setPeriods(updated);
-    markUnsyncedChanges(1);
 
     // Delete from server API immediately
     ApiService.deletePeriod(id).catch(e => console.warn('ApiService deletePeriod error:', e));
@@ -994,7 +1000,10 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     if (isReady && db) {
       safeFirestoreWrite('delete_period', () =>
         deleteDoc(doc(db, 'periods', id))
-      ).catch(fsErr => console.warn('Firestore period delete notice:', fsErr));
+      ).catch(fsErr => {
+        console.warn('Firestore period delete notice:', fsErr);
+        markUnsyncedChanges(1);
+      });
     }
   };
 
@@ -1080,19 +1089,28 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const updateSchoolInfo = (info: SchoolInfo) => {
     const updated = StorageService.saveSchoolInfo(info);
     setSchoolInfo(updated);
-    markUnsyncedChanges(1);
+    const { db, isReady } = getFirebaseInstance();
+    if (isReady && db) {
+      setDoc(doc(db, 'metadata', 'schoolInfo'), updated, { merge: true }).catch(() => {});
+    }
   };
 
   const updateSchoolLogo = (logoUrl: string) => {
     const updated = StorageService.saveSchoolLogo(logoUrl);
     setSchoolInfo(updated);
-    markUnsyncedChanges(1);
+    const { db, isReady } = getFirebaseInstance();
+    if (isReady && db) {
+      setDoc(doc(db, 'metadata', 'schoolInfo'), updated, { merge: true }).catch(() => {});
+    }
   };
 
   const removeSchoolLogo = () => {
     const updated = StorageService.removeSchoolLogo();
     setSchoolInfo(updated);
-    markUnsyncedChanges(1);
+    const { db, isReady } = getFirebaseInstance();
+    if (isReady && db) {
+      setDoc(doc(db, 'metadata', 'schoolInfo'), updated, { merge: true }).catch(() => {});
+    }
   };
 
   const resetAllData = () => {
@@ -1102,7 +1120,6 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     setDepartments(StorageService.getDepartments());
     setNotifications(StorageService.getNotifications(currentUser.id));
     setSchoolInfo(StorageService.getSchoolInfo());
-    markUnsyncedChanges(1);
   };
 
   return (

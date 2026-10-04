@@ -342,11 +342,6 @@ export const LoginPage: React.FC = () => {
         </div>
       )}
 
-      {/* Bottom Footer Bar */}
-      <footer className="border-t border-white/10 bg-black/20 backdrop-blur-md px-4 py-3 text-center text-xs text-slate-400">
-        Trường THCS & THPT Đốc Binh Kiều • Tháp Mười, Đồng Tháp • Năm học 2026 - 2027
-      </footer>
-
     </div>
   );
 };
