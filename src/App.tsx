@@ -184,7 +184,7 @@ const MainLayout: React.FC = () => {
 
       {/* Main Container */}
       <div className="flex-1 w-full max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6">
-        {isQuotaExceeded && !dismissedQuotaBanner && (
+        {isAdmin && isQuotaExceeded && !dismissedQuotaBanner && (
           <div className="mb-4 p-3 sm:p-4 rounded-2xl bg-amber-50/90 border border-amber-200/80 text-amber-900 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
             <div className="flex items-center gap-2.5">
               <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0 animate-pulse" />

@@ -457,14 +457,6 @@ export const SubmitReportModal: React.FC<SubmitReportModalProps> = ({
         lateExplanation: isPastDeadline ? lateExplanation : undefined
       });
 
-      if (!isDraft) {
-        confetti({
-          particleCount: 80,
-          spread: 60,
-          origin: { y: 0.6 }
-        });
-      }
-
       onClose();
       // Reset
       setContent('');
@@ -980,29 +972,17 @@ export const SubmitReportModal: React.FC<SubmitReportModalProps> = ({
                 <span>{isSubmitting ? 'Đang cập nhật...' : 'Cập Nhật Bổ Sung Bản Đã Nộp'}</span>
               </button>
             ) : (
-              <>
-                <button
-                  type="button"
-                  disabled={isSubmitting}
-                  onClick={() => handleSubmit(true)}
-                  className="px-4 py-2 rounded-xl border border-emerald-300 text-xs font-bold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 transition flex items-center gap-1.5 cursor-pointer"
-                >
-                  <Save className="w-4 h-4" />
-                  <span>Lưu Bản Nháp</span>
-                </button>
-
-                <button
-                  type="button"
-                  id="btn-submit-report-modal"
-                  disabled={isSubmitting}
-                  onClick={() => handleSubmit(false)}
-                  className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-xs sm:text-sm font-bold flex items-center gap-2 shadow-sm hover:shadow-md transition active:scale-98 cursor-pointer"
-                  title="Nhấn để gửi toàn bộ dữ liệu báo cáo về Ban Giám Hiệu"
-                >
-                  <Send className="w-4 h-4" />
-                  <span>{isSubmitting ? 'Đang gửi dữ liệu...' : 'Gửi Báo Cáo Về BGH'}</span>
-                </button>
-              </>
+              <button
+                type="button"
+                id="btn-submit-report-modal"
+                disabled={isSubmitting}
+                onClick={() => handleSubmit(false)}
+                className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-xs sm:text-sm font-bold flex items-center gap-2 shadow-sm hover:shadow-md transition active:scale-98 cursor-pointer"
+                title="Nhấn để lưu dữ liệu lên đám mây và gửi về Ban Giám Hiệu"
+              >
+                <Send className="w-4 h-4" />
+                <span>{isSubmitting ? 'Đang lưu lên đám mây...' : 'Gửi Báo Cáo'}</span>
+              </button>
             )}
           </div>
         </div>

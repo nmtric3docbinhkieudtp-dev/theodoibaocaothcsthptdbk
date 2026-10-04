@@ -200,8 +200,7 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
           )}
 
-          {/* Quick Submit Button */}
-          {/* Role-based action button: Admin creates requirement & sets deadline, Staff submits */}
+          {/* Role-based action button: Admin creates requirement & sets deadline */}
           {isAdmin || isPrincipal ? (
             <button
               id="btn-header-create-period"
@@ -212,16 +211,6 @@ export const Header: React.FC<HeaderProps> = ({
               <Plus className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">Ban Hành Yêu Cầu Báo Cáo</span>
               <span className="sm:hidden">Tạo Báo Cáo</span>
-            </button>
-          ) : onOpenSubmit ? (
-            <button
-              id="btn-quick-submit"
-              onClick={onOpenSubmit}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 active:scale-98 transition shadow-2xs cursor-pointer"
-            >
-              <Sparkles className="w-3.5 h-3.5" />
-              <span className="hidden xs:inline">Nộp Báo Cáo</span>
-              <span className="xs:hidden">Nộp</span>
             </button>
           ) : null}
 
