@@ -29,12 +29,13 @@ import {
   Sliders,
   Hash,
   Bookmark,
-  Type
+  Type,
+  Printer
 } from 'lucide-react';
 import { CustomFormField, CustomDynamicTable } from '../../types';
 import { ImportFormFromDocModal } from '../common/ImportFormFromDocModal';
 import { ParsedTemplateResult } from '../../utils/formFileParser';
-import { exportCustomReportToWord, splitSmartLines } from '../../utils/homeroomReportExporter';
+import { exportCustomReportToWord, exportCustomReportToPdf, splitSmartLines } from '../../utils/homeroomReportExporter';
 
 interface CustomReportFormBuilderProps {
   fields: CustomFormField[];
@@ -283,6 +284,20 @@ export const CustomReportFormBuilder: React.FC<CustomReportFormBuilderProps> = (
       tables,
       notes,
       fileName: formTitle
+    });
+  };
+
+  const handleDownloadPdf = () => {
+    exportCustomReportToPdf({
+      title: formTitle,
+      authorName,
+      authorRole,
+      departmentOrClass,
+      academicYear,
+      fields,
+      fieldValues,
+      tables,
+      notes
     });
   };
 
@@ -1075,16 +1090,30 @@ export const CustomReportFormBuilder: React.FC<CustomReportFormBuilderProps> = (
                   <div className="flex justify-center mt-0.5">
                     <div className="w-[140px] h-[1.2px] bg-black"></div>
                   </div>
-                  <div className="italic text-[11px] mt-1">
-                    Đốc Binh Kiều, ngày {new Date().getDate()} tháng {new Date().getMonth() + 1} năm {new Date().getFullYear()}
-                  </div>
+                  {!(/nghỉ\s*phép/i.test(formTitle) || /xin\s*phép/i.test(formTitle) || /đơn\s*xin/i.test(formTitle)) && (
+                    <div className="italic text-[11px] mt-1">
+                      Đốc Binh Kiều, ngày {new Date().getDate()} tháng {new Date().getMonth() + 1} năm {new Date().getFullYear()}
+                    </div>
+                  )}
                 </div>
               </div>
 
               <div className="text-center py-2">
                 <h3 className="text-base font-bold uppercase">{formTitle}</h3>
-                <div className="italic text-xs text-slate-600">Năm học: {academicYear}</div>
+                {!(/nghỉ\s*phép/i.test(formTitle) || /xin\s*phép/i.test(formTitle) || /đơn\s*xin/i.test(formTitle)) && (
+                  <div className="italic text-xs text-slate-600">Năm học: {academicYear}</div>
+                )}
               </div>
+
+              {(/nghỉ\s*phép/i.test(formTitle) || /xin\s*phép/i.test(formTitle) || /đơn\s*xin/i.test(formTitle)) && (
+                <div className="text-center py-1">
+                  <div className="inline-block text-left text-xs space-y-1">
+                    <p className="font-bold">Kính gửi:</p>
+                    <p className="pl-4">- Ban Giám hiệu Trường THCS và THPT Đốc Binh Kiều;</p>
+                    <p className="pl-4">- Tổ trưởng Tổ chuyên môn: <strong>{departmentOrClass || '........................'}</strong>.</p>
+                  </div>
+                </div>
+              )}
 
               <div className="space-y-1">
                 <p>- Người thực hiện: <strong>{authorName}</strong></p>
@@ -1115,33 +1144,43 @@ export const CustomReportFormBuilder: React.FC<CustomReportFormBuilderProps> = (
               {tables.length > 0 && (
                 <div className="space-y-3 pt-2">
                   <div className="font-bold uppercase">II. BẢNG SỐ LIỆU CHI TIẾT:</div>
-                  {tables.map((t, idx) => (
-                    <div key={t.id} className="space-y-1">
-                      <div className="font-bold italic">Bảng {idx + 1}: {t.title}</div>
-                      <table className="w-full border-collapse border border-slate-300">
-                        <thead>
-                          <tr className="bg-slate-100">
-                            {t.headers.map((h, hIdx) => (
-                              <th key={hIdx} className="border border-slate-300 p-1.5 font-bold text-center">
-                                {h}
-                              </th>
-                            ))}
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {t.rows.map((row, rIdx) => (
-                            <tr key={rIdx}>
-                              {t.headers.map((h, cIdx) => (
-                                <td key={cIdx} className="border border-slate-300 p-1.5">
-                                  {row[h] || ''}
-                                </td>
+                  {tables.map((t, idx) => {
+                    const isLeaveForm = /nghỉ\s*phép/i.test(formTitle) || /xin\s*phép/i.test(formTitle) || /đơn\s*xin/i.test(formTitle);
+                    let previewHeaders = [...t.headers];
+                    if (isLeaveForm && !previewHeaders.some(h => /ký|chữ\s*ký|xác\s*nhận/i.test(h))) {
+                      previewHeaders.push('Chữ ký người dạy');
+                    }
+                    return (
+                      <div key={t.id} className="space-y-1">
+                        <div className="font-bold italic">Bảng {idx + 1}: {t.title}</div>
+                        <table className="w-full border-collapse border border-slate-300">
+                          <thead>
+                            <tr className="bg-slate-100">
+                              {previewHeaders.map((h, hIdx) => (
+                                <th key={hIdx} className="border border-slate-300 p-1.5 font-bold text-center">
+                                  {h}
+                                </th>
                               ))}
                             </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  ))}
+                          </thead>
+                          <tbody>
+                            {(t.rows.length > 0 ? t.rows : [
+                              { 'STT': '1', 'Lớp': '', 'Tiết': '', 'Người dạy': '', 'Chữ ký người dạy': '' },
+                              { 'STT': '2', 'Lớp': '', 'Tiết': '', 'Người dạy': '', 'Chữ ký người dạy': '' }
+                            ]).map((row, rIdx) => (
+                              <tr key={rIdx}>
+                                {previewHeaders.map((h, cIdx) => (
+                                  <td key={cIdx} className="border border-slate-300 p-1.5 text-center">
+                                    {row[h] || ''}
+                                  </td>
+                                ))}
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
 
@@ -1150,6 +1189,48 @@ export const CustomReportFormBuilder: React.FC<CustomReportFormBuilderProps> = (
                   <div className="font-bold uppercase">III. GHI CHÚ & KIẾN NGHỊ:</div>
                   <div className="p-3 bg-slate-50 border border-slate-300 rounded whitespace-pre-line leading-relaxed">
                     {notes}
+                  </div>
+                </div>
+              )}
+
+              {/* Signatures */}
+              {(/nghỉ\s*phép/i.test(formTitle) || /xin\s*phép/i.test(formTitle) || /đơn\s*xin/i.test(formTitle)) ? (
+                <div className="pt-6 space-y-4">
+                  <div className="grid grid-cols-2 text-center gap-4">
+                    <div>
+                      <div className="font-bold uppercase">Ý KIẾN CỦA TỔ TRƯỞNG CHUYÊN MÔN</div>
+                      <div className="italic text-[10px] text-slate-500">(Ký và ghi rõ họ tên)</div>
+                      <div className="h-12"></div>
+                      <div className="font-medium text-slate-400">...................................................</div>
+                    </div>
+                    <div>
+                      <div className="italic text-[11px] mb-1">
+                        Đốc Binh Kiều, ngày {new Date().getDate()} tháng {new Date().getMonth() + 1} năm {new Date().getFullYear()}
+                      </div>
+                      <div className="font-bold uppercase">NGƯỜI LÀM ĐƠN</div>
+                      <div className="italic text-[10px] text-slate-500">(Ký và ghi rõ họ tên)</div>
+                      <div className="h-12"></div>
+                      <div className="font-bold">{authorName}</div>
+                    </div>
+                  </div>
+                  <div className="text-center pt-2">
+                    <div className="font-bold uppercase">Ý KIẾN PHÊ DUYỆT CỦA BAN GIÁM HIỆU</div>
+                    <div className="italic text-[10px] text-slate-500">(Ký và ghi rõ họ tên)</div>
+                    <div className="h-12"></div>
+                    <div className="font-medium text-slate-400">...................................................</div>
+                  </div>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 text-center pt-6">
+                  <div></div>
+                  <div>
+                    <div className="italic text-[11px] mb-1">
+                      Đốc Binh Kiều, ngày {new Date().getDate()} tháng {new Date().getMonth() + 1} năm {new Date().getFullYear()}
+                    </div>
+                    <div className="font-bold uppercase">NGƯỜI LẬP BÁO CÁO</div>
+                    <div className="italic text-[10px] text-slate-500">(Ký và ghi rõ họ tên)</div>
+                    <div className="h-14"></div>
+                    <div className="font-bold">{authorName}</div>
                   </div>
                 </div>
               )}
@@ -1173,6 +1254,17 @@ export const CustomReportFormBuilder: React.FC<CustomReportFormBuilderProps> = (
               >
                 <Download className="w-3.5 h-3.5" />
                 <span>Tải File Word (.doc)</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  handleDownloadPdf();
+                  setShowPreviewModal(false);
+                }}
+                className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-xs"
+              >
+                <Printer className="w-3.5 h-3.5" />
+                <span>Xuất PDF / In (.pdf)</span>
               </button>
             </div>
           </div>

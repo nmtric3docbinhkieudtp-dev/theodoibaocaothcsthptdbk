@@ -163,6 +163,12 @@ export const SubmitReportModal: React.FC<SubmitReportModalProps> = ({
     currentPeriod?.title?.toLowerCase().includes('xin phép')
   );
 
+  const isLeaveRequestPeriod = Boolean(
+    currentPeriod?.title?.toLowerCase().includes('nghỉ phép') ||
+    currentPeriod?.title?.toLowerCase().includes('xin phép') ||
+    currentPeriod?.title?.toLowerCase().includes('đơn xin')
+  );
+
   const userSubs = useMemo(() => {
     if (!currentPeriod) return [];
     return submissions.filter(s => s.authorId === currentUser.id && s.periodId === currentPeriod.id);
@@ -708,33 +714,17 @@ export const SubmitReportModal: React.FC<SubmitReportModalProps> = ({
               </button>
             )}
 
-            {hasFormTemplate && (
-              <button
-                type="button"
-                onClick={() => setFormMode('custom_form')}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-2xs ${
-                  isCustomFormActive
-                    ? 'bg-emerald-700 text-white shadow-xs'
-                    : 'bg-white text-slate-700 hover:bg-slate-50 border border-slate-200'
-                }`}
-              >
+            {hasFormTemplate ? (
+              <div className="px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-700 text-white shadow-xs flex items-center gap-1.5">
                 <Layers className="w-3.5 h-3.5" />
-                <span>Biểu Mẫu Nhập Liệu</span>
-              </button>
-            )}
-
-            <button
-              type="button"
-              onClick={() => setFormMode('standard')}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-2xs ${
-                formMode === 'standard' || (!isDeptMinutesActive && !isHomeroomActive && !isCustomFormActive)
-                  ? 'bg-emerald-700 text-white shadow-xs'
-                  : 'bg-white text-slate-700 hover:bg-slate-50 border border-slate-200'
-              }`}
-            >
-              <FileText className="w-3.5 h-3.5" />
-              <span>Soạn Thảo Tự Do</span>
-            </button>
+                <span>{isLeaveRequestPeriod ? 'Biểu Mẫu Đơn Xin Nghỉ Phép' : 'Biểu Mẫu Nhập Liệu Trực Tuyến'}</span>
+              </div>
+            ) : !isDeptMinutesActive && !isHomeroomActive ? (
+              <div className="px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-700 text-white shadow-xs flex items-center gap-1.5">
+                <FileText className="w-3.5 h-3.5" />
+                <span>Nội Dung Báo Cáo</span>
+              </div>
+            ) : null}
           </div>
 
           {/* Các nút xuất file lưu trên máy tính */}
@@ -849,7 +839,9 @@ export const SubmitReportModal: React.FC<SubmitReportModalProps> = ({
             <div className="flex items-center gap-2">
               <Paperclip className="w-4 h-4 text-emerald-600" />
               <span className="text-xs font-bold text-slate-800">
-                Đính kèm tệp minh chứng (PDF, Word, Excel, Hình ảnh...)
+                {isLeaveRequestPeriod
+                  ? 'Thầy cô đính kèm Đơn xin nghỉ phép file PDF có chữ ký giáo viên để minh chứng sau này'
+                  : 'Đính kèm tệp minh chứng (PDF, Word, Excel, Hình ảnh...)'}
               </span>
               {attachments.length > 0 && (
                 <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
@@ -886,10 +878,14 @@ export const SubmitReportModal: React.FC<SubmitReportModalProps> = ({
                 />
                 <UploadCloud className="w-6 h-6 text-emerald-600 mx-auto mb-1" />
                 <p className="text-xs font-semibold text-slate-800">
-                  Kéo thả tệp vào đây hoặc <span className="text-emerald-700 underline">bấm để chọn tệp</span>
+                  {isLeaveRequestPeriod
+                    ? <>Kéo thả tệp Đơn xin nghỉ phép file PDF có chữ ký vào đây hoặc <span className="text-emerald-700 underline">bấm để chọn tệp</span></>
+                    : <>Kéo thả tệp vào đây hoặc <span className="text-emerald-700 underline">bấm để chọn tệp</span></>}
                 </p>
                 <p className="text-[10px] text-slate-500 mt-0.5">
-                  Hỗ trợ Word (.docx, .doc), Excel (.xlsx, .xls), PDF, PowerPoint, Ảnh minh chứng • Dung lượng tối đa 15 MB / tệp
+                  {isLeaveRequestPeriod
+                    ? 'Hỗ trợ tệp PDF hoặc ảnh chụp Đơn xin nghỉ phép đã có đầy đủ chữ ký của giáo viên • Dung lượng tối đa 15 MB / tệp'
+                    : 'Hỗ trợ Word (.docx, .doc), Excel (.xlsx, .xls), PDF, PowerPoint, Ảnh minh chứng • Dung lượng tối đa 15 MB / tệp'}
                 </p>
               </div>
 
