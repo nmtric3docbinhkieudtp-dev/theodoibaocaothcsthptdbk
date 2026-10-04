@@ -13,7 +13,8 @@ import {
   Building, 
   Paperclip,
   Sparkles,
-  ShieldCheck
+  ShieldCheck,
+  Download
 } from 'lucide-react';
 import { ReportSubmission } from '../../types';
 
@@ -248,10 +249,19 @@ export const ApprovalQueue: React.FC<ApprovalQueueProps> = ({
                   <div className="flex flex-wrap items-center gap-2 text-xs">
                     <span className="text-slate-400 font-medium">Tệp đính kèm ({sub.attachments.length}):</span>
                     {sub.attachments.map(a => (
-                      <span key={a.id} className="inline-flex items-center gap-1 bg-slate-100 text-slate-700 px-2 py-0.5 rounded-md text-[11px] font-medium">
-                        <Paperclip className="w-3 h-3 text-slate-400" />
-                        <span>{a.name}</span>
-                      </span>
+                      <a 
+                        key={a.id} 
+                        href={a.url || '#'}
+                        download={a.name}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1 bg-slate-100 hover:bg-emerald-100 text-slate-700 hover:text-emerald-800 px-2 py-0.5 rounded-md text-[11px] font-medium transition cursor-pointer"
+                        title={`Bấm để mở / tải về tệp "${a.name}"`}
+                      >
+                        <Paperclip className="w-3 h-3 text-emerald-600" />
+                        <span className="truncate max-w-[140px]">{a.name}</span>
+                        <Download className="w-2.5 h-2.5 opacity-70" />
+                      </a>
                     ))}
                   </div>
                 )}

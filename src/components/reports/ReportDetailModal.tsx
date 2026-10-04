@@ -855,16 +855,16 @@ export const ReportDetailModal: React.FC<ReportDetailModalProps> = ({
               {submission.attachments.map((att) => (
                 <div
                   key={att.id}
-                  className="flex items-center justify-between p-3 rounded-2xl border border-slate-200 bg-white hover:border-emerald-300 transition shadow-2xs group"
+                  className="flex items-center justify-between p-3 rounded-2xl border border-slate-200 bg-white hover:border-emerald-300 hover:shadow-xs transition group"
                 >
                   <div className="flex items-center gap-2.5 min-w-0">
                     {getFileIcon(att.name)}
                     <div className="min-w-0">
-                      <div className="text-xs font-bold text-slate-900 truncate max-w-[200px]" title={att.name}>
+                      <div className="text-xs font-bold text-slate-900 truncate max-w-[170px] sm:max-w-[200px]" title={att.name}>
                         {att.name}
                       </div>
-                      <div className="text-[10px] text-slate-400">
-                        {formatFileSize(att.size)} • Tải lên {new Date(att.uploadedAt).toLocaleDateString('vi-VN')}
+                      <div className="text-[10px] text-slate-500">
+                        {formatFileSize(att.size)} • {new Date(att.uploadedAt).toLocaleDateString('vi-VN')}
                       </div>
                     </div>
                   </div>
@@ -874,15 +874,18 @@ export const ReportDetailModal: React.FC<ReportDetailModalProps> = ({
                     download={att.name}
                     target="_blank"
                     rel="noreferrer"
-                    className="p-2 rounded-xl bg-slate-100 group-hover:bg-emerald-600 group-hover:text-white text-slate-600 transition flex items-center gap-1 text-xs font-semibold cursor-pointer"
-                    title="Tải tệp về máy"
+                    className="px-3 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-600 text-emerald-800 hover:text-white border border-emerald-200 hover:border-emerald-600 transition flex items-center gap-1 text-xs font-bold cursor-pointer shadow-2xs shrink-0"
+                    title={`Mở hoặc tải về tệp "${att.name}"`}
                   >
-                    <Download className="w-4 h-4" />
-                    <span className="hidden sm:inline">Tải về</span>
+                    <Download className="w-3.5 h-3.5" />
+                    <span>Mở / Tải về</span>
                   </a>
                 </div>
               ))}
             </div>
+            <p className="text-[11px] text-slate-500 italic mt-1">
+              💡 Thầy/Cô chỉ cần nhấn nút <strong>"Mở / Tải về"</strong> để xem tài liệu gốc trên Word, Excel, PDF hoặc ảnh minh chứng.
+            </p>
           </div>
         )}
 
