@@ -1115,35 +1115,140 @@ export const CustomReportFormBuilder: React.FC<CustomReportFormBuilderProps> = (
                 </div>
               )}
 
-              <div className="space-y-1">
-                <p>- Người thực hiện: <strong>{authorName}</strong></p>
-                <p>- Chức vụ / Bộ phận: <strong>{authorRole} - {departmentOrClass}</strong></p>
-                <p>- Đơn vị công tác: Trường THCS-THPT Đốc Binh Kiều</p>
-              </div>
+              {(() => {
+                const isLeave = /nghỉ\s*phép/i.test(formTitle) || /xin\s*phép/i.test(formTitle) || /đơn\s*xin/i.test(formTitle);
+                if (!isLeave) {
+                  return (
+                    <>
+                      <div className="space-y-1">
+                        <p>- Người thực hiện: <strong>{authorName}</strong></p>
+                        <p>- Chức vụ / Bộ phận: <strong>{authorRole} - {departmentOrClass}</strong></p>
+                        <p>- Đơn vị công tác: Trường THCS-THPT Đốc Binh Kiều</p>
+                      </div>
 
-              {fields.length > 0 && (
-                <div className="space-y-2 pt-2">
-                  <div className="font-bold uppercase">I. THÔNG TIN & CHỈ TIÊU:</div>
-                  <table className="w-full border-collapse border border-slate-300">
-                    <tbody>
-                      {fields.map((f) => (
-                        <tr key={f.id} className="border-b border-slate-300">
-                          <td className="p-2 font-bold bg-slate-50 w-2/5 border-r border-slate-300">{f.label}</td>
-                          <td className="p-2">
-                            {f.type === 'checkbox' 
-                              ? (fieldValues[f.id] ? '✓ Đạt yêu cầu' : 'Chưa đạt') 
-                              : (fieldValues[f.id] || '---')}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
+                      {fields.length > 0 && (
+                        <div className="space-y-2 pt-2">
+                          <div className="font-bold uppercase">I. THÔNG TIN & CHỈ TIÊU:</div>
+                          <table className="w-full border-collapse border border-slate-300">
+                            <tbody>
+                              {fields.map((f) => (
+                                <tr key={f.id} className="border-b border-slate-300">
+                                  <td className="p-2 font-bold bg-slate-50 w-2/5 border-r border-slate-300">{f.label}</td>
+                                  <td className="p-2">
+                                    {f.type === 'checkbox' 
+                                      ? (fieldValues[f.id] ? '✓ Đạt yêu cầu' : 'Chưa đạt') 
+                                      : (fieldValues[f.id] || '---')}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+                    </>
+                  );
+                }
+
+                // Trích xuất thông tin cho ĐƠN XIN NGHỈ PHÉP
+                let pTeacher = authorName;
+                let pSubject = authorRole || '';
+                let pLeaveDateRaw = '';
+                let pReason = '';
+                let pMethod = '';
+                const pOthers: { label: string; value: string }[] = [];
+
+                for (const f of fields) {
+                  const val = fieldValues[f.id];
+                  const valStr = val !== undefined && val !== null ? String(val).trim() : '';
+                  const lLower = (f.label || '').toLowerCase();
+
+                  const isHandVal = valStr === 'Dạy thay' || valStr === 'Đổi tiết' || /dạy\s*thay|đổi\s*tiết/i.test(valStr);
+                  const isHandLabel = lLower.includes('xử lý') || lLower.includes('phương án') || lLower.includes('dạy thay') || lLower.includes('đổi tiết') || (f.options && f.options.some(o => /dạy\s*thay|đổi\s*tiết/i.test(o)));
+
+                  if (isHandVal || (isHandLabel && !/ngày|thời\s*gian/i.test(lLower))) {
+                    if (valStr && !pMethod) pMethod = valStr;
+                    continue;
+                  }
+                  if (lLower.includes('họ và tên') || lLower.includes('họ tên') || lLower.includes('người làm đơn')) {
+                    if (valStr) pTeacher = valStr;
+                    continue;
+                  }
+                  if ((lLower.includes('môn') && !lLower.includes('chuyên môn')) || lLower.includes('bộ môn')) {
+                    if (valStr) pSubject = valStr;
+                    continue;
+                  }
+                  const isDateType = f.type === 'date';
+                  const isDateVal = /^\d{4}-\d{2}-\d{2}$/.test(valStr) || /^\d{1,2}[/-]\d{1,2}[/-]\d{2,4}$/.test(valStr);
+                  const isDateLab = lLower.includes('ngày nghỉ') || lLower.includes('thời gian nghỉ') || lLower.includes('ngày xin nghỉ') || (lLower.includes('ngày') && (lLower.includes('nghỉ') || lLower.includes('phép')));
+                  if ((isDateType || isDateVal || isDateLab) && !isHandVal) {
+                    if (valStr && !pLeaveDateRaw) pLeaveDateRaw = valStr;
+                    continue;
+                  }
+                  if (lLower.includes('lý do') || lLower.includes('nguyên nhân')) {
+                    if (valStr) pReason = valStr;
+                    continue;
+                  }
+                  if (f.type !== 'section' && valStr && !isHandVal) {
+                    pOthers.push({ label: f.label.replace(/:$/, '').trim(), value: valStr });
+                  }
+                }
+
+                if (/dạy\s*thay|đổi\s*tiết/i.test(pLeaveDateRaw)) {
+                  if (!pMethod) pMethod = pLeaveDateRaw;
+                  pLeaveDateRaw = '';
+                }
+                if (!pLeaveDateRaw) {
+                  for (const f of fields) {
+                    const v = fieldValues[f.id];
+                    const vStr = v !== undefined && v !== null ? String(v).trim() : '';
+                    if (!vStr || /dạy\s*thay|đổi\s*tiết/i.test(vStr)) continue;
+                    if (f.type === 'date' || /^\d{4}-\d{2}-\d{2}$/.test(vStr) || /^\d{1,2}[/-]\d{1,2}[/-]\d{2,4}$/.test(vStr)) {
+                      pLeaveDateRaw = vStr;
+                      break;
+                    }
+                  }
+                }
+                if (!pMethod) {
+                  for (const f of fields) {
+                    const v = fieldValues[f.id];
+                    const vStr = v !== undefined && v !== null ? String(v).trim() : '';
+                    if (/dạy\s*thay|đổi\s*tiết/i.test(vStr)) {
+                      pMethod = vStr;
+                      break;
+                    }
+                  }
+                }
+
+                let pLeaveDateFmt = pLeaveDateRaw;
+                if (/^\d{4}-\d{2}-\d{2}$/.test(pLeaveDateRaw)) {
+                  const [y, m, d] = pLeaveDateRaw.split('-');
+                  pLeaveDateFmt = `${d}/${m}/${y}`;
+                }
+
+                return (
+                  <div className="space-y-1.5 text-xs leading-relaxed">
+                    <p style={{ textIndent: '20px' }}>Tôi tên là: <strong>{pTeacher}</strong></p>
+                    <p style={{ textIndent: '20px' }}>
+                      Giáo viên giảng dạy môn: <strong>{pSubject || '...................'}</strong> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Tổ chuyên môn: <strong>{departmentOrClass || '...................'}</strong>
+                    </p>
+                    <p style={{ textIndent: '20px' }}>
+                      Nay tôi làm đơn này kính xin Ban Giám hiệu và Tổ trưởng chuyên môn cho tôi được nghỉ phép vào ngày: <strong>{pLeaveDateFmt || '................................'}</strong>
+                    </p>
+                    <p style={{ textIndent: '20px' }}>
+                      Lý do nghỉ: <strong>{pReason || '....................................................................................'}</strong>
+                    </p>
+                    <p style={{ textIndent: '20px' }}>
+                      Phương án xử lý tiết dạy: <strong>{pMethod || 'Dạy thay'}</strong>
+                    </p>
+                    {pOthers.map((item, idx) => (
+                      <p key={idx} style={{ textIndent: '20px' }}>{item.label}: <strong>{item.value}</strong></p>
+                    ))}
+                  </div>
+                );
+              })()}
 
               {tables.length > 0 && (
-                <div className="space-y-3 pt-2">
-                  <div className="font-bold uppercase">II. BẢNG SỐ LIỆU CHI TIẾT:</div>
+                <div className="space-y-2 pt-1">
                   {tables.map((t, idx) => {
                     const isLeaveForm = /nghỉ\s*phép/i.test(formTitle) || /xin\s*phép/i.test(formTitle) || /đơn\s*xin/i.test(formTitle);
                     let previewHeaders = [...t.headers];
@@ -1152,12 +1257,14 @@ export const CustomReportFormBuilder: React.FC<CustomReportFormBuilderProps> = (
                     }
                     return (
                       <div key={t.id} className="space-y-1">
-                        <div className="font-bold italic">Bảng {idx + 1}: {t.title}</div>
-                        <table className="w-full border-collapse border border-slate-300">
+                        <div className="font-bold uppercase text-[11px]">
+                          {tables.length > 1 ? `Bảng ${idx + 1}: ` : ''}{t.title || 'THỐNG KÊ CHI TIẾT TIẾT DẠY THAY HOẶC ĐỔI TIẾT'}
+                        </div>
+                        <table className="w-full border-collapse border border-slate-300 text-xs">
                           <thead>
                             <tr className="bg-slate-100">
                               {previewHeaders.map((h, hIdx) => (
-                                <th key={hIdx} className="border border-slate-300 p-1.5 font-bold text-center">
+                                <th key={hIdx} className="border border-slate-300 p-1 font-bold text-center text-[10px]">
                                   {h}
                                 </th>
                               ))}
@@ -1170,7 +1277,7 @@ export const CustomReportFormBuilder: React.FC<CustomReportFormBuilderProps> = (
                             ]).map((row, rIdx) => (
                               <tr key={rIdx}>
                                 {previewHeaders.map((h, cIdx) => (
-                                  <td key={cIdx} className="border border-slate-300 p-1.5 text-center">
+                                  <td key={cIdx} className="border border-slate-300 p-1 text-center text-[10px] h-6">
                                     {row[h] || ''}
                                   </td>
                                 ))}
@@ -1185,40 +1292,53 @@ export const CustomReportFormBuilder: React.FC<CustomReportFormBuilderProps> = (
               )}
 
               {notes && notes.trim() && (
-                <div className="space-y-1 pt-2">
-                  <div className="font-bold uppercase">III. GHI CHÚ & KIẾN NGHỊ:</div>
-                  <div className="p-3 bg-slate-50 border border-slate-300 rounded whitespace-pre-line leading-relaxed">
+                <div className="space-y-1 pt-1">
+                  <div className="font-bold uppercase text-xs">Ghi chú & Đề xuất thêm:</div>
+                  <div className="p-2.5 bg-slate-50 border border-slate-300 rounded whitespace-pre-line text-xs">
                     {notes}
                   </div>
                 </div>
               )}
 
+              {(/nghỉ\s*phép/i.test(formTitle) || /xin\s*phép/i.test(formTitle) || /đơn\s*xin/i.test(formTitle)) && (
+                <div className="text-xs text-justify pt-1" style={{ textIndent: '20px' }}>
+                  Tôi xin cam kết sẽ thực hiện đầy đủ chương trình giảng dạy, việc dạy bù hoặc đổi tiết theo đúng kế hoạch và quy chế chuyên môn của nhà trường./.
+                </div>
+              )}
+
               {/* Signatures */}
               {(/nghỉ\s*phép/i.test(formTitle) || /xin\s*phép/i.test(formTitle) || /đơn\s*xin/i.test(formTitle)) ? (
-                <div className="pt-6 space-y-4">
-                  <div className="grid grid-cols-2 text-center gap-4">
-                    <div>
-                      <div className="font-bold uppercase">Ý KIẾN CỦA TỔ TRƯỞNG CHUYÊN MÔN</div>
-                      <div className="italic text-[10px] text-slate-500">(Ký và ghi rõ họ tên)</div>
-                      <div className="h-12"></div>
-                      <div className="font-medium text-slate-400">...................................................</div>
-                    </div>
-                    <div>
-                      <div className="italic text-[11px] mb-1">
-                        Đốc Binh Kiều, ngày {new Date().getDate()} tháng {new Date().getMonth() + 1} năm {new Date().getFullYear()}
-                      </div>
-                      <div className="font-bold uppercase">NGƯỜI LÀM ĐƠN</div>
-                      <div className="italic text-[10px] text-slate-500">(Ký và ghi rõ họ tên)</div>
-                      <div className="h-12"></div>
-                      <div className="font-bold">{authorName}</div>
-                    </div>
-                  </div>
-                  <div className="text-center pt-2">
-                    <div className="font-bold uppercase">Ý KIẾN PHÊ DUYỆT CỦA BAN GIÁM HIỆU</div>
-                    <div className="italic text-[10px] text-slate-500">(Ký và ghi rõ họ tên)</div>
-                    <div className="h-12"></div>
-                    <div className="font-medium text-slate-400">...................................................</div>
-                  </div>
+                <div className="pt-2">
+                  <table className="w-full text-center border-collapse">
+                    <tbody>
+                      <tr>
+                        <td colSpan={2} style={{ width: '66%' }}></td>
+                        <td style={{ width: '34%' }} className="italic text-[10px] pb-1">
+                          Đốc Binh Kiều, ngày {new Date().getDate()} tháng {new Date().getMonth() + 1} năm {new Date().getFullYear()}
+                        </td>
+                      </tr>
+                      <tr>
+                        <td style={{ width: '33%', verticalAlign: 'top', padding: '2px' }}>
+                          <div className="font-bold uppercase text-[10px]">Ý KIẾN CỦA TỔ TRƯỞNG CHUYÊN MÔN</div>
+                          <div className="italic text-[9px] text-slate-500">(Ký và ghi rõ họ tên)</div>
+                          <div className="h-8"></div>
+                          <div className="font-medium text-slate-400 text-[10px]">......................................</div>
+                        </td>
+                        <td style={{ width: '33%', verticalAlign: 'top', padding: '2px' }}>
+                          <div className="font-bold uppercase text-[10px]">Ý KIẾN PHÊ DUYỆT CỦA BAN GIÁM HIỆU</div>
+                          <div className="italic text-[9px] text-slate-500">(Ký và ghi rõ họ tên)</div>
+                          <div className="h-8"></div>
+                          <div className="font-medium text-slate-400 text-[10px]">......................................</div>
+                        </td>
+                        <td style={{ width: '34%', verticalAlign: 'top', padding: '2px' }}>
+                          <div className="font-bold uppercase text-[10px]">NGƯỜI LÀM ĐƠN</div>
+                          <div className="italic text-[9px] text-slate-500">(Ký và ghi rõ họ tên)</div>
+                          <div className="h-8"></div>
+                          <div className="font-bold text-[10px]">{authorName}</div>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
                 </div>
               ) : (
                 <div className="grid grid-cols-2 text-center pt-6">
