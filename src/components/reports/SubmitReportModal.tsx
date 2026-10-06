@@ -580,35 +580,9 @@ export const SubmitReportModal: React.FC<SubmitReportModalProps> = ({
                 )}
               </div>
 
-              {eligiblePeriods.length > 1 ? (
-                <div className="mt-1">
-                  <div className="flex items-center gap-1.5 text-xs text-slate-500 font-semibold mb-1">
-                    <span>Đang chọn đợt báo cáo:</span>
-                    <span className="text-[10px] text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded-md border border-emerald-200">
-                      Có {eligiblePeriods.length} đợt dành cho Thầy/Cô
-                    </span>
-                  </div>
-                  <select
-                    value={currentPeriod.id}
-                    onChange={(e) => setSelectedPeriodId(e.target.value)}
-                    className="w-full text-sm font-bold text-slate-900 bg-white border-2 border-emerald-500 rounded-xl px-3 py-2 shadow-xs focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
-                  >
-                    {eligiblePeriods.map(p => {
-                      const hasSub = submissions.some(s => s.periodId === p.id && s.authorId === currentUser.id && s.status !== 'draft');
-                      return (
-                        <option key={p.id} value={p.id}>
-                          {hasSub ? '✅ [Đã nộp] ' : p.status === 'active' ? '📢 [Đang mở] ' : '🔒 [Đã đóng] '}
-                          {p.title}
-                        </option>
-                      );
-                    })}
-                  </select>
-                </div>
-              ) : (
-                <h2 className="text-base sm:text-lg font-black text-slate-900 leading-tight">
-                  {currentPeriod.title}
-                </h2>
-              )}
+              <h2 className="text-base sm:text-lg font-black text-slate-900 leading-tight mt-1">
+                {currentPeriod.title}
+              </h2>
 
               {currentPeriod.description && (
                 <p className="text-xs text-slate-600 mt-1 leading-relaxed line-clamp-2">

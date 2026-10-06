@@ -661,7 +661,7 @@ export function generateLeaveRequestHtml({
 
     const headerHtml = headers.map((h, i) => {
       const isLast = i === headers.length - 1;
-      return `<th style="border: 1px solid #000; background-color: #f2f2f2; padding: 4px 3px; text-align: center; font-weight: bold; font-size: 10.5pt; ${isLast ? 'width: 120px;' : ''}">${h}</th>`;
+      return `<th style="border: 1px solid #000; background-color: #f2f2f2; padding: 5px 4px; text-align: center; font-weight: bold; font-size: 12pt; ${isLast ? 'width: 130px;' : ''}">${h}</th>`;
     }).join('');
 
     let rowsToRender = t.rows && t.rows.length > 0 ? t.rows : [];
@@ -683,10 +683,10 @@ export function generateLeaveRequestHtml({
         const align = (isStt || isTiet || isLop || isLast) ? 'center' : 'left';
         
         if (isLast && (/ký|chữ\s*ký|xác\s*nhận/i.test(h) || !hasSigCol)) {
-          return `<td style="border: 1px solid #000; padding: 2px 4px; text-align: center; height: 26px; font-size: 10.5pt; vertical-align: middle;">${cellVal}</td>`;
+          return `<td style="border: 1px solid #000; padding: 3px 4px; text-align: center; height: 28px; font-size: 12pt; vertical-align: middle;">${cellVal}</td>`;
         }
 
-        return `<td style="border: 1px solid #000; padding: 2px 5px; text-align: ${align}; font-size: 10.5pt;">${cellVal || (isStt ? String(rIdx + 1) : '&nbsp;')}</td>`;
+        return `<td style="border: 1px solid #000; padding: 3px 6px; text-align: ${align}; font-size: 12pt;">${cellVal || (isStt ? String(rIdx + 1) : '&nbsp;')}</td>`;
       }).join('');
       return `<tr>${cells}</tr>`;
     }).join('');
@@ -694,10 +694,10 @@ export function generateLeaveRequestHtml({
     const cleanTableTitle = (t.title || 'THỐNG KÊ CHI TIẾT TIẾT DẠY THAY HOẶC ĐỔI TIẾT').toUpperCase();
 
     return `
-      <div style="font-weight: bold; font-size: 11pt; margin-top: 5px; margin-bottom: 3px; text-transform: uppercase;">
+      <div style="font-weight: bold; font-size: 12.5pt; margin-top: 6px; margin-bottom: 3px; text-transform: uppercase;">
         ${tables.length > 1 ? `${tIdx + 1}. ` : ''}${cleanTableTitle}:
       </div>
-      <table style="width: 100%; border-collapse: collapse; margin-bottom: 4px; font-size: 10.5pt;">
+      <table style="width: 100%; border-collapse: collapse; margin-bottom: 5px; font-size: 12pt;">
         <thead><tr>${headerHtml}</tr></thead>
         <tbody>${rowsHtml}</tbody>
       </table>
@@ -705,7 +705,7 @@ export function generateLeaveRequestHtml({
   }).join('');
 
   const otherFieldsHtml = otherFields.map(item => `
-    <p style="margin: 2px 0; text-indent: 25px; text-align: justify;">
+    <p style="margin: 3px 0; text-indent: 25px; text-align: justify; font-size: 13pt;">
       ${item.label}: <strong>${item.value}</strong>
     </p>
   `).join('');
@@ -726,8 +726,8 @@ export function generateLeaveRequestHtml({
         }
         body { 
           font-family: 'Times New Roman', Times, serif; 
-          font-size: 12pt; 
-          line-height: 1.36; 
+          font-size: 13pt; 
+          line-height: 1.38; 
           color: #000; 
           background: #fff; 
           margin: 0; 
@@ -744,7 +744,7 @@ export function generateLeaveRequestHtml({
         table.meta-header { 
           width: 100%; 
           border-collapse: collapse; 
-          margin-bottom: 4px; 
+          margin-bottom: 6px; 
         }
         table.meta-header td { 
           vertical-align: top; 
@@ -752,8 +752,8 @@ export function generateLeaveRequestHtml({
         }
         .main-title { 
           text-align: center; 
-          margin-top: 6px; 
-          margin-bottom: 4px; 
+          margin-top: 8px; 
+          margin-bottom: 6px; 
         }
         @media print {
           .no-print { display: none !important; }
@@ -807,36 +807,36 @@ export function generateLeaveRequestHtml({
       <div class="page-container">
         <!-- HEADER CƠ QUAN VÀ QUỐC HIỆU (CHUẨN THỂ THỨC NGHỊ ĐỊNH 30/2020/NĐ-CP) -->
         <!-- BỎ DÒNG Số: ... /BC-THCS... VÌ ĐÂY LÀ ĐƠN XIN NGHỈ PHÉP, KHÔNG PHẢI BÁO CÁO -->
-        <table class="meta-header" style="width: 100%; border: none; border-collapse: collapse; margin-bottom: 4px;">
+        <table class="meta-header" style="width: 100%; border: none; border-collapse: collapse; margin-bottom: 6px;">
           <tr>
             <td style="width: 44%; text-align: center; vertical-align: top; border: none; padding: 0;">
-              <div style="font-size: 11pt; text-transform: uppercase;">SỞ GDĐT TỈNH ĐỒNG THÁP</div>
-              <div style="font-size: 11.5pt; font-weight: bold; text-transform: uppercase; margin-top: 1px;">TRƯỜNG THCS VÀ THPT</div>
-              <div style="font-size: 11.5pt; font-weight: bold; text-transform: uppercase; margin-top: 1px;">ĐỐC BINH KIỀU</div>
+              <div style="font-size: 12pt; text-transform: uppercase;">SỞ GDĐT TỈNH ĐỒNG THÁP</div>
+              <div style="font-size: 12.5pt; font-weight: bold; text-transform: uppercase; margin-top: 1px;">TRƯỜNG THCS VÀ THPT</div>
+              <div style="font-size: 12.5pt; font-weight: bold; text-transform: uppercase; margin-top: 1px;">ĐỐC BINH KIỀU</div>
               <div style="text-align: center; margin-top: 2px; margin-bottom: 2px;">
-                <span style="display: inline-block; width: 90px; border-bottom: 1.5px solid #000; height: 1px; vertical-align: top;"></span>
+                <span style="display: inline-block; width: 95px; border-bottom: 1.5px solid #000; height: 1px; vertical-align: top;"></span>
               </div>
             </td>
             <td style="width: 56%; text-align: center; vertical-align: top; border: none; padding: 0;">
-              <div style="font-size: 11pt; font-weight: bold; text-transform: uppercase;">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</div>
-              <div style="font-size: 12pt; font-weight: bold; margin-top: 1px;">Độc lập – Tự do – Hạnh phúc</div>
+              <div style="font-size: 12pt; font-weight: bold; text-transform: uppercase;">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</div>
+              <div style="font-size: 13pt; font-weight: bold; margin-top: 1px;">Độc lập – Tự do – Hạnh phúc</div>
               <div style="text-align: center; margin-top: 2px; margin-bottom: 2px;">
-                <span style="display: inline-block; width: 155px; border-bottom: 1.5px solid #000; height: 1px; vertical-align: top;"></span>
+                <span style="display: inline-block; width: 165px; border-bottom: 1.5px solid #000; height: 1px; vertical-align: top;"></span>
               </div>
             </td>
           </tr>
         </table>
 
         <!-- TIÊU ĐỀ: ĐƠN XIN NGHỈ PHÉP (XÓA CHỮ BÁO CÁO PHÍA TRÊN) -->
-        <div class="main-title" style="text-align: center; margin-top: 6px; margin-bottom: 4px;">
-          <div style="font-size: 14pt; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px;">
+        <div class="main-title" style="text-align: center; margin-top: 8px; margin-bottom: 6px;">
+          <div style="font-size: 15pt; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px;">
             ĐƠN XIN NGHỈ PHÉP
           </div>
         </div>
 
         <!-- KÍNH GỬI: BAN GIÁM HIỆU & TỔ TRƯỞNG CHUYÊN MÔN -->
-        <div style="text-align: center; margin-bottom: 4px; font-size: 12pt;">
-          <div style="display: inline-block; text-align: left; line-height: 1.38;">
+        <div style="text-align: center; margin-bottom: 6px; font-size: 13pt;">
+          <div style="display: inline-block; text-align: left; line-height: 1.4;">
             <div style="font-weight: bold;">Kính gửi:</div>
             <div style="padding-left: 20px;">- Ban Giám hiệu Trường THCS và THPT Đốc Binh Kiều;</div>
             <div style="padding-left: 20px;">- Tổ trưởng Tổ chuyên môn: <strong>${deptName}</strong>.</div>
@@ -844,20 +844,20 @@ export function generateLeaveRequestHtml({
         </div>
 
         <!-- NỘI DUNG FORM KHAI BÁO CỦA GIÁO VIÊN -->
-        <div style="font-size: 12pt; line-height: 1.38; margin-bottom: 4px;">
-          <p style="margin: 2px 0; text-indent: 25px; text-align: justify;">
+        <div style="font-size: 13pt; line-height: 1.4; margin-bottom: 6px;">
+          <p style="margin: 3px 0; text-indent: 25px; text-align: justify;">
             Tôi tên là: <strong>${teacherName}</strong>
           </p>
-          <p style="margin: 2px 0; text-indent: 25px; text-align: justify;">
+          <p style="margin: 3px 0; text-indent: 25px; text-align: justify;">
             Giáo viên giảng dạy môn: <strong>${subjectName}</strong> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Tổ chuyên môn: <strong>${deptName}</strong>
           </p>
-          <p style="margin: 2px 0; text-indent: 25px; text-align: justify;">
+          <p style="margin: 3px 0; text-indent: 25px; text-align: justify;">
             Nay tôi làm đơn này kính xin Ban Giám hiệu và Tổ trưởng chuyên môn cho tôi được nghỉ phép vào ngày: <strong>${leaveDateFormatted}</strong>
           </p>
-          <p style="margin: 2px 0; text-indent: 25px; text-align: justify;">
+          <p style="margin: 3px 0; text-indent: 25px; text-align: justify;">
             Lý do nghỉ: <strong>${leaveReason}</strong>
           </p>
-          <p style="margin: 2px 0; text-indent: 25px; text-align: justify;">
+          <p style="margin: 3px 0; text-indent: 25px; text-align: justify;">
             Phương án xử lý tiết dạy: <strong>${handlingMethod || 'Dạy thay'}</strong>
           </p>
           ${otherFieldsHtml}
@@ -868,42 +868,42 @@ export function generateLeaveRequestHtml({
 
         <!-- GHI CHÚ / KIẾN NGHỊ THÊM (NẾU CÓ) -->
         ${notes && notes.trim() ? `
-          <div style="font-size: 11.5pt; margin-top: 3px; margin-bottom: 3px;">
+          <div style="font-size: 12pt; margin-top: 4px; margin-bottom: 4px;">
             <strong>Ghi chú / Đề xuất thêm:</strong> ${notes}
           </div>
         ` : ''}
 
         <!-- LỜI CAM KẾT HOÀN THÀNH NHIỆM VỤ -->
-        <div style="text-indent: 25px; margin: 4px 0 5px 0; text-align: justify; line-height: 1.36; font-size: 12pt;">
+        <div style="text-indent: 25px; margin: 6px 0 8px 0; text-align: justify; line-height: 1.4; font-size: 13pt;">
           Tôi xin cam kết sẽ thực hiện đầy đủ chương trình giảng dạy, việc dạy bù hoặc đổi tiết theo đúng kế hoạch và quy chế chuyên môn của nhà trường./.
         </div>
 
-        <!-- CHỮ KÝ PHÊ DUYỆT: THIẾT KẾ 3 CỘT GỌN GÀNG TRÊN 1 HÀNG ĐỂ ĐẢM BẢO 100% NẰM TRỌN TRONG 1 TRANG A4 DUY NHẤT -->
-        <table class="signature-table" style="width: 100%; margin-top: 6px; border-collapse: collapse; page-break-inside: avoid;">
+        <!-- CHỮ KÝ PHÊ DUYỆT: THIẾT KẾ 3 CỘT GỌN GÀNG TRÊN 1 HÀNG, MỞ RỘNG KHOẢNG TRỐNG KÝ VÀ ĐÓNG MỘC THOẢI MÁI -->
+        <table class="signature-table" style="width: 100%; margin-top: 8px; border-collapse: collapse; page-break-inside: avoid;">
           <tr>
             <td colspan="2" style="width: 66%;"></td>
-            <td style="width: 34%; text-align: center; vertical-align: top; font-style: italic; font-size: 10.5pt; padding-bottom: 2px;">
+            <td style="width: 34%; text-align: center; vertical-align: top; font-style: italic; font-size: 12pt; padding-bottom: 3px;">
               ${dateStr}
             </td>
           </tr>
           <tr>
             <td style="width: 33%; text-align: center; vertical-align: top; padding: 2px 4px;">
-              <div style="font-weight: bold; font-size: 10pt; text-transform: uppercase;">Ý KIẾN CỦA TỔ TRƯỞNG CHUYÊN MÔN</div>
-              <div style="font-style: italic; font-size: 9pt; margin-top: 1px;">(Ký và ghi rõ họ tên)</div>
-              <div style="height: 38px;"></div>
-              <div style="font-weight: bold; font-size: 10pt;">......................................</div>
+              <div style="font-weight: bold; font-size: 12pt; text-transform: uppercase;">Ý KIẾN CỦA TỔ TRƯỞNG CHUYÊN MÔN</div>
+              <div style="font-style: italic; font-size: 11pt; margin-top: 1px;">(Ký và ghi rõ họ tên)</div>
+              <div style="height: 72px;"></div>
+              <div style="font-weight: bold; font-size: 12pt;">......................................</div>
             </td>
             <td style="width: 33%; text-align: center; vertical-align: top; padding: 2px 4px;">
-              <div style="font-weight: bold; font-size: 10pt; text-transform: uppercase;">Ý KIẾN PHÊ DUYỆT CỦA BAN GIÁM HIỆU</div>
-              <div style="font-style: italic; font-size: 9pt; margin-top: 1px;">(Ký và ghi rõ họ tên)</div>
-              <div style="height: 38px;"></div>
-              <div style="font-weight: bold; font-size: 10pt;">......................................</div>
+              <div style="font-weight: bold; font-size: 12pt; text-transform: uppercase;">Ý KIẾN PHÊ DUYỆT CỦA BAN GIÁM HIỆU</div>
+              <div style="font-style: italic; font-size: 11pt; margin-top: 1px;">(Ký và ghi rõ họ tên, đóng dấu)</div>
+              <div style="height: 72px;"></div>
+              <div style="font-weight: bold; font-size: 12pt;">......................................</div>
             </td>
             <td style="width: 34%; text-align: center; vertical-align: top; padding: 2px 4px;">
-              <div style="font-weight: bold; font-size: 10pt; text-transform: uppercase;">NGƯỜI LÀM ĐƠN</div>
-              <div style="font-style: italic; font-size: 9pt; margin-top: 1px;">(Ký và ghi rõ họ tên)</div>
-              <div style="height: 38px;"></div>
-              <div style="font-weight: bold; font-size: 10.5pt;">${teacherName}</div>
+              <div style="font-weight: bold; font-size: 12pt; text-transform: uppercase;">NGƯỜI LÀM ĐƠN</div>
+              <div style="font-style: italic; font-size: 11pt; margin-top: 1px;">(Ký và ghi rõ họ tên)</div>
+              <div style="height: 72px;"></div>
+              <div style="font-weight: bold; font-size: 12.5pt;">${teacherName}</div>
             </td>
           </tr>
         </table>
@@ -1686,28 +1686,28 @@ export function generateStandardReportHtml({
         <table style="width: 100%; margin-top: 10px; border-collapse: collapse; page-break-inside: avoid;">
           <tr>
             <td colspan="2" style="width: 66%;"></td>
-            <td style="width: 34%; text-align: center; vertical-align: top; font-style: italic; font-size: 10.5pt; padding-bottom: 2px;">
+            <td style="width: 34%; text-align: center; vertical-align: top; font-style: italic; font-size: 12pt; padding-bottom: 3px;">
               ${dateStr}
             </td>
           </tr>
           <tr>
             <td style="width: 33%; text-align: center; vertical-align: top; padding: 2px 4px;">
-              <div style="font-weight: bold; font-size: 10pt; text-transform: uppercase;">Ý KIẾN CỦA TỔ TRƯỞNG CHUYÊN MÔN</div>
-              <div style="font-style: italic; font-size: 9pt; margin-top: 1px;">(Ký và ghi rõ họ tên)</div>
-              <div style="height: 38px;"></div>
-              <div style="font-weight: bold; font-size: 10pt;">......................................</div>
+              <div style="font-weight: bold; font-size: 12pt; text-transform: uppercase;">Ý KIẾN CỦA TỔ TRƯỞNG CHUYÊN MÔN</div>
+              <div style="font-style: italic; font-size: 11pt; margin-top: 1px;">(Ký và ghi rõ họ tên)</div>
+              <div style="height: 72px;"></div>
+              <div style="font-weight: bold; font-size: 12pt;">......................................</div>
             </td>
             <td style="width: 33%; text-align: center; vertical-align: top; padding: 2px 4px;">
-              <div style="font-weight: bold; font-size: 10pt; text-transform: uppercase;">Ý KIẾN PHÊ DUYỆT CỦA BAN GIÁM HIỆU</div>
-              <div style="font-style: italic; font-size: 9pt; margin-top: 1px;">(Ký và ghi rõ họ tên)</div>
-              <div style="height: 38px;"></div>
-              <div style="font-weight: bold; font-size: 10pt;">......................................</div>
+              <div style="font-weight: bold; font-size: 12pt; text-transform: uppercase;">Ý KIẾN PHÊ DUYỆT CỦA BAN GIÁM HIỆU</div>
+              <div style="font-style: italic; font-size: 11pt; margin-top: 1px;">(Ký và ghi rõ họ tên, đóng dấu)</div>
+              <div style="height: 72px;"></div>
+              <div style="font-weight: bold; font-size: 12pt;">......................................</div>
             </td>
             <td style="width: 34%; text-align: center; vertical-align: top; padding: 2px 4px;">
-              <div style="font-weight: bold; font-size: 10pt; text-transform: uppercase;">NGƯỜI LÀM ĐƠN</div>
-              <div style="font-style: italic; font-size: 9pt; margin-top: 1px;">(Ký và ghi rõ họ tên)</div>
-              <div style="height: 38px;"></div>
-              <div style="font-weight: bold; font-size: 10.5pt;">${authorName}</div>
+              <div style="font-weight: bold; font-size: 12pt; text-transform: uppercase;">NGƯỜI LÀM ĐƠN</div>
+              <div style="font-style: italic; font-size: 11pt; margin-top: 1px;">(Ký và ghi rõ họ tên)</div>
+              <div style="height: 72px;"></div>
+              <div style="font-weight: bold; font-size: 12.5pt;">${authorName}</div>
             </td>
           </tr>
         </table>

@@ -1318,23 +1318,23 @@ export const CustomReportFormBuilder: React.FC<CustomReportFormBuilderProps> = (
                         </td>
                       </tr>
                       <tr>
-                        <td style={{ width: '33%', verticalAlign: 'top', padding: '2px' }}>
-                          <div className="font-bold uppercase text-[10px]">Ý KIẾN CỦA TỔ TRƯỞNG CHUYÊN MÔN</div>
-                          <div className="italic text-[9px] text-slate-500">(Ký và ghi rõ họ tên)</div>
-                          <div className="h-8"></div>
-                          <div className="font-medium text-slate-400 text-[10px]">......................................</div>
+                        <td style={{ width: '33%', verticalAlign: 'top', padding: '2px 4px' }}>
+                          <div className="font-bold uppercase text-xs">Ý KIẾN CỦA TỔ TRƯỞNG CHUYÊN MÔN</div>
+                          <div className="italic text-[11px] text-slate-500">(Ký và ghi rõ họ tên)</div>
+                          <div className="h-16"></div>
+                          <div className="font-medium text-slate-400 text-xs">......................................</div>
                         </td>
-                        <td style={{ width: '33%', verticalAlign: 'top', padding: '2px' }}>
-                          <div className="font-bold uppercase text-[10px]">Ý KIẾN PHÊ DUYỆT CỦA BAN GIÁM HIỆU</div>
-                          <div className="italic text-[9px] text-slate-500">(Ký và ghi rõ họ tên)</div>
-                          <div className="h-8"></div>
-                          <div className="font-medium text-slate-400 text-[10px]">......................................</div>
+                        <td style={{ width: '33%', verticalAlign: 'top', padding: '2px 4px' }}>
+                          <div className="font-bold uppercase text-xs">Ý KIẾN PHÊ DUYỆT CỦA BAN GIÁM HIỆU</div>
+                          <div className="italic text-[11px] text-slate-500">(Ký, ghi rõ họ tên và đóng dấu)</div>
+                          <div className="h-16"></div>
+                          <div className="font-medium text-slate-400 text-xs">......................................</div>
                         </td>
-                        <td style={{ width: '34%', verticalAlign: 'top', padding: '2px' }}>
-                          <div className="font-bold uppercase text-[10px]">NGƯỜI LÀM ĐƠN</div>
-                          <div className="italic text-[9px] text-slate-500">(Ký và ghi rõ họ tên)</div>
-                          <div className="h-8"></div>
-                          <div className="font-bold text-[10px]">{authorName}</div>
+                        <td style={{ width: '34%', verticalAlign: 'top', padding: '2px 4px' }}>
+                          <div className="font-bold uppercase text-xs">NGƯỜI LÀM ĐƠN</div>
+                          <div className="italic text-[11px] text-slate-500">(Ký và ghi rõ họ tên)</div>
+                          <div className="h-16"></div>
+                          <div className="font-bold text-xs">{authorName}</div>
                         </td>
                       </tr>
                     </tbody>
