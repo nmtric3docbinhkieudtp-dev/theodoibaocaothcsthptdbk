@@ -14,6 +14,7 @@ export interface User {
   gender?: 'Nam' | 'Nữ' | string;
   subject?: string; // Môn dạy hoặc công tác
   partyMember?: boolean; // Đảng viên
+  isDeptHead?: boolean; // Tổ trưởng / Tổ phó
   positionBefore?: string;
   positionAfter?: string;
   qualification?: string; // Trình độ chuyên môn cao nhất (Thạc sỹ, ĐHSP, Đại học, Cao đẳng, Trung cấp, Kỹ sư...)
@@ -142,6 +143,7 @@ export interface ReportPeriod {
   status: 'active' | 'closed' | 'upcoming' | 'completed';
   createdBy: string;
   createdAt: string;
+  updatedAt?: string;
   defaultTemplateContent?: string;
   formTemplate?: PeriodFormTemplate;
   allowMultipleSubmissions?: boolean; // Cho phép mỗi giáo viên nộp nhiều lần (vd: Đơn xin nghỉ phép, Phiếu đề xuất...)

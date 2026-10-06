@@ -1,5 +1,6 @@
 import { User, Department, ReportPeriod, ReportSubmission, SchoolInfo, AppNotification } from '../types';
 import { OFFICIAL_DEPARTMENTS, OFFICIAL_USERS } from './staffRoster';
+import { SEEDED_PERIODS } from './initialPeriods';
 
 export const INITIAL_SCHOOL_INFO: SchoolInfo = {
   name: 'THCS & THPT Đốc Binh Kiều',
@@ -16,7 +17,7 @@ export const INITIAL_SCHOOL_INFO: SchoolInfo = {
 export const INITIAL_DEPARTMENTS: Department[] = OFFICIAL_DEPARTMENTS;
 export const INITIAL_USERS: User[] = OFFICIAL_USERS;
 
-export const INITIAL_PERIODS: ReportPeriod[] = [];
+export const INITIAL_PERIODS: ReportPeriod[] = SEEDED_PERIODS;
 
 export const INITIAL_SUBMISSIONS: ReportSubmission[] = [];
 

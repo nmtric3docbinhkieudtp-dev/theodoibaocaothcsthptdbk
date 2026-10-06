@@ -327,7 +327,7 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         unsubscribePeriods = onSnapshot(collection(db, 'periods'), (snapshot) => {
           if (!snapshot.empty) {
             const rawList: ReportPeriod[] = snapshot.docs.map(d => d.data() as ReportPeriod);
-            const list: ReportPeriod[] = rawList.map(p => {
+            const fsList: ReportPeriod[] = rawList.map(p => {
               const isLeave = Boolean(
                 p.allowMultipleSubmissions ||
                 p.title?.toLowerCase().includes('nghỉ phép') ||
@@ -338,16 +338,35 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
                 allowMultipleSubmissions: isLeave
               };
             });
-            list.sort((a, b) => {
+            const localPeriods = StorageService.getPeriods();
+            const periodMap = new Map<string, ReportPeriod>();
+            localPeriods.forEach(p => { if (p && p.id) periodMap.set(p.id, p); });
+            fsList.forEach(p => {
+              if (p && p.id) {
+                const existing = periodMap.get(p.id);
+                if (!existing) {
+                  periodMap.set(p.id, p);
+                } else {
+                  const t1 = new Date((existing as any).updatedAt || existing.createdAt || 0).getTime();
+                  const t2 = new Date((p as any).updatedAt || p.createdAt || 0).getTime();
+                  if (t2 >= t1) periodMap.set(p.id, p);
+                }
+              }
+            });
+            const mergedList = Array.from(periodMap.values());
+            mergedList.sort((a, b) => {
               if (a.status === 'active' && b.status !== 'active') return -1;
               if (a.status !== 'active' && b.status === 'active') return 1;
               return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
             });
-            setPeriods(list);
-            setLocal('dbk_periods_data', list);
+            setPeriods(mergedList);
+            setLocal('dbk_periods_data', mergedList);
           } else {
-            setPeriods([]);
-            setLocal('dbk_periods_data', []);
+            const localPeriods = StorageService.getPeriods();
+            if (localPeriods.length > 0) {
+              setPeriods(localPeriods);
+              setLocal('dbk_periods_data', localPeriods);
+            }
           }
         }, (err) => console.warn('Periods snapshot listener error:', err));
 

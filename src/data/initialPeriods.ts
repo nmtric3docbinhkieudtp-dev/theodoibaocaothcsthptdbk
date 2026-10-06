@@ -1,210 +1,14 @@
-[
+import { ReportPeriod } from "../types";
+
+export const SEEDED_PERIODS: ReportPeriod[] = [
   {
+    "title": "BIÊN BẢN HỌP TỔ CHUYÊN MÔN LẦN 3 (08-10-2026)",
+    "targetAudience": "dept_heads_only",
+    "id": "period-1791271199207",
     "createdBy": "Ban Giám Hiệu",
     "startDate": "2026-10-06T00:00:00.000Z",
     "allowMultipleSubmissions": false,
-    "title": "BIÊN BẢN HỌP TỔ CHUYÊN MÔN LẦN 3 (08-10-2026)",
-    "isRequired": true,
-    "reportType": "hybrid",
-    "targetRoles": [
-      "dept_head",
-      "teacher"
-    ],
     "academicYear": "2026-2027",
-    "description": "Yêu cầu nộp báo cáo theo mẫu trực tuyến gồm 22 mục thông tin và 1 bảng số liệu. Thầy/Cô điền trực tiếp vào form trên hệ thống trước thời hạn.",
-    "defaultTemplateContent": "TRƯỜNG THCS VÀ THPT                CỘNG HOÀ XÃ HỘI CHỦ NGHĨA VIỆT NAM\nĐỐC BINH KIỀU                                       Độc lập – Tự do – Hạnh Phúc\nTỔ ……..\nĐốc Binh Kiều, ngày    tháng    năm 2026\nBIÊN BẢN\nSinh hoạt tổ chuyên môn lần…. năm học 2026 - 2027\nThời gian:  lúc     giờ   phút, ngày    tháng  năm 2026.\nĐịa điểm: Tại phòng ………..\nThành phần:\nTổng số thành viên của tổ: …\nTổng số thành viên tham dự: …\nVắng: …. Trong đó: có phép: …., lý do: ……\nkhông phép: …….\nChủ trì: …………………….. - Tổ trưởng\nThư ký: …………………………….\nNỘI DUNG\n1. Đánh giá hoạt động của tổ trong thời gian qua\nƯu điểm:…\nHạn chế:…\nNguyên nhân của hạn chế:…\nGiải pháp khắc phục:…\n2. Triển khai các văn bản\nKế hoạch giáo dục nhà trường năm học 2026-2027 (bản dự thảo).\nCông văn số 3284/SGDĐT-GDPT ngày 24 tháng 8 năm 2026 về việc hướng dẫn xây dựng và tổ chức thực hiện kế hoạch giáo dục của nhà trường cấp trung học.\nCông văn số 1061/HD-SGDĐT ngày 28 tháng 8 năm 2026 về hướng dẫn thực hiện nhiệm vụ giáo dục phổ thông năm học 2026 – 2027.\nCông văn số 1091/HD-SGDĐT ngày 08 tháng 9 năm 2026 về việc hướng dẫn tổ chức sinh hoạt chuyên môn tại cơ sở giáo dục phổ thông và sinh hoạt cụm chuyên môn kể từ năm học 2026 – 2027.\n3. Triển khai nội dung công việc trọng tâm của trường/tổ\nGóp ý dự thảo kế hoạch giáo dục nhà trường. Tập trung đánh giá các số liệu, chỉ tiêu trong kế hoạch giáo dục.\nTriển khai các văn bản trọng tâm đầu năm do Sở GDĐT gửi. Ngoài ra, các văn bản về dạy học 2 buổi/ngày, dạy thêm học thêm, STEM/STEAM, giáo dục hòa nhập, khung năng lực AI, khung năng lực số,… nhà trường sẽ triển khai sau.\nXây dựng Kế hoạch giáo dục của tổ chuyên môn, Kế hoạch bài dạy (phụ lục 1,2 công văn 3284). Phân phối chương trình từng môn học, từng khối lớp. Thời gian gửi kế hoạch giáo dục của tổ chuyên môn, phân phối chương trình gửi lại chậm nhất 23/9/2026 (thứ 5 tuần sau).\nTriển khai về nội dung sinh hoạt chuyên môn. Trong đó lưu ý về các biểu mẫu Sở gửi kèm trong công văn 1091. Lưu ý: Trường THCS và THPT Đốc Binh Kiều thuộc cụm 2.\nTổ trưởng thông báo danh sách học sinh khuyết tật về giáo viên trong tổ để biết và có sự quan tâm, hỗ trợ đối với các trường hợp này. Về hồ sơ theo quy định nhà trường sẽ có hướng dẫn sau. Lưu ý: danh sách này chỉ dùng để thông báo cho giáo viên dạy lớp biết, không chia sẻ ra bên ngoài trường (có danh sách kèm theo)\nTheo Công văn 1061 việc kiểm tra, đánh giá học sinh sẽ tiếp tục thực hiện theo Công văn số 471/SGDĐT-GDPT ngày 22 tháng 8 năm 2025 của Sở GDĐT về việc thực hiện kiểm tra, đánh giá đối với cấp THCS và THPT. Tổ trưởng thông báo để giáo viên có định hướng trong việc giảng dạy học sinh.\nThông báo về số cột điểm trong năm học theo môn học để GVBM nắm:\n4. Ý kiến của các thành viên trong cuộc họp đối với trường/tổ/cá nhân\n……………….\n5. Kết luận\n(của chủ trì về các chỉ tiêu, nội dung trọng tâm cần thực hiện trong thời gian tới)\n………………..\n6. Đề xuất, kiến nghị với nhà trường\n……………….\nCuộc họp kết thúc vào lúc… giờ….phút cùng ngày./.\nThư ký                                                                     Chủ trì\n………………………..                                          ……………………………",
-    "id": "period-1791271199207",
-    "targetDepartmentIds": [
-      "all"
-    ],
-    "formTemplate": {
-      "fields": [
-        {
-          "id": "fld-1789530482314-90qm",
-          "required": true,
-          "type": "text",
-          "label": "Thời gian họp (giờ, phút)",
-          "placeholder": "Nhập thời gian..."
-        },
-        {
-          "label": "Địa điểm (phòng):",
-          "placeholder": "Nhập địa điểm...",
-          "type": "text",
-          "id": "fld-1789530482314-92fp",
-          "required": true
-        },
-        {
-          "type": "dropdown",
-          "options": [
-            "Thành viên tổ Ngữ văn - Thư viện - Thiết bị",
-            "Thành viên tổ Toán",
-            "Thành viên tổ Vật lý - Hóa học - Sinh học - Công nghệ",
-            "Thành viên tổ Lịch sử - Địa lý - GDKTPL",
-            "Thành viên tổ Tiếng Anh - Tin học",
-            "Thành viên tổ GDTC - GDQPAN- Nghệ thuật",
-            "Thành viên tổ Văn phòng"
-          ],
-          "id": "field-1789548985977-nol9",
-          "required": true,
-          "label": "Thành phần"
-        },
-        {
-          "id": "fld-1789530482314-nnl9",
-          "placeholder": "Nhập tổng số thành viên của tổ...",
-          "label": "Tổng số thành viên của tổ",
-          "type": "number",
-          "required": true
-        },
-        {
-          "required": true,
-          "id": "fld-1789530482314-aig6",
-          "placeholder": "Nhập tổng số thành viên tham dự...",
-          "type": "number",
-          "label": "Tổng số thành viên tham dự"
-        },
-        {
-          "placeholder": "Nhập vắng...",
-          "label": "Vắng có phép (ghi rõ họ và tên, lý do)",
-          "type": "text",
-          "id": "fld-1789530482314-jmyn",
-          "required": true
-        },
-        {
-          "required": true,
-          "placeholder": "Nhập không phép...",
-          "label": "Vắng không phép (họ và tên):",
-          "id": "fld-1789530482314-bk9w",
-          "type": "text"
-        },
-        {
-          "required": true,
-          "type": "text",
-          "placeholder": "Nhập chủ trì...",
-          "label": "Chủ trì cuộc họp",
-          "id": "fld-1789530482314-z5zt"
-        },
-        {
-          "placeholder": "Nhập thư ký...",
-          "required": true,
-          "id": "fld-1789530482314-gg4q",
-          "type": "text",
-          "label": "Thư ký cuộc họp"
-        },
-        {
-          "required": false,
-          "type": "section",
-          "placeholder": "Nhập 1. đánh giá hoạt động của tổ trong thời gian qua...",
-          "label": "1. Đánh giá hoạt động của tổ trong thời gian qua",
-          "id": "fld-1789530482314-17oq"
-        },
-        {
-          "required": true,
-          "label": "Ưu điểm",
-          "type": "textarea",
-          "id": "field-1789530878093-a1cx"
-        },
-        {
-          "id": "fld-1789530482314-u4qq",
-          "label": "Hạn chế",
-          "placeholder": "Nhập hạn chế...",
-          "required": true,
-          "type": "textarea"
-        },
-        {
-          "label": "Nguyên nhân của hạn chế",
-          "id": "fld-1789530482314-qf0p",
-          "placeholder": "Nhập nguyên nhân của hạn chế...",
-          "type": "textarea",
-          "required": true
-        },
-        {
-          "label": "Giải pháp khắc phục",
-          "type": "text",
-          "id": "fld-1789530482314-3yoa",
-          "placeholder": "Nhập giải pháp khắc phục...",
-          "required": true
-        },
-        {
-          "placeholder": "Nhập 2. triển khai các văn bản...",
-          "id": "fld-1789530482314-ze33",
-          "type": "text",
-          "label": "2. Triển khai các văn bản (nêu các vướng mắc, đề xuất nếu có trong quá trình triển khai văn bản)",
-          "required": true
-        },
-        {
-          "label": "3. Triển khai nội dung công việc trọng tâm của trường/tổ",
-          "required": false,
-          "type": "section",
-          "id": "fld-1789530482314-qvc4",
-          "placeholder": "Nhập 3. triển khai nội dung công việc trọng tâm của trường/tổ..."
-        },
-        {
-          "id": "fld-1789530482314-w6wb",
-          "placeholder": "Nhập triển khai về nội dung sinh hoạt chuyên môn. trong đó lưu ý về các biểu mẫu sở gửi kèm trong công văn 1091. lưu ý...",
-          "type": "textarea",
-          "label": "Nêu những ý kiến về dự thảo kế hoạch giáo dục nhà trường.",
-          "required": true
-        },
-        {
-          "type": "textarea",
-          "id": "field-1789531414892-v79d",
-          "label": "Ý kiến về xây dựng Kế hoạch giáo dục của tổ chuyên môn, Kế hoạch bài dạy), Phân phối chương trình từng môn học, từng khối lớp. ",
-          "required": true
-        },
-        {
-          "id": "field-1789530967444-phuz",
-          "required": true,
-          "label": "Ý kiến về triển khai văn bản hướng dẫn nội dung sinh hoạt chuyên môn. ",
-          "type": "textarea"
-        },
-        {
-          "id": "fld-1789530482314-jkb4",
-          "placeholder": "Nhập tổ trưởng thông báo danh sách học sinh khuyết tật về giáo viên trong tổ để biết và có sự quan tâm, hỗ trợ đối với các trường hợp này. về hồ sơ theo quy định nhà trường sẽ có hướng dẫn sau. lưu ý...",
-          "label": "Ý kiến về công tác giáo dục hòa nhập (học sinh khuyết tật)",
-          "type": "text",
-          "required": true
-        },
-        {
-          "label": "Ý kiến về thực hiện công tác kiểm tra đánh giá",
-          "type": "textarea",
-          "placeholder": "Nhập thông báo về số cột điểm trong năm học theo môn học để gvbm nắm...",
-          "id": "fld-1789530482314-6yx2",
-          "required": true
-        },
-        {
-          "label": "4. Ý kiến của các thành viên trong cuộc họp đối với trường/tổ/cá nhân",
-          "type": "text",
-          "placeholder": "Nhập 4. ý kiến của các thành viên trong cuộc họp đối với trường/tổ/cá nhân...",
-          "required": true,
-          "id": "fld-1789530482314-0y0t"
-        },
-        {
-          "label": "5. Kết luận",
-          "type": "textarea",
-          "id": "fld-1789530482314-c0rs",
-          "placeholder": "Nhập 5. kết luận...",
-          "required": true
-        },
-        {
-          "id": "fld-1789530482314-atct",
-          "label": "6. Đề xuất, kiến nghị với nhà trường",
-          "type": "textarea",
-          "required": true,
-          "placeholder": "Nhập 6. đề xuất, kiến nghị với nhà trường..."
-        },
-        {
-          "id": "field-1789618350912-mm68",
-          "type": "text",
-          "label": "Cuộc họp kết thúc lúc: (.... giờ.... phút)",
-          "required": true
-        }
-      ],
-      "tables": [],
-      "defaultTemplateContent": "TRƯỜNG THCS VÀ THPT                CỘNG HOÀ XÃ HỘI CHỦ NGHĨA VIỆT NAM\nĐỐC BINH KIỀU                                       Độc lập – Tự do – Hạnh Phúc\nTỔ ……..\nĐốc Binh Kiều, ngày    tháng    năm 2026\nBIÊN BẢN\nSinh hoạt tổ chuyên môn lần…. năm học 2026 - 2027\nThời gian:  lúc     giờ   phút, ngày    tháng  năm 2026.\nĐịa điểm: Tại phòng ………..\nThành phần:\nTổng số thành viên của tổ: …\nTổng số thành viên tham dự: …\nVắng: …. Trong đó: có phép: …., lý do: ……\nkhông phép: …….\nChủ trì: …………………….. - Tổ trưởng\nThư ký: …………………………….\nNỘI DUNG\n1. Đánh giá hoạt động của tổ trong thời gian qua\nƯu điểm:…\nHạn chế:…\nNguyên nhân của hạn chế:…\nGiải pháp khắc phục:…\n2. Triển khai các văn bản\nKế hoạch giáo dục nhà trường năm học 2026-2027 (bản dự thảo).\nCông văn số 3284/SGDĐT-GDPT ngày 24 tháng 8 năm 2026 về việc hướng dẫn xây dựng và tổ chức thực hiện kế hoạch giáo dục của nhà trường cấp trung học.\nCông văn số 1061/HD-SGDĐT ngày 28 tháng 8 năm 2026 về hướng dẫn thực hiện nhiệm vụ giáo dục phổ thông năm học 2026 – 2027.\nCông văn số 1091/HD-SGDĐT ngày 08 tháng 9 năm 2026 về việc hướng dẫn tổ chức sinh hoạt chuyên môn tại cơ sở giáo dục phổ thông và sinh hoạt cụm chuyên môn kể từ năm học 2026 – 2027.\n3. Triển khai nội dung công việc trọng tâm của trường/tổ\nGóp ý dự thảo kế hoạch giáo dục nhà trường. Tập trung đánh giá các số liệu, chỉ tiêu trong kế hoạch giáo dục.\nTriển khai các văn bản trọng tâm đầu năm do Sở GDĐT gửi. Ngoài ra, các văn bản về dạy học 2 buổi/ngày, dạy thêm học thêm, STEM/STEAM, giáo dục hòa nhập, khung năng lực AI, khung năng lực số,… nhà trường sẽ triển khai sau.\nXây dựng Kế hoạch giáo dục của tổ chuyên môn, Kế hoạch bài dạy (phụ lục 1,2 công văn 3284). Phân phối chương trình từng môn học, từng khối lớp. Thời gian gửi kế hoạch giáo dục của tổ chuyên môn, phân phối chương trình gửi lại chậm nhất 23/9/2026 (thứ 5 tuần sau).\nTriển khai về nội dung sinh hoạt chuyên môn. Trong đó lưu ý về các biểu mẫu Sở gửi kèm trong công văn 1091. Lưu ý: Trường THCS và THPT Đốc Binh Kiều thuộc cụm 2.\nTổ trưởng thông báo danh sách học sinh khuyết tật về giáo viên trong tổ để biết và có sự quan tâm, hỗ trợ đối với các trường hợp này. Về hồ sơ theo quy định nhà trường sẽ có hướng dẫn sau. Lưu ý: danh sách này chỉ dùng để thông báo cho giáo viên dạy lớp biết, không chia sẻ ra bên ngoài trường (có danh sách kèm theo)\nTheo Công văn 1061 việc kiểm tra, đánh giá học sinh sẽ tiếp tục thực hiện theo Công văn số 471/SGDĐT-GDPT ngày 22 tháng 8 năm 2025 của Sở GDĐT về việc thực hiện kiểm tra, đánh giá đối với cấp THCS và THPT. Tổ trưởng thông báo để giáo viên có định hướng trong việc giảng dạy học sinh.\nThông báo về số cột điểm trong năm học theo môn học để GVBM nắm:\n4. Ý kiến của các thành viên trong cuộc họp đối với trường/tổ/cá nhân\n……………….\n5. Kết luận\n(của chủ trì về các chỉ tiêu, nội dung trọng tâm cần thực hiện trong thời gian tới)\n………………..\n6. Đề xuất, kiến nghị với nhà trường\n……………….\nCuộc họp kết thúc vào lúc… giờ….phút cùng ngày./.\nThư ký                                                                     Chủ trì\n………………………..                                          ……………………………"
-    },
-    "status": "active",
-    "targetAudience": "dept_heads_only",
-    "semester": "HK1",
     "targetUserIds": [
       "staff-5",
       "staff-6",
@@ -230,9 +34,207 @@
       "staff-111",
       "staff-2"
     ],
+    "semester": "HK1",
+    "targetRoles": [
+      "dept_head",
+      "teacher"
+    ],
+    "formTemplate": {
+      "fields": [
+        {
+          "id": "fld-1789530482314-90qm",
+          "label": "Thời gian họp (giờ, phút)",
+          "type": "text",
+          "placeholder": "Nhập thời gian...",
+          "required": true
+        },
+        {
+          "placeholder": "Nhập địa điểm...",
+          "id": "fld-1789530482314-92fp",
+          "required": true,
+          "label": "Địa điểm (phòng):",
+          "type": "text"
+        },
+        {
+          "id": "field-1789548985977-nol9",
+          "label": "Thành phần",
+          "type": "dropdown",
+          "options": [
+            "Thành viên tổ Ngữ văn - Thư viện - Thiết bị",
+            "Thành viên tổ Toán",
+            "Thành viên tổ Vật lý - Hóa học - Sinh học - Công nghệ",
+            "Thành viên tổ Lịch sử - Địa lý - GDKTPL",
+            "Thành viên tổ Tiếng Anh - Tin học",
+            "Thành viên tổ GDTC - GDQPAN- Nghệ thuật",
+            "Thành viên tổ Văn phòng"
+          ],
+          "required": true
+        },
+        {
+          "required": true,
+          "label": "Tổng số thành viên của tổ",
+          "type": "number",
+          "placeholder": "Nhập tổng số thành viên của tổ...",
+          "id": "fld-1789530482314-nnl9"
+        },
+        {
+          "placeholder": "Nhập tổng số thành viên tham dự...",
+          "label": "Tổng số thành viên tham dự",
+          "id": "fld-1789530482314-aig6",
+          "required": true,
+          "type": "number"
+        },
+        {
+          "label": "Vắng có phép (ghi rõ họ và tên, lý do)",
+          "required": true,
+          "placeholder": "Nhập vắng...",
+          "type": "text",
+          "id": "fld-1789530482314-jmyn"
+        },
+        {
+          "id": "fld-1789530482314-bk9w",
+          "label": "Vắng không phép (họ và tên):",
+          "type": "text",
+          "placeholder": "Nhập không phép...",
+          "required": true
+        },
+        {
+          "id": "fld-1789530482314-z5zt",
+          "type": "text",
+          "placeholder": "Nhập chủ trì...",
+          "required": true,
+          "label": "Chủ trì cuộc họp"
+        },
+        {
+          "placeholder": "Nhập thư ký...",
+          "id": "fld-1789530482314-gg4q",
+          "required": true,
+          "type": "text",
+          "label": "Thư ký cuộc họp"
+        },
+        {
+          "required": false,
+          "placeholder": "Nhập 1. đánh giá hoạt động của tổ trong thời gian qua...",
+          "type": "section",
+          "id": "fld-1789530482314-17oq",
+          "label": "1. Đánh giá hoạt động của tổ trong thời gian qua"
+        },
+        {
+          "type": "textarea",
+          "id": "field-1789530878093-a1cx",
+          "required": true,
+          "label": "Ưu điểm"
+        },
+        {
+          "label": "Hạn chế",
+          "type": "textarea",
+          "placeholder": "Nhập hạn chế...",
+          "id": "fld-1789530482314-u4qq",
+          "required": true
+        },
+        {
+          "label": "Nguyên nhân của hạn chế",
+          "required": true,
+          "type": "textarea",
+          "id": "fld-1789530482314-qf0p",
+          "placeholder": "Nhập nguyên nhân của hạn chế..."
+        },
+        {
+          "placeholder": "Nhập giải pháp khắc phục...",
+          "required": true,
+          "label": "Giải pháp khắc phục",
+          "type": "text",
+          "id": "fld-1789530482314-3yoa"
+        },
+        {
+          "id": "fld-1789530482314-ze33",
+          "placeholder": "Nhập 2. triển khai các văn bản...",
+          "type": "text",
+          "label": "2. Triển khai các văn bản (nêu các vướng mắc, đề xuất nếu có trong quá trình triển khai văn bản)",
+          "required": true
+        },
+        {
+          "required": false,
+          "placeholder": "Nhập 3. triển khai nội dung công việc trọng tâm của trường/tổ...",
+          "label": "3. Triển khai nội dung công việc trọng tâm của trường/tổ",
+          "type": "section",
+          "id": "fld-1789530482314-qvc4"
+        },
+        {
+          "label": "Nêu những ý kiến về dự thảo kế hoạch giáo dục nhà trường.",
+          "type": "textarea",
+          "id": "fld-1789530482314-w6wb",
+          "required": true,
+          "placeholder": "Nhập triển khai về nội dung sinh hoạt chuyên môn. trong đó lưu ý về các biểu mẫu sở gửi kèm trong công văn 1091. lưu ý..."
+        },
+        {
+          "type": "textarea",
+          "required": true,
+          "id": "field-1789531414892-v79d",
+          "label": "Ý kiến về xây dựng Kế hoạch giáo dục của tổ chuyên môn, Kế hoạch bài dạy), Phân phối chương trình từng môn học, từng khối lớp. "
+        },
+        {
+          "type": "textarea",
+          "required": true,
+          "label": "Ý kiến về triển khai văn bản hướng dẫn nội dung sinh hoạt chuyên môn. ",
+          "id": "field-1789530967444-phuz"
+        },
+        {
+          "type": "text",
+          "placeholder": "Nhập tổ trưởng thông báo danh sách học sinh khuyết tật về giáo viên trong tổ để biết và có sự quan tâm, hỗ trợ đối với các trường hợp này. về hồ sơ theo quy định nhà trường sẽ có hướng dẫn sau. lưu ý...",
+          "id": "fld-1789530482314-jkb4",
+          "required": true,
+          "label": "Ý kiến về công tác giáo dục hòa nhập (học sinh khuyết tật)"
+        },
+        {
+          "required": true,
+          "label": "Ý kiến về thực hiện công tác kiểm tra đánh giá",
+          "id": "fld-1789530482314-6yx2",
+          "type": "textarea",
+          "placeholder": "Nhập thông báo về số cột điểm trong năm học theo môn học để gvbm nắm..."
+        },
+        {
+          "label": "4. Ý kiến của các thành viên trong cuộc họp đối với trường/tổ/cá nhân",
+          "type": "text",
+          "placeholder": "Nhập 4. ý kiến của các thành viên trong cuộc họp đối với trường/tổ/cá nhân...",
+          "required": true,
+          "id": "fld-1789530482314-0y0t"
+        },
+        {
+          "placeholder": "Nhập 5. kết luận...",
+          "id": "fld-1789530482314-c0rs",
+          "required": true,
+          "type": "textarea",
+          "label": "5. Kết luận"
+        },
+        {
+          "type": "textarea",
+          "id": "fld-1789530482314-atct",
+          "label": "6. Đề xuất, kiến nghị với nhà trường",
+          "required": true,
+          "placeholder": "Nhập 6. đề xuất, kiến nghị với nhà trường..."
+        },
+        {
+          "required": true,
+          "type": "text",
+          "label": "Cuộc họp kết thúc lúc: (.... giờ.... phút)",
+          "id": "field-1789618350912-mm68"
+        }
+      ],
+      "defaultTemplateContent": "TRƯỜNG THCS VÀ THPT                CỘNG HOÀ XÃ HỘI CHỦ NGHĨA VIỆT NAM\nĐỐC BINH KIỀU                                       Độc lập – Tự do – Hạnh Phúc\nTỔ ……..\nĐốc Binh Kiều, ngày    tháng    năm 2026\nBIÊN BẢN\nSinh hoạt tổ chuyên môn lần…. năm học 2026 - 2027\nThời gian:  lúc     giờ   phút, ngày    tháng  năm 2026.\nĐịa điểm: Tại phòng ………..\nThành phần:\nTổng số thành viên của tổ: …\nTổng số thành viên tham dự: …\nVắng: …. Trong đó: có phép: …., lý do: ……\nkhông phép: …….\nChủ trì: …………………….. - Tổ trưởng\nThư ký: …………………………….\nNỘI DUNG\n1. Đánh giá hoạt động của tổ trong thời gian qua\nƯu điểm:…\nHạn chế:…\nNguyên nhân của hạn chế:…\nGiải pháp khắc phục:…\n2. Triển khai các văn bản\nKế hoạch giáo dục nhà trường năm học 2026-2027 (bản dự thảo).\nCông văn số 3284/SGDĐT-GDPT ngày 24 tháng 8 năm 2026 về việc hướng dẫn xây dựng và tổ chức thực hiện kế hoạch giáo dục của nhà trường cấp trung học.\nCông văn số 1061/HD-SGDĐT ngày 28 tháng 8 năm 2026 về hướng dẫn thực hiện nhiệm vụ giáo dục phổ thông năm học 2026 – 2027.\nCông văn số 1091/HD-SGDĐT ngày 08 tháng 9 năm 2026 về việc hướng dẫn tổ chức sinh hoạt chuyên môn tại cơ sở giáo dục phổ thông và sinh hoạt cụm chuyên môn kể từ năm học 2026 – 2027.\n3. Triển khai nội dung công việc trọng tâm của trường/tổ\nGóp ý dự thảo kế hoạch giáo dục nhà trường. Tập trung đánh giá các số liệu, chỉ tiêu trong kế hoạch giáo dục.\nTriển khai các văn bản trọng tâm đầu năm do Sở GDĐT gửi. Ngoài ra, các văn bản về dạy học 2 buổi/ngày, dạy thêm học thêm, STEM/STEAM, giáo dục hòa nhập, khung năng lực AI, khung năng lực số,… nhà trường sẽ triển khai sau.\nXây dựng Kế hoạch giáo dục của tổ chuyên môn, Kế hoạch bài dạy (phụ lục 1,2 công văn 3284). Phân phối chương trình từng môn học, từng khối lớp. Thời gian gửi kế hoạch giáo dục của tổ chuyên môn, phân phối chương trình gửi lại chậm nhất 23/9/2026 (thứ 5 tuần sau).\nTriển khai về nội dung sinh hoạt chuyên môn. Trong đó lưu ý về các biểu mẫu Sở gửi kèm trong công văn 1091. Lưu ý: Trường THCS và THPT Đốc Binh Kiều thuộc cụm 2.\nTổ trưởng thông báo danh sách học sinh khuyết tật về giáo viên trong tổ để biết và có sự quan tâm, hỗ trợ đối với các trường hợp này. Về hồ sơ theo quy định nhà trường sẽ có hướng dẫn sau. Lưu ý: danh sách này chỉ dùng để thông báo cho giáo viên dạy lớp biết, không chia sẻ ra bên ngoài trường (có danh sách kèm theo)\nTheo Công văn 1061 việc kiểm tra, đánh giá học sinh sẽ tiếp tục thực hiện theo Công văn số 471/SGDĐT-GDPT ngày 22 tháng 8 năm 2025 của Sở GDĐT về việc thực hiện kiểm tra, đánh giá đối với cấp THCS và THPT. Tổ trưởng thông báo để giáo viên có định hướng trong việc giảng dạy học sinh.\nThông báo về số cột điểm trong năm học theo môn học để GVBM nắm:\n4. Ý kiến của các thành viên trong cuộc họp đối với trường/tổ/cá nhân\n……………….\n5. Kết luận\n(của chủ trì về các chỉ tiêu, nội dung trọng tâm cần thực hiện trong thời gian tới)\n………………..\n6. Đề xuất, kiến nghị với nhà trường\n……………….\nCuộc họp kết thúc vào lúc… giờ….phút cùng ngày./.\nThư ký                                                                     Chủ trì\n………………………..                                          ……………………………",
+      "tables": []
+    },
     "createdAt": "2026-10-06T07:19:59.207Z",
+    "defaultTemplateContent": "TRƯỜNG THCS VÀ THPT                CỘNG HOÀ XÃ HỘI CHỦ NGHĨA VIỆT NAM\nĐỐC BINH KIỀU                                       Độc lập – Tự do – Hạnh Phúc\nTỔ ……..\nĐốc Binh Kiều, ngày    tháng    năm 2026\nBIÊN BẢN\nSinh hoạt tổ chuyên môn lần…. năm học 2026 - 2027\nThời gian:  lúc     giờ   phút, ngày    tháng  năm 2026.\nĐịa điểm: Tại phòng ………..\nThành phần:\nTổng số thành viên của tổ: …\nTổng số thành viên tham dự: …\nVắng: …. Trong đó: có phép: …., lý do: ……\nkhông phép: …….\nChủ trì: …………………….. - Tổ trưởng\nThư ký: …………………………….\nNỘI DUNG\n1. Đánh giá hoạt động của tổ trong thời gian qua\nƯu điểm:…\nHạn chế:…\nNguyên nhân của hạn chế:…\nGiải pháp khắc phục:…\n2. Triển khai các văn bản\nKế hoạch giáo dục nhà trường năm học 2026-2027 (bản dự thảo).\nCông văn số 3284/SGDĐT-GDPT ngày 24 tháng 8 năm 2026 về việc hướng dẫn xây dựng và tổ chức thực hiện kế hoạch giáo dục của nhà trường cấp trung học.\nCông văn số 1061/HD-SGDĐT ngày 28 tháng 8 năm 2026 về hướng dẫn thực hiện nhiệm vụ giáo dục phổ thông năm học 2026 – 2027.\nCông văn số 1091/HD-SGDĐT ngày 08 tháng 9 năm 2026 về việc hướng dẫn tổ chức sinh hoạt chuyên môn tại cơ sở giáo dục phổ thông và sinh hoạt cụm chuyên môn kể từ năm học 2026 – 2027.\n3. Triển khai nội dung công việc trọng tâm của trường/tổ\nGóp ý dự thảo kế hoạch giáo dục nhà trường. Tập trung đánh giá các số liệu, chỉ tiêu trong kế hoạch giáo dục.\nTriển khai các văn bản trọng tâm đầu năm do Sở GDĐT gửi. Ngoài ra, các văn bản về dạy học 2 buổi/ngày, dạy thêm học thêm, STEM/STEAM, giáo dục hòa nhập, khung năng lực AI, khung năng lực số,… nhà trường sẽ triển khai sau.\nXây dựng Kế hoạch giáo dục của tổ chuyên môn, Kế hoạch bài dạy (phụ lục 1,2 công văn 3284). Phân phối chương trình từng môn học, từng khối lớp. Thời gian gửi kế hoạch giáo dục của tổ chuyên môn, phân phối chương trình gửi lại chậm nhất 23/9/2026 (thứ 5 tuần sau).\nTriển khai về nội dung sinh hoạt chuyên môn. Trong đó lưu ý về các biểu mẫu Sở gửi kèm trong công văn 1091. Lưu ý: Trường THCS và THPT Đốc Binh Kiều thuộc cụm 2.\nTổ trưởng thông báo danh sách học sinh khuyết tật về giáo viên trong tổ để biết và có sự quan tâm, hỗ trợ đối với các trường hợp này. Về hồ sơ theo quy định nhà trường sẽ có hướng dẫn sau. Lưu ý: danh sách này chỉ dùng để thông báo cho giáo viên dạy lớp biết, không chia sẻ ra bên ngoài trường (có danh sách kèm theo)\nTheo Công văn 1061 việc kiểm tra, đánh giá học sinh sẽ tiếp tục thực hiện theo Công văn số 471/SGDĐT-GDPT ngày 22 tháng 8 năm 2025 của Sở GDĐT về việc thực hiện kiểm tra, đánh giá đối với cấp THCS và THPT. Tổ trưởng thông báo để giáo viên có định hướng trong việc giảng dạy học sinh.\nThông báo về số cột điểm trong năm học theo môn học để GVBM nắm:\n4. Ý kiến của các thành viên trong cuộc họp đối với trường/tổ/cá nhân\n……………….\n5. Kết luận\n(của chủ trì về các chỉ tiêu, nội dung trọng tâm cần thực hiện trong thời gian tới)\n………………..\n6. Đề xuất, kiến nghị với nhà trường\n……………….\nCuộc họp kết thúc vào lúc… giờ….phút cùng ngày./.\nThư ký                                                                     Chủ trì\n………………………..                                          ……………………………",
+    "updatedAt": "2026-10-06T07:48:17.995Z",
     "deadline": "2026-10-15T17:00:00.000Z",
-    "updatedAt": "2026-10-06T07:48:17.995Z"
+    "description": "Yêu cầu nộp báo cáo theo mẫu trực tuyến gồm 22 mục thông tin và 1 bảng số liệu. Thầy/Cô điền trực tiếp vào form trên hệ thống trước thời hạn.",
+    "targetDepartmentIds": [
+      "all"
+    ],
+    "isRequired": true,
+    "reportType": "hybrid",
+    "status": "active"
   },
   {
     "createdAt": "2026-10-04T12:07:25.325Z",
@@ -1246,4 +1248,4 @@
     "createdAt": "2026-09-04T15:26:21.418Z",
     "allowMultipleSubmissions": false
   }
-]
+];

@@ -1436,22 +1436,22 @@ export const CustomReportFormBuilder: React.FC<CustomReportFormBuilderProps> = (
                       </tr>
                       <tr>
                         <td style={{ width: '33%', verticalAlign: 'top', padding: '2px 4px' }}>
-                          <div className="font-bold uppercase text-xs">Ý KIẾN CỦA TỔ TRƯỞNG CHUYÊN MÔN</div>
-                          <div className="italic text-[11px] text-slate-500">(Ký và ghi rõ họ tên)</div>
-                          <div className="h-16"></div>
-                          <div className="font-medium text-slate-400 text-xs">......................................</div>
+                          <div className="font-bold uppercase text-[13px]">Ý KIẾN CỦA TỔ TRƯỞNG CHUYÊN MÔN</div>
+                          <div className="italic text-xs text-slate-500 mt-0.5">(Ký và ghi rõ họ tên)</div>
+                          <div className="h-28"></div>
+                          <div className="font-bold text-slate-700 text-[13.5px]">......................................</div>
                         </td>
                         <td style={{ width: '33%', verticalAlign: 'top', padding: '2px 4px' }}>
-                          <div className="font-bold uppercase text-xs">Ý KIẾN PHÊ DUYỆT CỦA BAN GIÁM HIỆU</div>
-                          <div className="italic text-[11px] text-slate-500">(Ký, ghi rõ họ tên và đóng dấu)</div>
-                          <div className="h-16"></div>
-                          <div className="font-medium text-slate-400 text-xs">......................................</div>
+                          <div className="font-bold uppercase text-[13px]">Ý KIẾN PHÊ DUYỆT CỦA BAN GIÁM HIỆU</div>
+                          <div className="italic text-xs text-slate-500 mt-0.5">(Ký, ghi rõ họ tên và đóng dấu)</div>
+                          <div className="h-28"></div>
+                          <div className="font-bold text-slate-700 text-[13.5px]">......................................</div>
                         </td>
                         <td style={{ width: '34%', verticalAlign: 'top', padding: '2px 4px' }}>
-                          <div className="font-bold uppercase text-xs">NGƯỜI LÀM ĐƠN</div>
-                          <div className="italic text-[11px] text-slate-500">(Ký và ghi rõ họ tên)</div>
-                          <div className="h-16"></div>
-                          <div className="font-bold text-xs">{authorName}</div>
+                          <div className="font-bold uppercase text-[13px]">NGƯỜI LÀM ĐƠN</div>
+                          <div className="italic text-xs text-slate-500 mt-0.5">(Ký và ghi rõ họ tên)</div>
+                          <div className="h-28"></div>
+                          <div className="font-bold text-[13.5px] text-slate-800">{authorName}</div>
                         </td>
                       </tr>
                     </tbody>
@@ -1473,10 +1473,10 @@ export const CustomReportFormBuilder: React.FC<CustomReportFormBuilderProps> = (
                     <tbody>
                       <tr>
                         <td style={{ width: '50%', verticalAlign: 'top', padding: '2px 4px' }}>
-                          <div className="font-bold uppercase text-xs">THƯ KÝ</div>
-                          <div className="italic text-[11px] text-slate-500">(Ký và ghi rõ họ tên)</div>
-                          <div className="h-16"></div>
-                          <div className="font-bold text-xs">{(() => {
+                          <div className="font-bold uppercase text-[13.5px]">THƯ KÝ</div>
+                          <div className="italic text-xs text-slate-500 mt-0.5">(Ký và ghi rõ họ tên)</div>
+                          <div className="h-24"></div>
+                          <div className="font-bold text-[13.5px]">{(() => {
                             for (const f of fields) {
                               if ((f.label || '').toLowerCase().includes('thư ký')) {
                                 return fieldValues[f.id] || '.......................................';
@@ -1486,10 +1486,10 @@ export const CustomReportFormBuilder: React.FC<CustomReportFormBuilderProps> = (
                           })()}</div>
                         </td>
                         <td style={{ width: '50%', verticalAlign: 'top', padding: '2px 4px' }}>
-                          <div className="font-bold uppercase text-xs">CHỦ TRÌ CUỘC HỌP</div>
-                          <div className="italic text-[11px] text-slate-500">(Ký và ghi rõ họ tên)</div>
-                          <div className="h-16"></div>
-                          <div className="font-bold text-xs">{(() => {
+                          <div className="font-bold uppercase text-[13.5px]">CHỦ TRÌ CUỘC HỌP</div>
+                          <div className="italic text-xs text-slate-500 mt-0.5">(Ký và ghi rõ họ tên)</div>
+                          <div className="h-24"></div>
+                          <div className="font-bold text-[13.5px]">{(() => {
                             for (const f of fields) {
                               if ((f.label || '').toLowerCase().includes('chủ trì') || (f.label || '').toLowerCase().includes('chủ tọa')) {
                                 return fieldValues[f.id] || authorName;

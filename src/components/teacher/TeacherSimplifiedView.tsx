@@ -24,7 +24,8 @@ import {
   History,
   FileCheck,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Users
 } from 'lucide-react';
 
 interface TeacherSimplifiedViewProps {
@@ -260,6 +261,12 @@ export const TeacherSimplifiedView: React.FC<TeacherSimplifiedViewProps> = ({
                     <span className="px-3 py-1 rounded-full text-xs font-bold bg-teal-100 text-teal-900 border border-teal-300 flex items-center gap-1">
                       <GraduationCap className="w-3.5 h-3.5 text-teal-700" />
                       <span>GVCN Điểm Tân Kiều (15 lớp)</span>
+                    </span>
+                  )}
+                  {period.targetAudience === 'dept_heads_only' && (
+                    <span className="px-3 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-900 border border-blue-300 flex items-center gap-1">
+                      <Users className="w-3.5 h-3.5 text-blue-700" />
+                      <span>Dành Cho Tổ Trưởng Chuyên Môn</span>
                     </span>
                   )}
                   {period.isRequired && !isMultiple && (

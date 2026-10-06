@@ -368,7 +368,23 @@ export const StorageService = {
   // --- PERIODS (CAMPAIGNS) ---
   getPeriods(): ReportPeriod[] {
     initializeDatabaseIfNeeded();
-    const list = getLocal<ReportPeriod[]>(STORAGE_KEYS.PERIODS, []);
+    const stored = getLocal<ReportPeriod[]>(STORAGE_KEYS.PERIODS, []);
+    // Merge INITIAL_PERIODS with stored periods so newly added periods are guaranteed to be present immediately
+    const periodMap = new Map<string, ReportPeriod>();
+    INITIAL_PERIODS.forEach(p => { if (p && p.id) periodMap.set(p.id, p); });
+    stored.forEach(p => {
+      if (p && p.id) {
+        const existing = periodMap.get(p.id);
+        if (!existing) {
+          periodMap.set(p.id, p);
+        } else {
+          const t1 = new Date((existing as any).updatedAt || existing.createdAt || 0).getTime();
+          const t2 = new Date((p as any).updatedAt || p.createdAt || 0).getTime();
+          if (t2 >= t1) periodMap.set(p.id, p);
+        }
+      }
+    });
+    const list = Array.from(periodMap.values());
     return list.sort((a, b) => {
       if (a.status === 'active' && b.status !== 'active') return -1;
       if (a.status !== 'active' && b.status === 'active') return 1;

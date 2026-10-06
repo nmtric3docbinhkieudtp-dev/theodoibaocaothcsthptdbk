@@ -879,31 +879,31 @@ export function generateLeaveRequestHtml({
         </div>
 
         <!-- CHỮ KÝ PHÊ DUYỆT: THIẾT KẾ 3 CỘT GỌN GÀNG TRÊN 1 HÀNG, MỞ RỘNG KHOẢNG TRỐNG KÝ VÀ ĐÓNG MỘC THOẢI MÁI -->
-        <table class="signature-table" style="width: 100%; margin-top: 8px; border-collapse: collapse; page-break-inside: avoid;">
+        <table class="signature-table" style="width: 100%; margin-top: 10px; border-collapse: collapse; page-break-inside: avoid;">
           <tr>
-            <td colspan="2" style="width: 66%;"></td>
-            <td style="width: 34%; text-align: center; vertical-align: top; font-style: italic; font-size: 12pt; padding-bottom: 3px;">
+            <td colspan="2" style="width: 64%;"></td>
+            <td style="width: 36%; text-align: center; vertical-align: top; font-style: italic; font-size: 13pt; padding-bottom: 4px;">
               ${dateStr}
             </td>
           </tr>
           <tr>
             <td style="width: 33%; text-align: center; vertical-align: top; padding: 2px 4px;">
-              <div style="font-weight: bold; font-size: 12pt; text-transform: uppercase;">Ý KIẾN CỦA TỔ TRƯỞNG CHUYÊN MÔN</div>
-              <div style="font-style: italic; font-size: 11pt; margin-top: 1px;">(Ký và ghi rõ họ tên)</div>
-              <div style="height: 72px;"></div>
-              <div style="font-weight: bold; font-size: 12pt;">......................................</div>
-            </td>
-            <td style="width: 33%; text-align: center; vertical-align: top; padding: 2px 4px;">
-              <div style="font-weight: bold; font-size: 12pt; text-transform: uppercase;">Ý KIẾN PHÊ DUYỆT CỦA BAN GIÁM HIỆU</div>
-              <div style="font-style: italic; font-size: 11pt; margin-top: 1px;">(Ký và ghi rõ họ tên, đóng dấu)</div>
-              <div style="height: 72px;"></div>
-              <div style="font-weight: bold; font-size: 12pt;">......................................</div>
+              <div style="font-weight: bold; font-size: 13pt; text-transform: uppercase; line-height: 1.3;">Ý KIẾN CỦA TỔ TRƯỞNG CHUYÊN MÔN</div>
+              <div style="font-style: italic; font-size: 12pt; margin-top: 2px;">(Ký và ghi rõ họ tên)</div>
+              <div style="height: 108px;"></div>
+              <div style="font-weight: bold; font-size: 13.5pt;">......................................</div>
             </td>
             <td style="width: 34%; text-align: center; vertical-align: top; padding: 2px 4px;">
-              <div style="font-weight: bold; font-size: 12pt; text-transform: uppercase;">NGƯỜI LÀM ĐƠN</div>
-              <div style="font-style: italic; font-size: 11pt; margin-top: 1px;">(Ký và ghi rõ họ tên)</div>
-              <div style="height: 72px;"></div>
-              <div style="font-weight: bold; font-size: 12.5pt;">${teacherName}</div>
+              <div style="font-weight: bold; font-size: 13pt; text-transform: uppercase; line-height: 1.3;">Ý KIẾN PHÊ DUYỆT CỦA BAN GIÁM HIỆU</div>
+              <div style="font-style: italic; font-size: 12pt; margin-top: 2px;">(Ký và ghi rõ họ tên, đóng dấu)</div>
+              <div style="height: 108px;"></div>
+              <div style="font-weight: bold; font-size: 13.5pt;">......................................</div>
+            </td>
+            <td style="width: 33%; text-align: center; vertical-align: top; padding: 2px 4px;">
+              <div style="font-weight: bold; font-size: 13pt; text-transform: uppercase; line-height: 1.3;">NGƯỜI LÀM ĐƠN</div>
+              <div style="font-style: italic; font-size: 12pt; margin-top: 2px;">(Ký và ghi rõ họ tên)</div>
+              <div style="height: 108px;"></div>
+              <div style="font-weight: bold; font-size: 13.5pt;">${teacherName}</div>
             </td>
           </tr>
         </table>
@@ -1454,16 +1454,16 @@ export function generateCustomReportHtml({
         <table style="width: 100%; margin-top: 25px; border-collapse: collapse; page-break-inside: avoid;">
           <tr>
             <td style="width: 50%; text-align: center; vertical-align: top;">
-              <div style="font-weight: bold; font-size: 13pt; text-transform: uppercase;">THƯ KÝ</div>
-              <div style="font-style: italic; font-size: 11pt; margin-top: 2px;">(Ký và ghi rõ họ tên)</div>
-              <div style="height: 75px;"></div>
-              <div style="font-weight: bold; font-size: 13pt;">${secretaryName}</div>
+              <div style="font-weight: bold; font-size: 13.5pt; text-transform: uppercase;">THƯ KÝ</div>
+              <div style="font-style: italic; font-size: 12pt; margin-top: 2px;">(Ký và ghi rõ họ tên)</div>
+              <div style="height: 100px;"></div>
+              <div style="font-weight: bold; font-size: 13.5pt;">${secretaryName}</div>
             </td>
             <td style="width: 50%; text-align: center; vertical-align: top;">
-              <div style="font-weight: bold; font-size: 13pt; text-transform: uppercase;">CHỦ TRÌ CUỘC HỌP</div>
-              <div style="font-style: italic; font-size: 11pt; margin-top: 2px;">(Ký và ghi rõ họ tên)</div>
-              <div style="height: 75px;"></div>
-              <div style="font-weight: bold; font-size: 13pt;">${chairPersonName}</div>
+              <div style="font-weight: bold; font-size: 13.5pt; text-transform: uppercase;">CHỦ TRÌ CUỘC HỌP</div>
+              <div style="font-style: italic; font-size: 12pt; margin-top: 2px;">(Ký và ghi rõ họ tên)</div>
+              <div style="height: 100px;"></div>
+              <div style="font-weight: bold; font-size: 13.5pt;">${chairPersonName}</div>
             </td>
           </tr>
         </table>
@@ -1723,29 +1723,29 @@ export function generateStandardReportHtml({
       ${isLeave ? `
         <table style="width: 100%; margin-top: 10px; border-collapse: collapse; page-break-inside: avoid;">
           <tr>
-            <td colspan="2" style="width: 66%;"></td>
-            <td style="width: 34%; text-align: center; vertical-align: top; font-style: italic; font-size: 12pt; padding-bottom: 3px;">
+            <td colspan="2" style="width: 64%;"></td>
+            <td style="width: 36%; text-align: center; vertical-align: top; font-style: italic; font-size: 13pt; padding-bottom: 4px;">
               ${dateStr}
             </td>
           </tr>
           <tr>
             <td style="width: 33%; text-align: center; vertical-align: top; padding: 2px 4px;">
-              <div style="font-weight: bold; font-size: 12pt; text-transform: uppercase;">Ý KIẾN CỦA TỔ TRƯỞNG CHUYÊN MÔN</div>
-              <div style="font-style: italic; font-size: 11pt; margin-top: 1px;">(Ký và ghi rõ họ tên)</div>
-              <div style="height: 72px;"></div>
-              <div style="font-weight: bold; font-size: 12pt;">......................................</div>
-            </td>
-            <td style="width: 33%; text-align: center; vertical-align: top; padding: 2px 4px;">
-              <div style="font-weight: bold; font-size: 12pt; text-transform: uppercase;">Ý KIẾN PHÊ DUYỆT CỦA BAN GIÁM HIỆU</div>
-              <div style="font-style: italic; font-size: 11pt; margin-top: 1px;">(Ký và ghi rõ họ tên, đóng dấu)</div>
-              <div style="height: 72px;"></div>
-              <div style="font-weight: bold; font-size: 12pt;">......................................</div>
+              <div style="font-weight: bold; font-size: 13pt; text-transform: uppercase; line-height: 1.3;">Ý KIẾN CỦA TỔ TRƯỞNG CHUYÊN MÔN</div>
+              <div style="font-style: italic; font-size: 12pt; margin-top: 2px;">(Ký và ghi rõ họ tên)</div>
+              <div style="height: 108px;"></div>
+              <div style="font-weight: bold; font-size: 13.5pt;">......................................</div>
             </td>
             <td style="width: 34%; text-align: center; vertical-align: top; padding: 2px 4px;">
-              <div style="font-weight: bold; font-size: 12pt; text-transform: uppercase;">NGƯỜI LÀM ĐƠN</div>
-              <div style="font-style: italic; font-size: 11pt; margin-top: 1px;">(Ký và ghi rõ họ tên)</div>
-              <div style="height: 72px;"></div>
-              <div style="font-weight: bold; font-size: 12.5pt;">${authorName}</div>
+              <div style="font-weight: bold; font-size: 13pt; text-transform: uppercase; line-height: 1.3;">Ý KIẾN PHÊ DUYỆT CỦA BAN GIÁM HIỆU</div>
+              <div style="font-style: italic; font-size: 12pt; margin-top: 2px;">(Ký và ghi rõ họ tên, đóng dấu)</div>
+              <div style="height: 108px;"></div>
+              <div style="font-weight: bold; font-size: 13.5pt;">......................................</div>
+            </td>
+            <td style="width: 33%; text-align: center; vertical-align: top; padding: 2px 4px;">
+              <div style="font-weight: bold; font-size: 13pt; text-transform: uppercase; line-height: 1.3;">NGƯỜI LÀM ĐƠN</div>
+              <div style="font-style: italic; font-size: 12pt; margin-top: 2px;">(Ký và ghi rõ họ tên)</div>
+              <div style="height: 108px;"></div>
+              <div style="font-weight: bold; font-size: 13.5pt;">${authorName}</div>
             </td>
           </tr>
         </table>
@@ -1753,16 +1753,16 @@ export function generateStandardReportHtml({
         <table style="width: 100%; margin-top: 25px; border-collapse: collapse; page-break-inside: avoid;">
           <tr>
             <td style="width: 50%; text-align: center; vertical-align: top;">
-              <div style="font-weight: bold; font-size: 13pt; text-transform: uppercase;">THƯ KÝ</div>
-              <div style="font-style: italic; font-size: 11pt; margin-top: 2px;">(Ký và ghi rõ họ tên)</div>
-              <div style="height: 70px;"></div>
-              <div style="font-weight: bold; font-size: 12.5pt;">......................................</div>
+              <div style="font-weight: bold; font-size: 13.5pt; text-transform: uppercase;">THƯ KÝ</div>
+              <div style="font-style: italic; font-size: 12pt; margin-top: 2px;">(Ký và ghi rõ họ tên)</div>
+              <div style="height: 100px;"></div>
+              <div style="font-weight: bold; font-size: 13.5pt;">......................................</div>
             </td>
             <td style="width: 50%; text-align: center; vertical-align: top;">
-              <div style="font-weight: bold; font-size: 13pt; text-transform: uppercase;">CHỦ TRÌ CUỘC HỌP</div>
-              <div style="font-style: italic; font-size: 11pt; margin-top: 2px;">(Ký và ghi rõ họ tên)</div>
-              <div style="height: 70px;"></div>
-              <div style="font-weight: bold; font-size: 12.5pt;">${authorName}</div>
+              <div style="font-weight: bold; font-size: 13.5pt; text-transform: uppercase;">CHỦ TRÌ CUỘC HỌP</div>
+              <div style="font-style: italic; font-size: 12pt; margin-top: 2px;">(Ký và ghi rõ họ tên)</div>
+              <div style="height: 100px;"></div>
+              <div style="font-weight: bold; font-size: 13.5pt;">${authorName}</div>
             </td>
           </tr>
         </table>
