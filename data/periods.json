@@ -1,419 +1,8 @@
 [
   {
-    "description": "",
-    "id": "period-1791115645325",
-    "reportType": "hybrid",
-    "createdAt": "2026-10-04T12:07:25.325Z",
-    "updatedAt": "2026-10-04T12:08:47.207Z",
-    "semester": "HK1",
-    "createdBy": "Ban Giám Hiệu",
-    "startDate": "2026-10-04T12:07:25.324Z",
-    "isRequired": true,
-    "targetDepartmentIds": [
-      "all"
-    ],
-    "targetRoles": [
-      "teacher",
-      "dept_head"
-    ],
-    "deadline": "2027-05-30T10:00:00.000Z",
-    "formTemplate": {
-      "tables": [
-        {
-          "title": "THỐNG KÊ CHI TIẾT TIẾT DẠY THAY HOẶC ĐỔI TIẾT",
-          "rows": [],
-          "headers": [
-            "STT",
-            "Lớp",
-            "Tiết",
-            "Người dạy",
-            "Chữ ký người dạy"
-          ],
-          "id": "table-1791115587156-rhi2"
-        }
-      ],
-      "defaultTemplateContent": "",
-      "fields": [
-        {
-          "id": "field-1",
-          "required": true,
-          "label": "Họ và tên",
-          "type": "text",
-          "description": ""
-        },
-        {
-          "options": [
-            "Tốt (100% đúng giờ)",
-            "Khá (Có học sinh đi trễ)",
-            "Cần nhắc nhở"
-          ],
-          "type": "text",
-          "id": "field-2",
-          "required": true,
-          "label": "Môn dạy"
-        },
-        {
-          "required": true,
-          "label": "Ngày nghỉ phép",
-          "type": "date",
-          "id": "field-3"
-        },
-        {
-          "label": "Lý do nghỉ",
-          "required": true,
-          "id": "field-4",
-          "type": "text"
-        },
-        {
-          "options": [
-            "Đổi tiết",
-            "Dạy thay"
-          ],
-          "type": "radio",
-          "label": "Cách xử lý khi nghỉ phép",
-          "required": true,
-          "id": "field-1791115366139-mhvs"
-        }
-      ]
-    },
-    "status": "active",
-    "targetAudience": "teachers_only",
+    "deadline": "2026-10-15T17:00:00.000Z",
     "academicYear": "2026-2027",
-    "title": "ĐƠN XIN NGHỈ PHÉP",
-    "allowMultipleSubmissions": true
-  },
-  {
     "semester": "HK1",
-    "targetRoles": [
-      "teacher",
-      "dept_head"
-    ],
-    "academicYear": "2026-2027",
-    "targetDepartmentIds": [
-      "all"
-    ],
-    "id": "period-1790419110520",
-    "isRequired": true,
-    "formTemplate": {
-      "tables": [],
-      "fields": [
-        {
-          "type": "text",
-          "required": true,
-          "id": "field-1",
-          "description": "Ví dụ: 7h30 ngày 27/9/2026",
-          "label": "Thời gian họp:"
-        },
-        {
-          "type": "text",
-          "id": "field-1790419220133-ryfr",
-          "label": "Địa điểm: ",
-          "required": true,
-          "description": "Ví dụ: Phòng 10CB1"
-        },
-        {
-          "label": "Thành phần: Tập thể Phụ huynh học sinh lớp ___",
-          "description": "Chỉ ghi lớp",
-          "required": true,
-          "type": "text",
-          "id": "field-1790419347559-b2zw"
-        },
-        {
-          "type": "text",
-          "label": "Chủ trì cuộc họp:",
-          "description": "Ghi họ và tên giáo viên chủ nhiệm",
-          "id": "field-1790419220117-ix7d",
-          "required": true
-        },
-        {
-          "required": true,
-          "description": "Ghi họ và tên người ghi biên bản",
-          "label": "Thư ký cuộc họp:",
-          "type": "text",
-          "id": "field-1790419493477-vunc"
-        },
-        {
-          "type": "text",
-          "label": "Sĩ số học sinh",
-          "id": "field-2",
-          "required": true,
-          "options": [
-            "Tốt (100% đúng giờ)",
-            "Khá (Có học sinh đi trễ)",
-            "Cần nhắc nhở"
-          ]
-        },
-        {
-          "label": "Số phụ huynh học sinh có mặt",
-          "required": true,
-          "id": "field-3",
-          "type": "text"
-        },
-        {
-          "type": "text",
-          "id": "field-4",
-          "label": "Họ và tên Trưởng Ban đại diện CMHS",
-          "required": true
-        },
-        {
-          "type": "text",
-          "id": "field-1790418552805-jc5o",
-          "required": true,
-          "label": "Số điện thoại Trưởng ban "
-        },
-        {
-          "label": "Họ và tên Phó Trưởng ban đại diện CMHS",
-          "type": "text",
-          "required": true,
-          "id": "field-1790418563821-z6ew"
-        },
-        {
-          "type": "text",
-          "required": true,
-          "id": "field-1790418601406-1wye",
-          "label": "Số điện thoại Phó Trưởng ban "
-        },
-        {
-          "required": true,
-          "id": "field-1790418613789-meu3",
-          "label": "Họ và tên Thư ký Ban đại diện CMHS",
-          "type": "textarea"
-        },
-        {
-          "required": true,
-          "type": "textarea",
-          "id": "field-1790418659612-jhsn",
-          "label": "Số điện thoại Thư ký "
-        },
-        {
-          "required": true,
-          "id": "field-1790418670509-u1fk",
-          "label": "Ý kiến của phụ huynh học sinh",
-          "type": "textarea"
-        },
-        {
-          "required": true,
-          "description": "Điền vào giờ kết thúc cuộc họp. Ví dụ: 9h00",
-          "type": "text",
-          "label": "Cuộc họp kết thúc lúc __ giờ __ cùng ngày",
-          "id": "field-1790419649408-wulj"
-        }
-      ],
-      "defaultTemplateContent": ""
-    },
-    "startDate": "2026-09-26T10:38:30.519Z",
-    "createdBy": "Ban Giám Hiệu",
-    "description": "",
-    "reportType": "hybrid",
-    "createdAt": "2026-09-26T10:38:30.520Z",
-    "updatedAt": "2026-10-04T12:07:43.156Z",
-    "title": "BÁO CÁO KẾT QUẢ HỌP PHỤ HUYNH HỌC SINH ĐẦU NĂM HỌC 2026-2027",
-    "targetAudience": "homeroom_teachers",
-    "status": "closed",
-    "deadline": "2026-09-27T10:00:00.000Z",
-    "allowMultipleSubmissions": false
-  },
-  {
-    "formTemplate": {
-      "fields": [
-        {
-          "id": "fld-1789530482314-90qm",
-          "placeholder": "Nhập thời gian...",
-          "label": "Thời gian họp (giờ, phút)",
-          "type": "text",
-          "required": true
-        },
-        {
-          "required": true,
-          "id": "fld-1789530482314-92fp",
-          "label": "Địa điểm (phòng):",
-          "type": "text",
-          "placeholder": "Nhập địa điểm..."
-        },
-        {
-          "options": [
-            "Thành viên tổ Ngữ văn - Thư viện - Thiết bị",
-            "Thành viên tổ Toán",
-            "Thành viên tổ Vật lý - Hóa học - Sinh học - Công nghệ",
-            "Thành viên tổ Lịch sử - Địa lý - GDKTPL",
-            "Thành viên tổ Tiếng Anh - Tin học",
-            "Thành viên tổ GDTC - GDQPAN- Nghệ thuật",
-            "Thành viên tổ Văn phòng"
-          ],
-          "required": true,
-          "id": "field-1789548985977-nol9",
-          "type": "dropdown",
-          "label": "Thành phần"
-        },
-        {
-          "placeholder": "Nhập tổng số thành viên của tổ...",
-          "label": "Tổng số thành viên của tổ",
-          "required": true,
-          "type": "number",
-          "id": "fld-1789530482314-nnl9"
-        },
-        {
-          "type": "number",
-          "label": "Tổng số thành viên tham dự",
-          "placeholder": "Nhập tổng số thành viên tham dự...",
-          "required": true,
-          "id": "fld-1789530482314-aig6"
-        },
-        {
-          "placeholder": "Nhập vắng...",
-          "label": "Vắng có phép (ghi rõ họ và tên, lý do)",
-          "required": true,
-          "id": "fld-1789530482314-jmyn",
-          "type": "text"
-        },
-        {
-          "placeholder": "Nhập không phép...",
-          "id": "fld-1789530482314-bk9w",
-          "type": "text",
-          "label": "Vắng không phép (họ và tên):",
-          "required": true
-        },
-        {
-          "required": true,
-          "label": "Chủ trì cuộc họp",
-          "placeholder": "Nhập chủ trì...",
-          "type": "text",
-          "id": "fld-1789530482314-z5zt"
-        },
-        {
-          "label": "Thư ký cuộc họp",
-          "type": "text",
-          "id": "fld-1789530482314-gg4q",
-          "required": true,
-          "placeholder": "Nhập thư ký..."
-        },
-        {
-          "type": "section",
-          "id": "fld-1789530482314-17oq",
-          "required": false,
-          "label": "1. Đánh giá hoạt động của tổ trong thời gian qua",
-          "placeholder": "Nhập 1. đánh giá hoạt động của tổ trong thời gian qua..."
-        },
-        {
-          "required": true,
-          "label": "Ưu điểm",
-          "type": "textarea",
-          "id": "field-1789530878093-a1cx"
-        },
-        {
-          "required": true,
-          "id": "fld-1789530482314-u4qq",
-          "label": "Hạn chế",
-          "placeholder": "Nhập hạn chế...",
-          "type": "textarea"
-        },
-        {
-          "id": "fld-1789530482314-qf0p",
-          "label": "Nguyên nhân của hạn chế",
-          "placeholder": "Nhập nguyên nhân của hạn chế...",
-          "type": "textarea",
-          "required": true
-        },
-        {
-          "label": "Giải pháp khắc phục",
-          "type": "text",
-          "required": true,
-          "placeholder": "Nhập giải pháp khắc phục...",
-          "id": "fld-1789530482314-3yoa"
-        },
-        {
-          "label": "2. Triển khai các văn bản (nêu các vướng mắc, đề xuất nếu có trong quá trình triển khai văn bản)",
-          "type": "text",
-          "placeholder": "Nhập 2. triển khai các văn bản...",
-          "id": "fld-1789530482314-ze33",
-          "required": true
-        },
-        {
-          "label": "3. Triển khai nội dung công việc trọng tâm của trường/tổ",
-          "type": "section",
-          "id": "fld-1789530482314-qvc4",
-          "required": false,
-          "placeholder": "Nhập 3. triển khai nội dung công việc trọng tâm của trường/tổ..."
-        },
-        {
-          "type": "textarea",
-          "id": "fld-1789530482314-w6wb",
-          "placeholder": "Nhập triển khai về nội dung sinh hoạt chuyên môn. trong đó lưu ý về các biểu mẫu sở gửi kèm trong công văn 1091. lưu ý...",
-          "label": "Nêu những ý kiến về dự thảo kế hoạch giáo dục nhà trường.",
-          "required": true
-        },
-        {
-          "label": "Ý kiến về xây dựng Kế hoạch giáo dục của tổ chuyên môn, Kế hoạch bài dạy), Phân phối chương trình từng môn học, từng khối lớp. ",
-          "required": true,
-          "id": "field-1789531414892-v79d",
-          "type": "textarea"
-        },
-        {
-          "id": "field-1789530967444-phuz",
-          "label": "Ý kiến về triển khai văn bản hướng dẫn nội dung sinh hoạt chuyên môn. ",
-          "type": "textarea",
-          "required": true
-        },
-        {
-          "placeholder": "Nhập tổ trưởng thông báo danh sách học sinh khuyết tật về giáo viên trong tổ để biết và có sự quan tâm, hỗ trợ đối với các trường hợp này. về hồ sơ theo quy định nhà trường sẽ có hướng dẫn sau. lưu ý...",
-          "id": "fld-1789530482314-jkb4",
-          "required": true,
-          "type": "text",
-          "label": "Ý kiến về công tác giáo dục hòa nhập (học sinh khuyết tật)"
-        },
-        {
-          "placeholder": "Nhập thông báo về số cột điểm trong năm học theo môn học để gvbm nắm...",
-          "label": "Ý kiến về thực hiện công tác kiểm tra đánh giá",
-          "required": true,
-          "id": "fld-1789530482314-6yx2",
-          "type": "textarea"
-        },
-        {
-          "placeholder": "Nhập 4. ý kiến của các thành viên trong cuộc họp đối với trường/tổ/cá nhân...",
-          "label": "4. Ý kiến của các thành viên trong cuộc họp đối với trường/tổ/cá nhân",
-          "required": true,
-          "id": "fld-1789530482314-0y0t",
-          "type": "text"
-        },
-        {
-          "placeholder": "Nhập 5. kết luận...",
-          "type": "textarea",
-          "label": "5. Kết luận",
-          "id": "fld-1789530482314-c0rs",
-          "required": true
-        },
-        {
-          "id": "fld-1789530482314-atct",
-          "placeholder": "Nhập 6. đề xuất, kiến nghị với nhà trường...",
-          "required": true,
-          "label": "6. Đề xuất, kiến nghị với nhà trường",
-          "type": "textarea"
-        },
-        {
-          "type": "text",
-          "id": "field-1789618350912-mm68",
-          "required": true,
-          "label": "Cuộc họp kết thúc lúc: (.... giờ.... phút)"
-        }
-      ],
-      "tables": [],
-      "defaultTemplateContent": "TRƯỜNG THCS VÀ THPT                CỘNG HOÀ XÃ HỘI CHỦ NGHĨA VIỆT NAM\nĐỐC BINH KIỀU                                       Độc lập – Tự do – Hạnh Phúc\nTỔ ……..\nĐốc Binh Kiều, ngày    tháng    năm 2026\nBIÊN BẢN\nSinh hoạt tổ chuyên môn lần…. năm học 2026 - 2027\nThời gian:  lúc     giờ   phút, ngày    tháng  năm 2026.\nĐịa điểm: Tại phòng ………..\nThành phần:\nTổng số thành viên của tổ: …\nTổng số thành viên tham dự: …\nVắng: …. Trong đó: có phép: …., lý do: ……\nkhông phép: …….\nChủ trì: …………………….. - Tổ trưởng\nThư ký: …………………………….\nNỘI DUNG\n1. Đánh giá hoạt động của tổ trong thời gian qua\nƯu điểm:…\nHạn chế:…\nNguyên nhân của hạn chế:…\nGiải pháp khắc phục:…\n2. Triển khai các văn bản\nKế hoạch giáo dục nhà trường năm học 2026-2027 (bản dự thảo).\nCông văn số 3284/SGDĐT-GDPT ngày 24 tháng 8 năm 2026 về việc hướng dẫn xây dựng và tổ chức thực hiện kế hoạch giáo dục của nhà trường cấp trung học.\nCông văn số 1061/HD-SGDĐT ngày 28 tháng 8 năm 2026 về hướng dẫn thực hiện nhiệm vụ giáo dục phổ thông năm học 2026 – 2027.\nCông văn số 1091/HD-SGDĐT ngày 08 tháng 9 năm 2026 về việc hướng dẫn tổ chức sinh hoạt chuyên môn tại cơ sở giáo dục phổ thông và sinh hoạt cụm chuyên môn kể từ năm học 2026 – 2027.\n3. Triển khai nội dung công việc trọng tâm của trường/tổ\nGóp ý dự thảo kế hoạch giáo dục nhà trường. Tập trung đánh giá các số liệu, chỉ tiêu trong kế hoạch giáo dục.\nTriển khai các văn bản trọng tâm đầu năm do Sở GDĐT gửi. Ngoài ra, các văn bản về dạy học 2 buổi/ngày, dạy thêm học thêm, STEM/STEAM, giáo dục hòa nhập, khung năng lực AI, khung năng lực số,… nhà trường sẽ triển khai sau.\nXây dựng Kế hoạch giáo dục của tổ chuyên môn, Kế hoạch bài dạy (phụ lục 1,2 công văn 3284). Phân phối chương trình từng môn học, từng khối lớp. Thời gian gửi kế hoạch giáo dục của tổ chuyên môn, phân phối chương trình gửi lại chậm nhất 23/9/2026 (thứ 5 tuần sau).\nTriển khai về nội dung sinh hoạt chuyên môn. Trong đó lưu ý về các biểu mẫu Sở gửi kèm trong công văn 1091. Lưu ý: Trường THCS và THPT Đốc Binh Kiều thuộc cụm 2.\nTổ trưởng thông báo danh sách học sinh khuyết tật về giáo viên trong tổ để biết và có sự quan tâm, hỗ trợ đối với các trường hợp này. Về hồ sơ theo quy định nhà trường sẽ có hướng dẫn sau. Lưu ý: danh sách này chỉ dùng để thông báo cho giáo viên dạy lớp biết, không chia sẻ ra bên ngoài trường (có danh sách kèm theo)\nTheo Công văn 1061 việc kiểm tra, đánh giá học sinh sẽ tiếp tục thực hiện theo Công văn số 471/SGDĐT-GDPT ngày 22 tháng 8 năm 2025 của Sở GDĐT về việc thực hiện kiểm tra, đánh giá đối với cấp THCS và THPT. Tổ trưởng thông báo để giáo viên có định hướng trong việc giảng dạy học sinh.\nThông báo về số cột điểm trong năm học theo môn học để GVBM nắm:\n4. Ý kiến của các thành viên trong cuộc họp đối với trường/tổ/cá nhân\n……………….\n5. Kết luận\n(của chủ trì về các chỉ tiêu, nội dung trọng tâm cần thực hiện trong thời gian tới)\n………………..\n6. Đề xuất, kiến nghị với nhà trường\n……………….\nCuộc họp kết thúc vào lúc… giờ….phút cùng ngày./.\nThư ký                                                                     Chủ trì\n………………………..                                          ……………………………"
-    },
-    "description": "Yêu cầu nộp báo cáo theo mẫu trực tuyến gồm 22 mục thông tin và 1 bảng số liệu. Thầy/Cô điền trực tiếp vào form trên hệ thống trước thời hạn.",
-    "id": "period-1789531094791",
-    "reportType": "hybrid",
-    "title": "BIÊN BẢN HỌP TỔ CHUYÊN MÔN LẦN 2 (17-9-2026)",
-    "defaultTemplateContent": "TRƯỜNG THCS VÀ THPT                CỘNG HOÀ XÃ HỘI CHỦ NGHĨA VIỆT NAM\nĐỐC BINH KIỀU                                       Độc lập – Tự do – Hạnh Phúc\nTỔ ……..\nĐốc Binh Kiều, ngày    tháng    năm 2026\nBIÊN BẢN\nSinh hoạt tổ chuyên môn lần…. năm học 2026 - 2027\nThời gian:  lúc     giờ   phút, ngày    tháng  năm 2026.\nĐịa điểm: Tại phòng ………..\nThành phần:\nTổng số thành viên của tổ: …\nTổng số thành viên tham dự: …\nVắng: …. Trong đó: có phép: …., lý do: ……\nkhông phép: …….\nChủ trì: …………………….. - Tổ trưởng\nThư ký: …………………………….\nNỘI DUNG\n1. Đánh giá hoạt động của tổ trong thời gian qua\nƯu điểm:…\nHạn chế:…\nNguyên nhân của hạn chế:…\nGiải pháp khắc phục:…\n2. Triển khai các văn bản\nKế hoạch giáo dục nhà trường năm học 2026-2027 (bản dự thảo).\nCông văn số 3284/SGDĐT-GDPT ngày 24 tháng 8 năm 2026 về việc hướng dẫn xây dựng và tổ chức thực hiện kế hoạch giáo dục của nhà trường cấp trung học.\nCông văn số 1061/HD-SGDĐT ngày 28 tháng 8 năm 2026 về hướng dẫn thực hiện nhiệm vụ giáo dục phổ thông năm học 2026 – 2027.\nCông văn số 1091/HD-SGDĐT ngày 08 tháng 9 năm 2026 về việc hướng dẫn tổ chức sinh hoạt chuyên môn tại cơ sở giáo dục phổ thông và sinh hoạt cụm chuyên môn kể từ năm học 2026 – 2027.\n3. Triển khai nội dung công việc trọng tâm của trường/tổ\nGóp ý dự thảo kế hoạch giáo dục nhà trường. Tập trung đánh giá các số liệu, chỉ tiêu trong kế hoạch giáo dục.\nTriển khai các văn bản trọng tâm đầu năm do Sở GDĐT gửi. Ngoài ra, các văn bản về dạy học 2 buổi/ngày, dạy thêm học thêm, STEM/STEAM, giáo dục hòa nhập, khung năng lực AI, khung năng lực số,… nhà trường sẽ triển khai sau.\nXây dựng Kế hoạch giáo dục của tổ chuyên môn, Kế hoạch bài dạy (phụ lục 1,2 công văn 3284). Phân phối chương trình từng môn học, từng khối lớp. Thời gian gửi kế hoạch giáo dục của tổ chuyên môn, phân phối chương trình gửi lại chậm nhất 23/9/2026 (thứ 5 tuần sau).\nTriển khai về nội dung sinh hoạt chuyên môn. Trong đó lưu ý về các biểu mẫu Sở gửi kèm trong công văn 1091. Lưu ý: Trường THCS và THPT Đốc Binh Kiều thuộc cụm 2.\nTổ trưởng thông báo danh sách học sinh khuyết tật về giáo viên trong tổ để biết và có sự quan tâm, hỗ trợ đối với các trường hợp này. Về hồ sơ theo quy định nhà trường sẽ có hướng dẫn sau. Lưu ý: danh sách này chỉ dùng để thông báo cho giáo viên dạy lớp biết, không chia sẻ ra bên ngoài trường (có danh sách kèm theo)\nTheo Công văn 1061 việc kiểm tra, đánh giá học sinh sẽ tiếp tục thực hiện theo Công văn số 471/SGDĐT-GDPT ngày 22 tháng 8 năm 2025 của Sở GDĐT về việc thực hiện kiểm tra, đánh giá đối với cấp THCS và THPT. Tổ trưởng thông báo để giáo viên có định hướng trong việc giảng dạy học sinh.\nThông báo về số cột điểm trong năm học theo môn học để GVBM nắm:\n4. Ý kiến của các thành viên trong cuộc họp đối với trường/tổ/cá nhân\n……………….\n5. Kết luận\n(của chủ trì về các chỉ tiêu, nội dung trọng tâm cần thực hiện trong thời gian tới)\n………………..\n6. Đề xuất, kiến nghị với nhà trường\n……………….\nCuộc họp kết thúc vào lúc… giờ….phút cùng ngày./.\nThư ký                                                                     Chủ trì\n………………………..                                          ……………………………",
-    "status": "active",
-    "semester": "HK1",
-    "academicYear": "2026-2027",
-    "targetAudience": "specific_users",
-    "targetRoles": [
-      "teacher",
-      "dept_head"
-    ],
-    "isRequired": true,
-    "startDate": "2026-09-16T03:58:14.791Z",
     "targetUserIds": [
       "staff-5",
       "staff-34",
@@ -424,215 +13,913 @@
       "staff-109",
       "staff-2"
     ],
-    "createdBy": "Ban Giám Hiệu",
-    "createdAt": "2026-09-16T03:58:14.791Z",
-    "deadline": "2026-09-18T10:00:00.000Z",
+    "isRequired": true,
+    "formTemplate": {
+      "defaultTemplateContent": "TRƯỜNG THCS VÀ THPT                CỘNG HOÀ XÃ HỘI CHỦ NGHĨA VIỆT NAM\nĐỐC BINH KIỀU                                       Độc lập – Tự do – Hạnh Phúc\nTỔ ……..\nĐốc Binh Kiều, ngày    tháng    năm 2026\nBIÊN BẢN\nSinh hoạt tổ chuyên môn lần…. năm học 2026 - 2027\nThời gian:  lúc     giờ   phút, ngày    tháng  năm 2026.\nĐịa điểm: Tại phòng ………..\nThành phần:\nTổng số thành viên của tổ: …\nTổng số thành viên tham dự: …\nVắng: …. Trong đó: có phép: …., lý do: ……\nkhông phép: …….\nChủ trì: …………………….. - Tổ trưởng\nThư ký: …………………………….\nNỘI DUNG\n1. Đánh giá hoạt động của tổ trong thời gian qua\nƯu điểm:…\nHạn chế:…\nNguyên nhân của hạn chế:…\nGiải pháp khắc phục:…\n2. Triển khai các văn bản\nKế hoạch giáo dục nhà trường năm học 2026-2027 (bản dự thảo).\nCông văn số 3284/SGDĐT-GDPT ngày 24 tháng 8 năm 2026 về việc hướng dẫn xây dựng và tổ chức thực hiện kế hoạch giáo dục của nhà trường cấp trung học.\nCông văn số 1061/HD-SGDĐT ngày 28 tháng 8 năm 2026 về hướng dẫn thực hiện nhiệm vụ giáo dục phổ thông năm học 2026 – 2027.\nCông văn số 1091/HD-SGDĐT ngày 08 tháng 9 năm 2026 về việc hướng dẫn tổ chức sinh hoạt chuyên môn tại cơ sở giáo dục phổ thông và sinh hoạt cụm chuyên môn kể từ năm học 2026 – 2027.\n3. Triển khai nội dung công việc trọng tâm của trường/tổ\nGóp ý dự thảo kế hoạch giáo dục nhà trường. Tập trung đánh giá các số liệu, chỉ tiêu trong kế hoạch giáo dục.\nTriển khai các văn bản trọng tâm đầu năm do Sở GDĐT gửi. Ngoài ra, các văn bản về dạy học 2 buổi/ngày, dạy thêm học thêm, STEM/STEAM, giáo dục hòa nhập, khung năng lực AI, khung năng lực số,… nhà trường sẽ triển khai sau.\nXây dựng Kế hoạch giáo dục của tổ chuyên môn, Kế hoạch bài dạy (phụ lục 1,2 công văn 3284). Phân phối chương trình từng môn học, từng khối lớp. Thời gian gửi kế hoạch giáo dục của tổ chuyên môn, phân phối chương trình gửi lại chậm nhất 23/9/2026 (thứ 5 tuần sau).\nTriển khai về nội dung sinh hoạt chuyên môn. Trong đó lưu ý về các biểu mẫu Sở gửi kèm trong công văn 1091. Lưu ý: Trường THCS và THPT Đốc Binh Kiều thuộc cụm 2.\nTổ trưởng thông báo danh sách học sinh khuyết tật về giáo viên trong tổ để biết và có sự quan tâm, hỗ trợ đối với các trường hợp này. Về hồ sơ theo quy định nhà trường sẽ có hướng dẫn sau. Lưu ý: danh sách này chỉ dùng để thông báo cho giáo viên dạy lớp biết, không chia sẻ ra bên ngoài trường (có danh sách kèm theo)\nTheo Công văn 1061 việc kiểm tra, đánh giá học sinh sẽ tiếp tục thực hiện theo Công văn số 471/SGDĐT-GDPT ngày 22 tháng 8 năm 2025 của Sở GDĐT về việc thực hiện kiểm tra, đánh giá đối với cấp THCS và THPT. Tổ trưởng thông báo để giáo viên có định hướng trong việc giảng dạy học sinh.\nThông báo về số cột điểm trong năm học theo môn học để GVBM nắm:\n4. Ý kiến của các thành viên trong cuộc họp đối với trường/tổ/cá nhân\n……………….\n5. Kết luận\n(của chủ trì về các chỉ tiêu, nội dung trọng tâm cần thực hiện trong thời gian tới)\n………………..\n6. Đề xuất, kiến nghị với nhà trường\n……………….\nCuộc họp kết thúc vào lúc… giờ….phút cùng ngày./.\nThư ký                                                                     Chủ trì\n………………………..                                          ……………………………",
+      "fields": [
+        {
+          "label": "Thời gian họp (giờ, phút)",
+          "required": true,
+          "placeholder": "Nhập thời gian...",
+          "id": "fld-1789530482314-90qm",
+          "type": "text"
+        },
+        {
+          "placeholder": "Nhập địa điểm...",
+          "label": "Địa điểm (phòng):",
+          "id": "fld-1789530482314-92fp",
+          "type": "text",
+          "required": true
+        },
+        {
+          "id": "field-1789548985977-nol9",
+          "label": "Thành phần",
+          "type": "dropdown",
+          "options": [
+            "Thành viên tổ Ngữ văn - Thư viện - Thiết bị",
+            "Thành viên tổ Toán",
+            "Thành viên tổ Vật lý - Hóa học - Sinh học - Công nghệ",
+            "Thành viên tổ Lịch sử - Địa lý - GDKTPL",
+            "Thành viên tổ Tiếng Anh - Tin học",
+            "Thành viên tổ GDTC - GDQPAN- Nghệ thuật",
+            "Thành viên tổ Văn phòng"
+          ],
+          "required": true
+        },
+        {
+          "id": "fld-1789530482314-nnl9",
+          "type": "number",
+          "placeholder": "Nhập tổng số thành viên của tổ...",
+          "label": "Tổng số thành viên của tổ",
+          "required": true
+        },
+        {
+          "label": "Tổng số thành viên tham dự",
+          "id": "fld-1789530482314-aig6",
+          "required": true,
+          "placeholder": "Nhập tổng số thành viên tham dự...",
+          "type": "number"
+        },
+        {
+          "required": true,
+          "id": "fld-1789530482314-jmyn",
+          "label": "Vắng có phép (ghi rõ họ và tên, lý do)",
+          "type": "text",
+          "placeholder": "Nhập vắng..."
+        },
+        {
+          "type": "text",
+          "placeholder": "Nhập không phép...",
+          "label": "Vắng không phép (họ và tên):",
+          "required": true,
+          "id": "fld-1789530482314-bk9w"
+        },
+        {
+          "required": true,
+          "placeholder": "Nhập chủ trì...",
+          "id": "fld-1789530482314-z5zt",
+          "label": "Chủ trì cuộc họp",
+          "type": "text"
+        },
+        {
+          "type": "text",
+          "placeholder": "Nhập thư ký...",
+          "required": true,
+          "id": "fld-1789530482314-gg4q",
+          "label": "Thư ký cuộc họp"
+        },
+        {
+          "id": "fld-1789530482314-17oq",
+          "type": "section",
+          "label": "1. Đánh giá hoạt động của tổ trong thời gian qua",
+          "required": false,
+          "placeholder": "Nhập 1. đánh giá hoạt động của tổ trong thời gian qua..."
+        },
+        {
+          "type": "textarea",
+          "required": true,
+          "label": "Ưu điểm",
+          "id": "field-1789530878093-a1cx"
+        },
+        {
+          "id": "fld-1789530482314-u4qq",
+          "required": true,
+          "placeholder": "Nhập hạn chế...",
+          "type": "textarea",
+          "label": "Hạn chế"
+        },
+        {
+          "label": "Nguyên nhân của hạn chế",
+          "placeholder": "Nhập nguyên nhân của hạn chế...",
+          "type": "textarea",
+          "id": "fld-1789530482314-qf0p",
+          "required": true
+        },
+        {
+          "label": "Giải pháp khắc phục",
+          "id": "fld-1789530482314-3yoa",
+          "required": true,
+          "placeholder": "Nhập giải pháp khắc phục...",
+          "type": "text"
+        },
+        {
+          "label": "2. Triển khai các văn bản (nêu các vướng mắc, đề xuất nếu có trong quá trình triển khai văn bản)",
+          "id": "fld-1789530482314-ze33",
+          "required": true,
+          "type": "text",
+          "placeholder": "Nhập 2. triển khai các văn bản..."
+        },
+        {
+          "placeholder": "Nhập 3. triển khai nội dung công việc trọng tâm của trường/tổ...",
+          "type": "section",
+          "id": "fld-1789530482314-qvc4",
+          "required": false,
+          "label": "3. Triển khai nội dung công việc trọng tâm của trường/tổ"
+        },
+        {
+          "required": true,
+          "type": "textarea",
+          "label": "Nêu những ý kiến về dự thảo kế hoạch giáo dục nhà trường.",
+          "id": "fld-1789530482314-w6wb",
+          "placeholder": "Nhập triển khai về nội dung sinh hoạt chuyên môn. trong đó lưu ý về các biểu mẫu sở gửi kèm trong công văn 1091. lưu ý..."
+        },
+        {
+          "id": "field-1789531414892-v79d",
+          "label": "Ý kiến về xây dựng Kế hoạch giáo dục của tổ chuyên môn, Kế hoạch bài dạy), Phân phối chương trình từng môn học, từng khối lớp. ",
+          "required": true,
+          "type": "textarea"
+        },
+        {
+          "type": "textarea",
+          "id": "field-1789530967444-phuz",
+          "required": true,
+          "label": "Ý kiến về triển khai văn bản hướng dẫn nội dung sinh hoạt chuyên môn. "
+        },
+        {
+          "required": true,
+          "label": "Ý kiến về công tác giáo dục hòa nhập (học sinh khuyết tật)",
+          "id": "fld-1789530482314-jkb4",
+          "type": "text",
+          "placeholder": "Nhập tổ trưởng thông báo danh sách học sinh khuyết tật về giáo viên trong tổ để biết và có sự quan tâm, hỗ trợ đối với các trường hợp này. về hồ sơ theo quy định nhà trường sẽ có hướng dẫn sau. lưu ý..."
+        },
+        {
+          "required": true,
+          "placeholder": "Nhập thông báo về số cột điểm trong năm học theo môn học để gvbm nắm...",
+          "label": "Ý kiến về thực hiện công tác kiểm tra đánh giá",
+          "type": "textarea",
+          "id": "fld-1789530482314-6yx2"
+        },
+        {
+          "id": "fld-1789530482314-0y0t",
+          "placeholder": "Nhập 4. ý kiến của các thành viên trong cuộc họp đối với trường/tổ/cá nhân...",
+          "label": "4. Ý kiến của các thành viên trong cuộc họp đối với trường/tổ/cá nhân",
+          "required": true,
+          "type": "text"
+        },
+        {
+          "type": "textarea",
+          "id": "fld-1789530482314-c0rs",
+          "required": true,
+          "placeholder": "Nhập 5. kết luận...",
+          "label": "5. Kết luận"
+        },
+        {
+          "placeholder": "Nhập 6. đề xuất, kiến nghị với nhà trường...",
+          "id": "fld-1789530482314-atct",
+          "label": "6. Đề xuất, kiến nghị với nhà trường",
+          "required": true,
+          "type": "textarea"
+        },
+        {
+          "required": true,
+          "label": "Cuộc họp kết thúc lúc: (.... giờ.... phút)",
+          "id": "field-1789618350912-mm68",
+          "type": "text"
+        }
+      ],
+      "tables": []
+    },
+    "targetRoles": [
+      "teacher",
+      "dept_head"
+    ],
     "targetDepartmentIds": [
       "all"
     ],
+    "defaultTemplateContent": "TRƯỜNG THCS VÀ THPT                CỘNG HOÀ XÃ HỘI CHỦ NGHĨA VIỆT NAM\nĐỐC BINH KIỀU                                       Độc lập – Tự do – Hạnh Phúc\nTỔ ……..\nĐốc Binh Kiều, ngày    tháng    năm 2026\nBIÊN BẢN\nSinh hoạt tổ chuyên môn lần…. năm học 2026 - 2027\nThời gian:  lúc     giờ   phút, ngày    tháng  năm 2026.\nĐịa điểm: Tại phòng ………..\nThành phần:\nTổng số thành viên của tổ: …\nTổng số thành viên tham dự: …\nVắng: …. Trong đó: có phép: …., lý do: ……\nkhông phép: …….\nChủ trì: …………………….. - Tổ trưởng\nThư ký: …………………………….\nNỘI DUNG\n1. Đánh giá hoạt động của tổ trong thời gian qua\nƯu điểm:…\nHạn chế:…\nNguyên nhân của hạn chế:…\nGiải pháp khắc phục:…\n2. Triển khai các văn bản\nKế hoạch giáo dục nhà trường năm học 2026-2027 (bản dự thảo).\nCông văn số 3284/SGDĐT-GDPT ngày 24 tháng 8 năm 2026 về việc hướng dẫn xây dựng và tổ chức thực hiện kế hoạch giáo dục của nhà trường cấp trung học.\nCông văn số 1061/HD-SGDĐT ngày 28 tháng 8 năm 2026 về hướng dẫn thực hiện nhiệm vụ giáo dục phổ thông năm học 2026 – 2027.\nCông văn số 1091/HD-SGDĐT ngày 08 tháng 9 năm 2026 về việc hướng dẫn tổ chức sinh hoạt chuyên môn tại cơ sở giáo dục phổ thông và sinh hoạt cụm chuyên môn kể từ năm học 2026 – 2027.\n3. Triển khai nội dung công việc trọng tâm của trường/tổ\nGóp ý dự thảo kế hoạch giáo dục nhà trường. Tập trung đánh giá các số liệu, chỉ tiêu trong kế hoạch giáo dục.\nTriển khai các văn bản trọng tâm đầu năm do Sở GDĐT gửi. Ngoài ra, các văn bản về dạy học 2 buổi/ngày, dạy thêm học thêm, STEM/STEAM, giáo dục hòa nhập, khung năng lực AI, khung năng lực số,… nhà trường sẽ triển khai sau.\nXây dựng Kế hoạch giáo dục của tổ chuyên môn, Kế hoạch bài dạy (phụ lục 1,2 công văn 3284). Phân phối chương trình từng môn học, từng khối lớp. Thời gian gửi kế hoạch giáo dục của tổ chuyên môn, phân phối chương trình gửi lại chậm nhất 23/9/2026 (thứ 5 tuần sau).\nTriển khai về nội dung sinh hoạt chuyên môn. Trong đó lưu ý về các biểu mẫu Sở gửi kèm trong công văn 1091. Lưu ý: Trường THCS và THPT Đốc Binh Kiều thuộc cụm 2.\nTổ trưởng thông báo danh sách học sinh khuyết tật về giáo viên trong tổ để biết và có sự quan tâm, hỗ trợ đối với các trường hợp này. Về hồ sơ theo quy định nhà trường sẽ có hướng dẫn sau. Lưu ý: danh sách này chỉ dùng để thông báo cho giáo viên dạy lớp biết, không chia sẻ ra bên ngoài trường (có danh sách kèm theo)\nTheo Công văn 1061 việc kiểm tra, đánh giá học sinh sẽ tiếp tục thực hiện theo Công văn số 471/SGDĐT-GDPT ngày 22 tháng 8 năm 2025 của Sở GDĐT về việc thực hiện kiểm tra, đánh giá đối với cấp THCS và THPT. Tổ trưởng thông báo để giáo viên có định hướng trong việc giảng dạy học sinh.\nThông báo về số cột điểm trong năm học theo môn học để GVBM nắm:\n4. Ý kiến của các thành viên trong cuộc họp đối với trường/tổ/cá nhân\n……………….\n5. Kết luận\n(của chủ trì về các chỉ tiêu, nội dung trọng tâm cần thực hiện trong thời gian tới)\n………………..\n6. Đề xuất, kiến nghị với nhà trường\n……………….\nCuộc họp kết thúc vào lúc… giờ….phút cùng ngày./.\nThư ký                                                                     Chủ trì\n………………………..                                          ……………………………",
+    "reportType": "hybrid",
+    "title": "BIÊN BẢN HỌP TỔ CHUYÊN MÔN LẦN 3 (08-10-2026)",
+    "createdAt": "2026-10-06T07:19:59.207Z",
+    "createdBy": "Ban Giám Hiệu",
+    "startDate": "2026-10-06T00:00:00.000Z",
+    "status": "active",
+    "id": "period-1791271199207",
+    "description": "Yêu cầu nộp báo cáo theo mẫu trực tuyến gồm 22 mục thông tin và 1 bảng số liệu. Thầy/Cô điền trực tiếp vào form trên hệ thống trước thời hạn.",
+    "targetAudience": "specific_users",
+    "allowMultipleSubmissions": false
+  },
+  {
+    "title": "ĐƠN XIN NGHỈ PHÉP",
+    "createdBy": "Ban Giám Hiệu",
+    "deadline": "2027-05-30T10:00:00.000Z",
+    "startDate": "2026-10-04T12:07:25.324Z",
+    "targetAudience": "teachers_only",
+    "semester": "HK1",
+    "id": "period-1791115645325",
+    "createdAt": "2026-10-04T12:07:25.325Z",
+    "description": "",
+    "status": "active",
+    "isRequired": true,
+    "academicYear": "2026-2027",
+    "reportType": "hybrid",
+    "formTemplate": {
+      "fields": [
+        {
+          "type": "text",
+          "id": "field-1",
+          "description": "",
+          "label": "Họ và tên",
+          "required": true
+        },
+        {
+          "required": true,
+          "type": "text",
+          "label": "Môn dạy",
+          "id": "field-2",
+          "options": [
+            "Tốt (100% đúng giờ)",
+            "Khá (Có học sinh đi trễ)",
+            "Cần nhắc nhở"
+          ]
+        },
+        {
+          "label": "Ngày nghỉ phép",
+          "required": true,
+          "id": "field-3",
+          "type": "date"
+        },
+        {
+          "type": "text",
+          "required": true,
+          "id": "field-4",
+          "label": "Lý do nghỉ"
+        },
+        {
+          "label": "Cách xử lý khi nghỉ phép",
+          "id": "field-1791115366139-mhvs",
+          "required": true,
+          "type": "radio",
+          "options": [
+            "Đổi tiết",
+            "Dạy thay"
+          ]
+        }
+      ],
+      "defaultTemplateContent": "",
+      "tables": [
+        {
+          "id": "table-1791115587156-rhi2",
+          "rows": [],
+          "headers": [
+            "STT",
+            "Lớp",
+            "Tiết",
+            "Người dạy"
+          ],
+          "title": "THỐNG KÊ CHI TIẾT TIẾT DẠY THAY HOẶC ĐỔI TIẾT"
+        }
+      ]
+    },
+    "targetRoles": [
+      "teacher",
+      "dept_head"
+    ],
+    "updatedAt": "2026-10-04T12:08:47.207Z",
+    "targetDepartmentIds": [
+      "all"
+    ],
+    "allowMultipleSubmissions": true
+  },
+  {
+    "status": "closed",
+    "description": "",
+    "targetDepartmentIds": [
+      "all"
+    ],
+    "targetAudience": "homeroom_teachers",
+    "updatedAt": "2026-10-04T12:07:43.156Z",
+    "deadline": "2026-09-27T10:00:00.000Z",
+    "semester": "HK1",
+    "academicYear": "2026-2027",
+    "isRequired": true,
+    "formTemplate": {
+      "tables": [],
+      "fields": [
+        {
+          "required": true,
+          "label": "Thời gian họp:",
+          "id": "field-1",
+          "type": "text",
+          "description": "Ví dụ: 7h30 ngày 27/9/2026"
+        },
+        {
+          "required": true,
+          "id": "field-1790419220133-ryfr",
+          "description": "Ví dụ: Phòng 10CB1",
+          "label": "Địa điểm: ",
+          "type": "text"
+        },
+        {
+          "description": "Chỉ ghi lớp",
+          "id": "field-1790419347559-b2zw",
+          "type": "text",
+          "label": "Thành phần: Tập thể Phụ huynh học sinh lớp ___",
+          "required": true
+        },
+        {
+          "type": "text",
+          "id": "field-1790419220117-ix7d",
+          "required": true,
+          "label": "Chủ trì cuộc họp:",
+          "description": "Ghi họ và tên giáo viên chủ nhiệm"
+        },
+        {
+          "id": "field-1790419493477-vunc",
+          "type": "text",
+          "required": true,
+          "label": "Thư ký cuộc họp:",
+          "description": "Ghi họ và tên người ghi biên bản"
+        },
+        {
+          "label": "Sĩ số học sinh",
+          "required": true,
+          "type": "text",
+          "options": [
+            "Tốt (100% đúng giờ)",
+            "Khá (Có học sinh đi trễ)",
+            "Cần nhắc nhở"
+          ],
+          "id": "field-2"
+        },
+        {
+          "type": "text",
+          "required": true,
+          "id": "field-3",
+          "label": "Số phụ huynh học sinh có mặt"
+        },
+        {
+          "id": "field-4",
+          "label": "Họ và tên Trưởng Ban đại diện CMHS",
+          "required": true,
+          "type": "text"
+        },
+        {
+          "required": true,
+          "type": "text",
+          "id": "field-1790418552805-jc5o",
+          "label": "Số điện thoại Trưởng ban "
+        },
+        {
+          "label": "Họ và tên Phó Trưởng ban đại diện CMHS",
+          "required": true,
+          "id": "field-1790418563821-z6ew",
+          "type": "text"
+        },
+        {
+          "type": "text",
+          "id": "field-1790418601406-1wye",
+          "required": true,
+          "label": "Số điện thoại Phó Trưởng ban "
+        },
+        {
+          "id": "field-1790418613789-meu3",
+          "type": "textarea",
+          "label": "Họ và tên Thư ký Ban đại diện CMHS",
+          "required": true
+        },
+        {
+          "required": true,
+          "label": "Số điện thoại Thư ký ",
+          "id": "field-1790418659612-jhsn",
+          "type": "textarea"
+        },
+        {
+          "type": "textarea",
+          "label": "Ý kiến của phụ huynh học sinh",
+          "required": true,
+          "id": "field-1790418670509-u1fk"
+        },
+        {
+          "type": "text",
+          "description": "Điền vào giờ kết thúc cuộc họp. Ví dụ: 9h00",
+          "required": true,
+          "label": "Cuộc họp kết thúc lúc __ giờ __ cùng ngày",
+          "id": "field-1790419649408-wulj"
+        }
+      ],
+      "defaultTemplateContent": ""
+    },
+    "targetRoles": [
+      "teacher",
+      "dept_head"
+    ],
+    "id": "period-1790419110520",
+    "createdAt": "2026-09-26T10:38:30.520Z",
+    "reportType": "hybrid",
+    "title": "BÁO CÁO KẾT QUẢ HỌP PHỤ HUYNH HỌC SINH ĐẦU NĂM HỌC 2026-2027",
+    "createdBy": "Ban Giám Hiệu",
+    "startDate": "2026-09-26T10:38:30.519Z",
+    "allowMultipleSubmissions": false
+  },
+  {
+    "deadline": "2026-09-18T10:00:00.000Z",
+    "academicYear": "2026-2027",
+    "semester": "HK1",
+    "targetUserIds": [
+      "staff-5",
+      "staff-34",
+      "staff-93",
+      "staff-19",
+      "staff-67",
+      "staff-51",
+      "staff-109",
+      "staff-2"
+    ],
+    "isRequired": true,
+    "formTemplate": {
+      "defaultTemplateContent": "TRƯỜNG THCS VÀ THPT                CỘNG HOÀ XÃ HỘI CHỦ NGHĨA VIỆT NAM\nĐỐC BINH KIỀU                                       Độc lập – Tự do – Hạnh Phúc\nTỔ ……..\nĐốc Binh Kiều, ngày    tháng    năm 2026\nBIÊN BẢN\nSinh hoạt tổ chuyên môn lần…. năm học 2026 - 2027\nThời gian:  lúc     giờ   phút, ngày    tháng  năm 2026.\nĐịa điểm: Tại phòng ………..\nThành phần:\nTổng số thành viên của tổ: …\nTổng số thành viên tham dự: …\nVắng: …. Trong đó: có phép: …., lý do: ……\nkhông phép: …….\nChủ trì: …………………….. - Tổ trưởng\nThư ký: …………………………….\nNỘI DUNG\n1. Đánh giá hoạt động của tổ trong thời gian qua\nƯu điểm:…\nHạn chế:…\nNguyên nhân của hạn chế:…\nGiải pháp khắc phục:…\n2. Triển khai các văn bản\nKế hoạch giáo dục nhà trường năm học 2026-2027 (bản dự thảo).\nCông văn số 3284/SGDĐT-GDPT ngày 24 tháng 8 năm 2026 về việc hướng dẫn xây dựng và tổ chức thực hiện kế hoạch giáo dục của nhà trường cấp trung học.\nCông văn số 1061/HD-SGDĐT ngày 28 tháng 8 năm 2026 về hướng dẫn thực hiện nhiệm vụ giáo dục phổ thông năm học 2026 – 2027.\nCông văn số 1091/HD-SGDĐT ngày 08 tháng 9 năm 2026 về việc hướng dẫn tổ chức sinh hoạt chuyên môn tại cơ sở giáo dục phổ thông và sinh hoạt cụm chuyên môn kể từ năm học 2026 – 2027.\n3. Triển khai nội dung công việc trọng tâm của trường/tổ\nGóp ý dự thảo kế hoạch giáo dục nhà trường. Tập trung đánh giá các số liệu, chỉ tiêu trong kế hoạch giáo dục.\nTriển khai các văn bản trọng tâm đầu năm do Sở GDĐT gửi. Ngoài ra, các văn bản về dạy học 2 buổi/ngày, dạy thêm học thêm, STEM/STEAM, giáo dục hòa nhập, khung năng lực AI, khung năng lực số,… nhà trường sẽ triển khai sau.\nXây dựng Kế hoạch giáo dục của tổ chuyên môn, Kế hoạch bài dạy (phụ lục 1,2 công văn 3284). Phân phối chương trình từng môn học, từng khối lớp. Thời gian gửi kế hoạch giáo dục của tổ chuyên môn, phân phối chương trình gửi lại chậm nhất 23/9/2026 (thứ 5 tuần sau).\nTriển khai về nội dung sinh hoạt chuyên môn. Trong đó lưu ý về các biểu mẫu Sở gửi kèm trong công văn 1091. Lưu ý: Trường THCS và THPT Đốc Binh Kiều thuộc cụm 2.\nTổ trưởng thông báo danh sách học sinh khuyết tật về giáo viên trong tổ để biết và có sự quan tâm, hỗ trợ đối với các trường hợp này. Về hồ sơ theo quy định nhà trường sẽ có hướng dẫn sau. Lưu ý: danh sách này chỉ dùng để thông báo cho giáo viên dạy lớp biết, không chia sẻ ra bên ngoài trường (có danh sách kèm theo)\nTheo Công văn 1061 việc kiểm tra, đánh giá học sinh sẽ tiếp tục thực hiện theo Công văn số 471/SGDĐT-GDPT ngày 22 tháng 8 năm 2025 của Sở GDĐT về việc thực hiện kiểm tra, đánh giá đối với cấp THCS và THPT. Tổ trưởng thông báo để giáo viên có định hướng trong việc giảng dạy học sinh.\nThông báo về số cột điểm trong năm học theo môn học để GVBM nắm:\n4. Ý kiến của các thành viên trong cuộc họp đối với trường/tổ/cá nhân\n……………….\n5. Kết luận\n(của chủ trì về các chỉ tiêu, nội dung trọng tâm cần thực hiện trong thời gian tới)\n………………..\n6. Đề xuất, kiến nghị với nhà trường\n……………….\nCuộc họp kết thúc vào lúc… giờ….phút cùng ngày./.\nThư ký                                                                     Chủ trì\n………………………..                                          ……………………………",
+      "fields": [
+        {
+          "label": "Thời gian họp (giờ, phút)",
+          "required": true,
+          "placeholder": "Nhập thời gian...",
+          "id": "fld-1789530482314-90qm",
+          "type": "text"
+        },
+        {
+          "placeholder": "Nhập địa điểm...",
+          "label": "Địa điểm (phòng):",
+          "id": "fld-1789530482314-92fp",
+          "type": "text",
+          "required": true
+        },
+        {
+          "id": "field-1789548985977-nol9",
+          "label": "Thành phần",
+          "type": "dropdown",
+          "options": [
+            "Thành viên tổ Ngữ văn - Thư viện - Thiết bị",
+            "Thành viên tổ Toán",
+            "Thành viên tổ Vật lý - Hóa học - Sinh học - Công nghệ",
+            "Thành viên tổ Lịch sử - Địa lý - GDKTPL",
+            "Thành viên tổ Tiếng Anh - Tin học",
+            "Thành viên tổ GDTC - GDQPAN- Nghệ thuật",
+            "Thành viên tổ Văn phòng"
+          ],
+          "required": true
+        },
+        {
+          "id": "fld-1789530482314-nnl9",
+          "type": "number",
+          "placeholder": "Nhập tổng số thành viên của tổ...",
+          "label": "Tổng số thành viên của tổ",
+          "required": true
+        },
+        {
+          "label": "Tổng số thành viên tham dự",
+          "id": "fld-1789530482314-aig6",
+          "required": true,
+          "placeholder": "Nhập tổng số thành viên tham dự...",
+          "type": "number"
+        },
+        {
+          "required": true,
+          "id": "fld-1789530482314-jmyn",
+          "label": "Vắng có phép (ghi rõ họ và tên, lý do)",
+          "type": "text",
+          "placeholder": "Nhập vắng..."
+        },
+        {
+          "type": "text",
+          "placeholder": "Nhập không phép...",
+          "label": "Vắng không phép (họ và tên):",
+          "required": true,
+          "id": "fld-1789530482314-bk9w"
+        },
+        {
+          "required": true,
+          "placeholder": "Nhập chủ trì...",
+          "id": "fld-1789530482314-z5zt",
+          "label": "Chủ trì cuộc họp",
+          "type": "text"
+        },
+        {
+          "type": "text",
+          "placeholder": "Nhập thư ký...",
+          "required": true,
+          "id": "fld-1789530482314-gg4q",
+          "label": "Thư ký cuộc họp"
+        },
+        {
+          "id": "fld-1789530482314-17oq",
+          "type": "section",
+          "label": "1. Đánh giá hoạt động của tổ trong thời gian qua",
+          "required": false,
+          "placeholder": "Nhập 1. đánh giá hoạt động của tổ trong thời gian qua..."
+        },
+        {
+          "type": "textarea",
+          "required": true,
+          "label": "Ưu điểm",
+          "id": "field-1789530878093-a1cx"
+        },
+        {
+          "id": "fld-1789530482314-u4qq",
+          "required": true,
+          "placeholder": "Nhập hạn chế...",
+          "type": "textarea",
+          "label": "Hạn chế"
+        },
+        {
+          "label": "Nguyên nhân của hạn chế",
+          "placeholder": "Nhập nguyên nhân của hạn chế...",
+          "type": "textarea",
+          "id": "fld-1789530482314-qf0p",
+          "required": true
+        },
+        {
+          "label": "Giải pháp khắc phục",
+          "id": "fld-1789530482314-3yoa",
+          "required": true,
+          "placeholder": "Nhập giải pháp khắc phục...",
+          "type": "text"
+        },
+        {
+          "label": "2. Triển khai các văn bản (nêu các vướng mắc, đề xuất nếu có trong quá trình triển khai văn bản)",
+          "id": "fld-1789530482314-ze33",
+          "required": true,
+          "type": "text",
+          "placeholder": "Nhập 2. triển khai các văn bản..."
+        },
+        {
+          "placeholder": "Nhập 3. triển khai nội dung công việc trọng tâm của trường/tổ...",
+          "type": "section",
+          "id": "fld-1789530482314-qvc4",
+          "required": false,
+          "label": "3. Triển khai nội dung công việc trọng tâm của trường/tổ"
+        },
+        {
+          "required": true,
+          "type": "textarea",
+          "label": "Nêu những ý kiến về dự thảo kế hoạch giáo dục nhà trường.",
+          "id": "fld-1789530482314-w6wb",
+          "placeholder": "Nhập triển khai về nội dung sinh hoạt chuyên môn. trong đó lưu ý về các biểu mẫu sở gửi kèm trong công văn 1091. lưu ý..."
+        },
+        {
+          "id": "field-1789531414892-v79d",
+          "label": "Ý kiến về xây dựng Kế hoạch giáo dục của tổ chuyên môn, Kế hoạch bài dạy), Phân phối chương trình từng môn học, từng khối lớp. ",
+          "required": true,
+          "type": "textarea"
+        },
+        {
+          "type": "textarea",
+          "id": "field-1789530967444-phuz",
+          "required": true,
+          "label": "Ý kiến về triển khai văn bản hướng dẫn nội dung sinh hoạt chuyên môn. "
+        },
+        {
+          "required": true,
+          "label": "Ý kiến về công tác giáo dục hòa nhập (học sinh khuyết tật)",
+          "id": "fld-1789530482314-jkb4",
+          "type": "text",
+          "placeholder": "Nhập tổ trưởng thông báo danh sách học sinh khuyết tật về giáo viên trong tổ để biết và có sự quan tâm, hỗ trợ đối với các trường hợp này. về hồ sơ theo quy định nhà trường sẽ có hướng dẫn sau. lưu ý..."
+        },
+        {
+          "required": true,
+          "placeholder": "Nhập thông báo về số cột điểm trong năm học theo môn học để gvbm nắm...",
+          "label": "Ý kiến về thực hiện công tác kiểm tra đánh giá",
+          "type": "textarea",
+          "id": "fld-1789530482314-6yx2"
+        },
+        {
+          "id": "fld-1789530482314-0y0t",
+          "placeholder": "Nhập 4. ý kiến của các thành viên trong cuộc họp đối với trường/tổ/cá nhân...",
+          "label": "4. Ý kiến của các thành viên trong cuộc họp đối với trường/tổ/cá nhân",
+          "required": true,
+          "type": "text"
+        },
+        {
+          "type": "textarea",
+          "id": "fld-1789530482314-c0rs",
+          "required": true,
+          "placeholder": "Nhập 5. kết luận...",
+          "label": "5. Kết luận"
+        },
+        {
+          "placeholder": "Nhập 6. đề xuất, kiến nghị với nhà trường...",
+          "id": "fld-1789530482314-atct",
+          "label": "6. Đề xuất, kiến nghị với nhà trường",
+          "required": true,
+          "type": "textarea"
+        },
+        {
+          "required": true,
+          "label": "Cuộc họp kết thúc lúc: (.... giờ.... phút)",
+          "id": "field-1789618350912-mm68",
+          "type": "text"
+        }
+      ],
+      "tables": []
+    },
+    "targetRoles": [
+      "teacher",
+      "dept_head"
+    ],
+    "targetDepartmentIds": [
+      "all"
+    ],
+    "defaultTemplateContent": "TRƯỜNG THCS VÀ THPT                CỘNG HOÀ XÃ HỘI CHỦ NGHĨA VIỆT NAM\nĐỐC BINH KIỀU                                       Độc lập – Tự do – Hạnh Phúc\nTỔ ……..\nĐốc Binh Kiều, ngày    tháng    năm 2026\nBIÊN BẢN\nSinh hoạt tổ chuyên môn lần…. năm học 2026 - 2027\nThời gian:  lúc     giờ   phút, ngày    tháng  năm 2026.\nĐịa điểm: Tại phòng ………..\nThành phần:\nTổng số thành viên của tổ: …\nTổng số thành viên tham dự: …\nVắng: …. Trong đó: có phép: …., lý do: ……\nkhông phép: …….\nChủ trì: …………………….. - Tổ trưởng\nThư ký: …………………………….\nNỘI DUNG\n1. Đánh giá hoạt động của tổ trong thời gian qua\nƯu điểm:…\nHạn chế:…\nNguyên nhân của hạn chế:…\nGiải pháp khắc phục:…\n2. Triển khai các văn bản\nKế hoạch giáo dục nhà trường năm học 2026-2027 (bản dự thảo).\nCông văn số 3284/SGDĐT-GDPT ngày 24 tháng 8 năm 2026 về việc hướng dẫn xây dựng và tổ chức thực hiện kế hoạch giáo dục của nhà trường cấp trung học.\nCông văn số 1061/HD-SGDĐT ngày 28 tháng 8 năm 2026 về hướng dẫn thực hiện nhiệm vụ giáo dục phổ thông năm học 2026 – 2027.\nCông văn số 1091/HD-SGDĐT ngày 08 tháng 9 năm 2026 về việc hướng dẫn tổ chức sinh hoạt chuyên môn tại cơ sở giáo dục phổ thông và sinh hoạt cụm chuyên môn kể từ năm học 2026 – 2027.\n3. Triển khai nội dung công việc trọng tâm của trường/tổ\nGóp ý dự thảo kế hoạch giáo dục nhà trường. Tập trung đánh giá các số liệu, chỉ tiêu trong kế hoạch giáo dục.\nTriển khai các văn bản trọng tâm đầu năm do Sở GDĐT gửi. Ngoài ra, các văn bản về dạy học 2 buổi/ngày, dạy thêm học thêm, STEM/STEAM, giáo dục hòa nhập, khung năng lực AI, khung năng lực số,… nhà trường sẽ triển khai sau.\nXây dựng Kế hoạch giáo dục của tổ chuyên môn, Kế hoạch bài dạy (phụ lục 1,2 công văn 3284). Phân phối chương trình từng môn học, từng khối lớp. Thời gian gửi kế hoạch giáo dục của tổ chuyên môn, phân phối chương trình gửi lại chậm nhất 23/9/2026 (thứ 5 tuần sau).\nTriển khai về nội dung sinh hoạt chuyên môn. Trong đó lưu ý về các biểu mẫu Sở gửi kèm trong công văn 1091. Lưu ý: Trường THCS và THPT Đốc Binh Kiều thuộc cụm 2.\nTổ trưởng thông báo danh sách học sinh khuyết tật về giáo viên trong tổ để biết và có sự quan tâm, hỗ trợ đối với các trường hợp này. Về hồ sơ theo quy định nhà trường sẽ có hướng dẫn sau. Lưu ý: danh sách này chỉ dùng để thông báo cho giáo viên dạy lớp biết, không chia sẻ ra bên ngoài trường (có danh sách kèm theo)\nTheo Công văn 1061 việc kiểm tra, đánh giá học sinh sẽ tiếp tục thực hiện theo Công văn số 471/SGDĐT-GDPT ngày 22 tháng 8 năm 2025 của Sở GDĐT về việc thực hiện kiểm tra, đánh giá đối với cấp THCS và THPT. Tổ trưởng thông báo để giáo viên có định hướng trong việc giảng dạy học sinh.\nThông báo về số cột điểm trong năm học theo môn học để GVBM nắm:\n4. Ý kiến của các thành viên trong cuộc họp đối với trường/tổ/cá nhân\n……………….\n5. Kết luận\n(của chủ trì về các chỉ tiêu, nội dung trọng tâm cần thực hiện trong thời gian tới)\n………………..\n6. Đề xuất, kiến nghị với nhà trường\n……………….\nCuộc họp kết thúc vào lúc… giờ….phút cùng ngày./.\nThư ký                                                                     Chủ trì\n………………………..                                          ……………………………",
+    "reportType": "hybrid",
+    "title": "BIÊN BẢN HỌP TỔ CHUYÊN MÔN LẦN 2 (17-9-2026)",
+    "createdAt": "2026-09-16T03:58:14.791Z",
+    "createdBy": "Ban Giám Hiệu",
+    "startDate": "2026-09-16T03:58:14.791Z",
+    "status": "active",
+    "id": "period-1789531094791",
+    "description": "Yêu cầu nộp báo cáo theo mẫu trực tuyến gồm 22 mục thông tin và 1 bảng số liệu. Thầy/Cô điền trực tiếp vào form trên hệ thống trước thời hạn.",
+    "targetAudience": "specific_users",
     "allowMultipleSubmissions": false
   },
   {
     "semester": "HK1",
+    "deadline": "2026-09-20T10:00:00.000Z",
+    "reportType": "hybrid",
     "defaultTemplateContent": "Số học sinh chưa ra lớp đến thời điểm ngày 07/9/2026:\nDanh sách học sinh chưa ra lớp (theo bảng thống kê)\nThông tin học sinh có thành tích về hội thi, phong trào:\nHọ và tên lớp trưởng:",
-    "targetAudience": "specific_users",
-    "isRequired": true,
+    "createdAt": "2026-09-13T07:01:36.984Z",
+    "formTemplate": {
+      "fields": [
+        {
+          "id": "fld-1789282853301-uj8d",
+          "required": false,
+          "label": "Số học sinh chưa ra lớp đến thời điểm ngày 07/9/2026",
+          "placeholder": "Nhập số học sinh chưa ra lớp đến thời điểm ngày 07/9/2026...",
+          "type": "number"
+        },
+        {
+          "placeholder": "Nhập thông tin học sinh có thành tích về hội thi, phong trào...",
+          "type": "text",
+          "label": "Thông tin học sinh có thành tích về hội thi, phong trào",
+          "required": false,
+          "id": "fld-1789282853301-usb6"
+        },
+        {
+          "placeholder": "Nhập họ và tên lớp trưởng...",
+          "required": false,
+          "type": "text",
+          "label": "Họ và tên lớp trưởng",
+          "id": "fld-1789282853301-28u7"
+        }
+      ],
+      "tables": [
+        {
+          "rows": [
+            {
+              "Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng)": "",
+              "Số điện thoại phụ huynh (nếu có)": "",
+              "Lý do chưa ra lớp (nếu biết)": "",
+              "Họ và tên học sinh": "",
+              "Số điện thoại học sinh (nếu có)": "",
+              "TT": "1",
+              "Lớp năm học trước": ""
+            },
+            {
+              "Lớp năm học trước": "",
+              "Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng)": "",
+              "Họ và tên học sinh": "",
+              "Lý do chưa ra lớp (nếu biết)": "",
+              "Số điện thoại phụ huynh (nếu có)": "",
+              "TT": "2",
+              "Số điện thoại học sinh (nếu có)": ""
+            },
+            {
+              "Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng)": "",
+              "Số điện thoại học sinh (nếu có)": "",
+              "Số điện thoại phụ huynh (nếu có)": "",
+              "Họ và tên học sinh": "",
+              "Lớp năm học trước": "",
+              "Lý do chưa ra lớp (nếu biết)": "",
+              "TT": "3"
+            },
+            {
+              "Họ và tên học sinh": "",
+              "Lý do chưa ra lớp (nếu biết)": "",
+              "Số điện thoại học sinh (nếu có)": "",
+              "Số điện thoại phụ huynh (nếu có)": "",
+              "TT": "4",
+              "Lớp năm học trước": "",
+              "Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng)": ""
+            },
+            {
+              "Họ và tên học sinh": "",
+              "Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng)": "",
+              "Lớp năm học trước": "",
+              "TT": "5",
+              "Lý do chưa ra lớp (nếu biết)": "",
+              "Số điện thoại học sinh (nếu có)": "",
+              "Số điện thoại phụ huynh (nếu có)": ""
+            }
+          ],
+          "id": "tbl-1789282853300-0-bqe",
+          "title": "Danh sách học sinh chưa ra lớp (theo bảng thống kê)",
+          "headers": [
+            "TT",
+            "Họ và tên học sinh",
+            "Lớp năm học trước",
+            "Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng)",
+            "Số điện thoại học sinh (nếu có)",
+            "Số điện thoại phụ huynh (nếu có)",
+            "Lý do chưa ra lớp (nếu biết)"
+          ]
+        },
+        {
+          "headers": [
+            "TT",
+            "Cuộc thi",
+            "Đạt giải",
+            "Họ tên học sinh đạt giải"
+          ],
+          "id": "tbl-1789282853300-1-e26",
+          "rows": [
+            {
+              "Cuộc thi": "Văn nghệ vòng tỉnh, vòng xã",
+              "TT": "1",
+              "Đạt giải": "",
+              "Họ tên học sinh đạt giải": ""
+            },
+            {
+              "Cuộc thi": "Hội khỏe phù đổng",
+              "Họ tên học sinh đạt giải": "",
+              "Đạt giải": "",
+              "TT": "2"
+            },
+            {
+              "Đạt giải": "",
+              "TT": "3",
+              "Họ tên học sinh đạt giải": "",
+              "Cuộc thi": "Giải thể thao học sinh tỉnh Đồng Tháp"
+            },
+            {
+              "TT": "4",
+              "Đạt giải": "",
+              "Họ tên học sinh đạt giải": "",
+              "Cuộc thi": "Sáng tạo thanh thiếu niên nhi đồng"
+            },
+            {
+              "TT": "5",
+              "Đạt giải": "",
+              "Họ tên học sinh đạt giải": "",
+              "Cuộc thi": "Khoa học kỹ thuật"
+            },
+            {
+              "Họ tên học sinh đạt giải": "",
+              "Cuộc thi": "Vẽ tranh",
+              "Đạt giải": "",
+              "TT": "6"
+            },
+            {
+              "TT": "7",
+              "Cuộc thi": "Phong trào khác:",
+              "Đạt giải": "",
+              "Họ tên học sinh đạt giải": ""
+            },
+            {
+              "TT": "8",
+              "Họ tên học sinh đạt giải": "",
+              "Cuộc thi": "Thành tích khác:",
+              "Đạt giải": ""
+            }
+          ],
+          "title": "Thông tin học sinh có thành tích về hội thi, phong trào"
+        }
+      ],
+      "defaultTemplateContent": "Số học sinh chưa ra lớp đến thời điểm ngày 07/9/2026:\nDanh sách học sinh chưa ra lớp (theo bảng thống kê)\nThông tin học sinh có thành tích về hội thi, phong trào:\nHọ và tên lớp trưởng:"
+    },
+    "description": "Yêu cầu nộp báo cáo theo mẫu trực tuyến gồm 3 mục thông tin và 2 bảng số liệu. Thầy/Cô điền trực tiếp vào form trên hệ thống trước thời hạn.",
+    "startDate": "2026-09-13T07:01:36.984Z",
+    "academicYear": "2026-2027",
     "targetUserIds": [
       "staff-5",
       "staff-9",
       "staff-10",
       "staff-11"
     ],
-    "reportType": "hybrid",
-    "academicYear": "2026-2027",
-    "id": "period-1789282896984",
-    "description": "Yêu cầu nộp báo cáo theo mẫu trực tuyến gồm 3 mục thông tin và 2 bảng số liệu. Thầy/Cô điền trực tiếp vào form trên hệ thống trước thời hạn.",
+    "createdBy": "Ban Giám Hiệu",
+    "isRequired": true,
     "title": "Danh sách học sinh chưa ra lớp (theo bảng thống kê)",
-    "formTemplate": {
-      "fields": [
-        {
-          "placeholder": "Nhập số học sinh chưa ra lớp đến thời điểm ngày 07/9/2026...",
-          "id": "fld-1789282853301-uj8d",
-          "required": false,
-          "type": "number",
-          "label": "Số học sinh chưa ra lớp đến thời điểm ngày 07/9/2026"
-        },
-        {
-          "id": "fld-1789282853301-usb6",
-          "required": false,
-          "placeholder": "Nhập thông tin học sinh có thành tích về hội thi, phong trào...",
-          "label": "Thông tin học sinh có thành tích về hội thi, phong trào",
-          "type": "text"
-        },
-        {
-          "type": "text",
-          "label": "Họ và tên lớp trưởng",
-          "required": false,
-          "id": "fld-1789282853301-28u7",
-          "placeholder": "Nhập họ và tên lớp trưởng..."
-        }
-      ],
-      "tables": [
-        {
-          "headers": [
-            "TT",
-            "Họ và tên học sinh",
-            "Lớp năm học trước",
-            "Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng)",
-            "Số điện thoại học sinh (nếu có)",
-            "Số điện thoại phụ huynh (nếu có)",
-            "Lý do chưa ra lớp (nếu biết)"
-          ],
-          "id": "tbl-1789282853300-0-bqe",
-          "rows": [
-            {
-              "Lớp năm học trước": "",
-              "Số điện thoại phụ huynh (nếu có)": "",
-              "Số điện thoại học sinh (nếu có)": "",
-              "Lý do chưa ra lớp (nếu biết)": "",
-              "Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng)": "",
-              "Họ và tên học sinh": "",
-              "TT": "1"
-            },
-            {
-              "TT": "2",
-              "Lớp năm học trước": "",
-              "Lý do chưa ra lớp (nếu biết)": "",
-              "Họ và tên học sinh": "",
-              "Số điện thoại phụ huynh (nếu có)": "",
-              "Số điện thoại học sinh (nếu có)": "",
-              "Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng)": ""
-            },
-            {
-              "Lý do chưa ra lớp (nếu biết)": "",
-              "Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng)": "",
-              "Lớp năm học trước": "",
-              "Số điện thoại học sinh (nếu có)": "",
-              "Họ và tên học sinh": "",
-              "TT": "3",
-              "Số điện thoại phụ huynh (nếu có)": ""
-            },
-            {
-              "Lý do chưa ra lớp (nếu biết)": "",
-              "TT": "4",
-              "Số điện thoại phụ huynh (nếu có)": "",
-              "Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng)": "",
-              "Số điện thoại học sinh (nếu có)": "",
-              "Họ và tên học sinh": "",
-              "Lớp năm học trước": ""
-            },
-            {
-              "Lý do chưa ra lớp (nếu biết)": "",
-              "TT": "5",
-              "Số điện thoại học sinh (nếu có)": "",
-              "Họ và tên học sinh": "",
-              "Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng)": "",
-              "Số điện thoại phụ huynh (nếu có)": "",
-              "Lớp năm học trước": ""
-            }
-          ],
-          "title": "Danh sách học sinh chưa ra lớp (theo bảng thống kê)"
-        },
-        {
-          "title": "Thông tin học sinh có thành tích về hội thi, phong trào",
-          "rows": [
-            {
-              "Đạt giải": "",
-              "Cuộc thi": "Văn nghệ vòng tỉnh, vòng xã",
-              "TT": "1",
-              "Họ tên học sinh đạt giải": ""
-            },
-            {
-              "TT": "2",
-              "Cuộc thi": "Hội khỏe phù đổng",
-              "Họ tên học sinh đạt giải": "",
-              "Đạt giải": ""
-            },
-            {
-              "Đạt giải": "",
-              "TT": "3",
-              "Cuộc thi": "Giải thể thao học sinh tỉnh Đồng Tháp",
-              "Họ tên học sinh đạt giải": ""
-            },
-            {
-              "Họ tên học sinh đạt giải": "",
-              "TT": "4",
-              "Cuộc thi": "Sáng tạo thanh thiếu niên nhi đồng",
-              "Đạt giải": ""
-            },
-            {
-              "Cuộc thi": "Khoa học kỹ thuật",
-              "TT": "5",
-              "Họ tên học sinh đạt giải": "",
-              "Đạt giải": ""
-            },
-            {
-              "Đạt giải": "",
-              "TT": "6",
-              "Cuộc thi": "Vẽ tranh",
-              "Họ tên học sinh đạt giải": ""
-            },
-            {
-              "Cuộc thi": "Phong trào khác:",
-              "Họ tên học sinh đạt giải": "",
-              "TT": "7",
-              "Đạt giải": ""
-            },
-            {
-              "TT": "8",
-              "Cuộc thi": "Thành tích khác:",
-              "Đạt giải": "",
-              "Họ tên học sinh đạt giải": ""
-            }
-          ],
-          "id": "tbl-1789282853300-1-e26",
-          "headers": [
-            "TT",
-            "Cuộc thi",
-            "Đạt giải",
-            "Họ tên học sinh đạt giải"
-          ]
-        }
-      ],
-      "defaultTemplateContent": "Số học sinh chưa ra lớp đến thời điểm ngày 07/9/2026:\nDanh sách học sinh chưa ra lớp (theo bảng thống kê)\nThông tin học sinh có thành tích về hội thi, phong trào:\nHọ và tên lớp trưởng:"
-    },
-    "startDate": "2026-09-13T07:01:36.984Z",
+    "targetDepartmentIds": [
+      "all"
+    ],
     "targetRoles": [
       "teacher",
       "dept_head"
     ],
-    "createdBy": "Ban Giám Hiệu",
-    "targetDepartmentIds": [
-      "all"
-    ],
     "status": "active",
-    "deadline": "2026-09-20T10:00:00.000Z",
-    "createdAt": "2026-09-13T07:01:36.984Z",
+    "id": "period-1789282896984",
+    "targetAudience": "specific_users",
     "allowMultipleSubmissions": false
   },
   {
+    "targetDepartmentIds": [
+      "all"
+    ],
+    "semester": "HK1",
     "deadline": "2026-09-18T10:00:00.000Z",
     "createdAt": "2026-09-11T13:28:29.131Z",
+    "targetRoles": [
+      "teacher",
+      "dept_head"
+    ],
     "startDate": "2026-09-11T13:28:29.130Z",
     "createdBy": "Ban Giám Hiệu",
     "defaultTemplateContent": "\\- Số học sinh chưa ra lớp đến thời điểm ngày 07/9/2026:\r\n\r\n\\- Danh sách học sinh chưa ra lớp (theo bảng thống kê)\r\n\r\n|**TT**|**Họ và tên học sinh**|**Lớp năm học trước**|**Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng)**|**Số điện thoại học sinh (nếu có)**|**Số điện thoại phụ huynh (nếu có)**|**Lý do chưa ra lớp (nếu biết)**|\r\n| :-: | :-: | :-: | :-: | :-: | :-: | :-: |\r\n|**1**|||||||\r\n|**2**|||||||\r\n|**3**|||||||\r\n|**4**|||||||\r\n|**5**|||||||\r\n- Thông tin học sinh có thành tích về hội thi, phong trào:\r\n\r\n|**TT**|**Cuộc thi**|**Đạt giải**|**Họ tên học sinh đạt giải**|\r\n| :-: | :-: | :-: | :-: |\r\n|1|Văn nghệ vòng tỉnh, vòng xã|||\r\n|2|Hội khỏe phù đổng|||\r\n|3|Giải thể thao học sinh tỉnh Đồng Tháp|||\r\n|4|Sáng tạo thanh thiếu niên nhi đồng|||\r\n|5|Khoa học kỹ thuật|||\r\n|6|Vẽ tranh |||\r\n|7|<p>Phong trào khác:</p><p>...............................</p><p>...............................</p>|||\r\n|8|<p>Thành tích khác:</p><p>...............................</p>|||\r\n\\- Họ và tên lớp trưởng: \r\n2\r\n\r\n",
+    "title": "Test hệ thống dùm",
     "targetUserIds": [
       "staff-8",
       "staff-48",
       "staff-9"
     ],
+    "reportType": "hybrid",
     "status": "active",
-    "targetAudience": "specific_users",
-    "targetDepartmentIds": [
-      "all"
-    ],
-    "targetRoles": [
-      "teacher",
-      "dept_head"
-    ],
+    "academicYear": "2026-2027",
     "formTemplate": {
+      "defaultTemplateContent": "\\- Số học sinh chưa ra lớp đến thời điểm ngày 07/9/2026:\r\n\r\n\\- Danh sách học sinh chưa ra lớp (theo bảng thống kê)\r\n\r\n|**TT**|**Họ và tên học sinh**|**Lớp năm học trước**|**Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng)**|**Số điện thoại học sinh (nếu có)**|**Số điện thoại phụ huynh (nếu có)**|**Lý do chưa ra lớp (nếu biết)**|\r\n| :-: | :-: | :-: | :-: | :-: | :-: | :-: |\r\n|**1**|||||||\r\n|**2**|||||||\r\n|**3**|||||||\r\n|**4**|||||||\r\n|**5**|||||||\r\n- Thông tin học sinh có thành tích về hội thi, phong trào:\r\n\r\n|**TT**|**Cuộc thi**|**Đạt giải**|**Họ tên học sinh đạt giải**|\r\n| :-: | :-: | :-: | :-: |\r\n|1|Văn nghệ vòng tỉnh, vòng xã|||\r\n|2|Hội khỏe phù đổng|||\r\n|3|Giải thể thao học sinh tỉnh Đồng Tháp|||\r\n|4|Sáng tạo thanh thiếu niên nhi đồng|||\r\n|5|Khoa học kỹ thuật|||\r\n|6|Vẽ tranh |||\r\n|7|<p>Phong trào khác:</p><p>...............................</p><p>...............................</p>|||\r\n|8|<p>Thành tích khác:</p><p>...............................</p>|||\r\n\\- Họ và tên lớp trưởng: \r\n2\r\n\r\n",
+      "fields": [
+        {
+          "label": "Số học sinh chưa ra lớp đến thời điểm ngày 07/9/2026",
+          "required": false,
+          "placeholder": "Nhập số học sinh chưa ra lớp đến thời điểm ngày 07/9/2026...",
+          "type": "number",
+          "id": "fld-1789133281723-163k"
+        },
+        {
+          "id": "fld-1789133281724-ji7t",
+          "required": false,
+          "label": "Họ và tên lớp trưởng",
+          "placeholder": "Giá trị mặc định: 2",
+          "type": "text"
+        }
+      ],
       "tables": [
         {
+          "title": "Danh sách học sinh chưa ra lớp (theo bảng thống kê)",
+          "id": "tbl-1789133281723-91qi",
+          "rows": [
+            {
+              "Lý do chưa ra lớp (nếu biết)": "",
+              "Số điện thoại phụ huynh (nếu có)": "",
+              "Số điện thoại học sinh (nếu có)": "",
+              "Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng)": "",
+              "Họ và tên học sinh": "",
+              "Lớp năm học trước": "",
+              "TT": "1"
+            },
+            {
+              "Họ và tên học sinh": "",
+              "Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng)": "",
+              "Lý do chưa ra lớp (nếu biết)": "",
+              "Lớp năm học trước": "",
+              "Số điện thoại học sinh (nếu có)": "",
+              "TT": "2",
+              "Số điện thoại phụ huynh (nếu có)": ""
+            },
+            {
+              "Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng)": "",
+              "Họ và tên học sinh": "",
+              "Số điện thoại phụ huynh (nếu có)": "",
+              "TT": "3",
+              "Lý do chưa ra lớp (nếu biết)": "",
+              "Lớp năm học trước": "",
+              "Số điện thoại học sinh (nếu có)": ""
+            },
+            {
+              "Họ và tên học sinh": "",
+              "Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng)": "",
+              "Số điện thoại học sinh (nếu có)": "",
+              "Số điện thoại phụ huynh (nếu có)": "",
+              "TT": "4",
+              "Lớp năm học trước": "",
+              "Lý do chưa ra lớp (nếu biết)": ""
+            },
+            {
+              "Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng)": "",
+              "TT": "5",
+              "Lý do chưa ra lớp (nếu biết)": "",
+              "Lớp năm học trước": "",
+              "Số điện thoại phụ huynh (nếu có)": "",
+              "Số điện thoại học sinh (nếu có)": "",
+              "Họ và tên học sinh": ""
+            }
+          ],
           "headers": [
             "TT",
             "Họ và tên học sinh",
@@ -641,197 +928,84 @@
             "Số điện thoại học sinh (nếu có)",
             "Số điện thoại phụ huynh (nếu có)",
             "Lý do chưa ra lớp (nếu biết)"
-          ],
-          "id": "tbl-1789133281723-91qi",
-          "rows": [
-            {
-              "Lớp năm học trước": "",
-              "Họ và tên học sinh": "",
-              "TT": "1",
-              "Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng)": "",
-              "Số điện thoại học sinh (nếu có)": "",
-              "Lý do chưa ra lớp (nếu biết)": "",
-              "Số điện thoại phụ huynh (nếu có)": ""
-            },
-            {
-              "Số điện thoại học sinh (nếu có)": "",
-              "Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng)": "",
-              "Họ và tên học sinh": "",
-              "Số điện thoại phụ huynh (nếu có)": "",
-              "TT": "2",
-              "Lớp năm học trước": "",
-              "Lý do chưa ra lớp (nếu biết)": ""
-            },
-            {
-              "Số điện thoại phụ huynh (nếu có)": "",
-              "TT": "3",
-              "Lớp năm học trước": "",
-              "Lý do chưa ra lớp (nếu biết)": "",
-              "Số điện thoại học sinh (nếu có)": "",
-              "Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng)": "",
-              "Họ và tên học sinh": ""
-            },
-            {
-              "Lớp năm học trước": "",
-              "Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng)": "",
-              "Lý do chưa ra lớp (nếu biết)": "",
-              "TT": "4",
-              "Họ và tên học sinh": "",
-              "Số điện thoại học sinh (nếu có)": "",
-              "Số điện thoại phụ huynh (nếu có)": ""
-            },
-            {
-              "Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng)": "",
-              "Lý do chưa ra lớp (nếu biết)": "",
-              "Lớp năm học trước": "",
-              "Số điện thoại phụ huynh (nếu có)": "",
-              "TT": "5",
-              "Số điện thoại học sinh (nếu có)": "",
-              "Họ và tên học sinh": ""
-            }
-          ],
-          "title": "Danh sách học sinh chưa ra lớp (theo bảng thống kê)"
+          ]
         },
         {
-          "title": "Thông tin học sinh có thành tích về hội thi, phong trào",
-          "rows": [
-            {
-              "Cuộc thi": "Văn nghệ vòng tỉnh, vòng xã",
-              "Đạt giải": "",
-              "Họ tên học sinh đạt giải": "",
-              "TT": "1"
-            },
-            {
-              "Cuộc thi": "Hội khỏe phù đổng",
-              "TT": "2",
-              "Họ tên học sinh đạt giải": "",
-              "Đạt giải": ""
-            },
-            {
-              "Đạt giải": "",
-              "TT": "3",
-              "Cuộc thi": "Giải thể thao học sinh tỉnh Đồng Tháp",
-              "Họ tên học sinh đạt giải": ""
-            },
-            {
-              "Đạt giải": "",
-              "Họ tên học sinh đạt giải": "",
-              "Cuộc thi": "Sáng tạo thanh thiếu niên nhi đồng",
-              "TT": "4"
-            },
-            {
-              "Đạt giải": "",
-              "TT": "5",
-              "Họ tên học sinh đạt giải": "",
-              "Cuộc thi": "Khoa học kỹ thuật"
-            },
-            {
-              "Đạt giải": "",
-              "TT": "6",
-              "Cuộc thi": "Vẽ tranh",
-              "Họ tên học sinh đạt giải": ""
-            },
-            {
-              "TT": "7",
-              "Cuộc thi": "Phong trào khác:",
-              "Đạt giải": "",
-              "Họ tên học sinh đạt giải": ""
-            },
-            {
-              "Cuộc thi": "Thành tích khác:",
-              "Họ tên học sinh đạt giải": "",
-              "TT": "8",
-              "Đạt giải": ""
-            }
-          ],
-          "id": "tbl-1789133281723-vma3",
           "headers": [
             "TT",
             "Cuộc thi",
             "Đạt giải",
             "Họ tên học sinh đạt giải"
-          ]
+          ],
+          "rows": [
+            {
+              "TT": "1",
+              "Cuộc thi": "Văn nghệ vòng tỉnh, vòng xã",
+              "Đạt giải": "",
+              "Họ tên học sinh đạt giải": ""
+            },
+            {
+              "Họ tên học sinh đạt giải": "",
+              "TT": "2",
+              "Đạt giải": "",
+              "Cuộc thi": "Hội khỏe phù đổng"
+            },
+            {
+              "Đạt giải": "",
+              "Cuộc thi": "Giải thể thao học sinh tỉnh Đồng Tháp",
+              "TT": "3",
+              "Họ tên học sinh đạt giải": ""
+            },
+            {
+              "Cuộc thi": "Sáng tạo thanh thiếu niên nhi đồng",
+              "TT": "4",
+              "Đạt giải": "",
+              "Họ tên học sinh đạt giải": ""
+            },
+            {
+              "TT": "5",
+              "Họ tên học sinh đạt giải": "",
+              "Cuộc thi": "Khoa học kỹ thuật",
+              "Đạt giải": ""
+            },
+            {
+              "Họ tên học sinh đạt giải": "",
+              "TT": "6",
+              "Cuộc thi": "Vẽ tranh",
+              "Đạt giải": ""
+            },
+            {
+              "TT": "7",
+              "Họ tên học sinh đạt giải": "",
+              "Đạt giải": "",
+              "Cuộc thi": "Phong trào khác:"
+            },
+            {
+              "Đạt giải": "",
+              "Họ tên học sinh đạt giải": "",
+              "TT": "8",
+              "Cuộc thi": "Thành tích khác:"
+            }
+          ],
+          "title": "Thông tin học sinh có thành tích về hội thi, phong trào",
+          "id": "tbl-1789133281723-vma3"
         }
-      ],
-      "fields": [
-        {
-          "placeholder": "Nhập số học sinh chưa ra lớp đến thời điểm ngày 07/9/2026...",
-          "id": "fld-1789133281723-163k",
-          "type": "number",
-          "required": false,
-          "label": "Số học sinh chưa ra lớp đến thời điểm ngày 07/9/2026"
-        },
-        {
-          "placeholder": "Giá trị mặc định: 2",
-          "id": "fld-1789133281724-ji7t",
-          "required": false,
-          "type": "text",
-          "label": "Họ và tên lớp trưởng"
-        }
-      ],
-      "defaultTemplateContent": "\\- Số học sinh chưa ra lớp đến thời điểm ngày 07/9/2026:\r\n\r\n\\- Danh sách học sinh chưa ra lớp (theo bảng thống kê)\r\n\r\n|**TT**|**Họ và tên học sinh**|**Lớp năm học trước**|**Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng)**|**Số điện thoại học sinh (nếu có)**|**Số điện thoại phụ huynh (nếu có)**|**Lý do chưa ra lớp (nếu biết)**|\r\n| :-: | :-: | :-: | :-: | :-: | :-: | :-: |\r\n|**1**|||||||\r\n|**2**|||||||\r\n|**3**|||||||\r\n|**4**|||||||\r\n|**5**|||||||\r\n- Thông tin học sinh có thành tích về hội thi, phong trào:\r\n\r\n|**TT**|**Cuộc thi**|**Đạt giải**|**Họ tên học sinh đạt giải**|\r\n| :-: | :-: | :-: | :-: |\r\n|1|Văn nghệ vòng tỉnh, vòng xã|||\r\n|2|Hội khỏe phù đổng|||\r\n|3|Giải thể thao học sinh tỉnh Đồng Tháp|||\r\n|4|Sáng tạo thanh thiếu niên nhi đồng|||\r\n|5|Khoa học kỹ thuật|||\r\n|6|Vẽ tranh |||\r\n|7|<p>Phong trào khác:</p><p>...............................</p><p>...............................</p>|||\r\n|8|<p>Thành tích khác:</p><p>...............................</p>|||\r\n\\- Họ và tên lớp trưởng: \r\n2\r\n\r\n"
+      ]
     },
+    "targetAudience": "specific_users",
     "id": "period-1789133309131",
-    "reportType": "hybrid",
-    "title": "Test hệ thống dùm",
-    "description": "Yêu cầu nộp báo cáo theo mẫu trực tuyến gồm 2 mục thông tin và 2 bảng số liệu. Thầy/Cô điền trực tiếp vào form trên hệ thống trước thời hạn.",
-    "semester": "HK1",
     "isRequired": true,
-    "academicYear": "2026-2027",
+    "description": "Yêu cầu nộp báo cáo theo mẫu trực tuyến gồm 2 mục thông tin và 2 bảng số liệu. Thầy/Cô điền trực tiếp vào form trên hệ thống trước thời hạn.",
     "allowMultipleSubmissions": false
   },
   {
-    "formTemplate": {
-      "defaultTemplateContent": "Số thành viên trong tổ: (định dạng number)\n\n\n\nSố đã khảo sát: (định dạng number)\n\n\n\nSố chưa khảo sát: (định dạng number)\n\n\n\nLý do chưa khảo sát: (định dạng text)\n\n\n\n",
-      "fields": [
-        {
-          "id": "fld-1789009671530-6a0q",
-          "required": false,
-          "type": "text",
-          "label": "Số thành viên trong tổ",
-          "placeholder": "Giá trị mặc định: (định dạng number)"
-        },
-        {
-          "placeholder": "Giá trị mặc định: (định dạng number)",
-          "label": "Số đã khảo sát",
-          "type": "text",
-          "id": "fld-1789009671530-48hs",
-          "required": false
-        },
-        {
-          "placeholder": "Giá trị mặc định: (định dạng number)",
-          "required": false,
-          "type": "text",
-          "id": "fld-1789009671530-iagn",
-          "label": "Số chưa khảo sát"
-        },
-        {
-          "required": false,
-          "type": "textarea",
-          "id": "fld-1789009671530-fpb5",
-          "label": "Lý do chưa khảo sát",
-          "placeholder": "Giá trị mặc định: (định dạng text)"
-        }
-      ],
-      "tables": []
-    },
-    "description": "Yêu cầu nộp báo cáo theo mẫu trực tuyến gồm 0 mục thông tin và 0 bảng số liệu. Thầy/Cô điền trực tiếp vào form trên hệ thống trước thời hạn.",
-    "reportType": "hybrid",
-    "deadline": "2026-09-11T08:00:00.000Z",
-    "targetRoles": [
-      "teacher",
-      "dept_head"
-    ],
-    "academicYear": "2026-2027",
-    "defaultTemplateContent": "Số thành viên trong tổ: (định dạng number)\n\n\n\nSố đã khảo sát: (định dạng number)\n\n\n\nSố chưa khảo sát: (định dạng number)\n\n\n\nLý do chưa khảo sát: (định dạng text)\n\n\n\n",
-    "isRequired": true,
-    "createdBy": "Ban Giám Hiệu",
-    "targetAudience": "specific_users",
-    "id": "period-1789009780369",
-    "startDate": "2026-09-10T03:09:40.368Z",
-    "createdAt": "2026-09-10T03:09:40.369Z",
-    "semester": "HK1",
     "title": "Báo cáo Khảo sát theo yêu cầu Công an xã (Kiến thức về ATGT)",
+    "targetDepartmentIds": [
+      "all"
+    ],
+    "targetAudience": "specific_users",
+    "semester": "HK1",
+    "deadline": "2026-09-11T08:00:00.000Z",
     "targetUserIds": [
       "staff-5",
       "staff-19",
@@ -841,20 +1015,93 @@
       "staff-109",
       "staff-93"
     ],
-    "status": "active",
-    "targetDepartmentIds": [
-      "all"
+    "description": "Yêu cầu nộp báo cáo theo mẫu trực tuyến gồm 0 mục thông tin và 0 bảng số liệu. Thầy/Cô điền trực tiếp vào form trên hệ thống trước thời hạn.",
+    "formTemplate": {
+      "tables": [],
+      "fields": [
+        {
+          "label": "Số thành viên trong tổ",
+          "type": "text",
+          "placeholder": "Giá trị mặc định: (định dạng number)",
+          "id": "fld-1789009671530-6a0q",
+          "required": false
+        },
+        {
+          "label": "Số đã khảo sát",
+          "placeholder": "Giá trị mặc định: (định dạng number)",
+          "id": "fld-1789009671530-48hs",
+          "required": false,
+          "type": "text"
+        },
+        {
+          "required": false,
+          "label": "Số chưa khảo sát",
+          "id": "fld-1789009671530-iagn",
+          "type": "text",
+          "placeholder": "Giá trị mặc định: (định dạng number)"
+        },
+        {
+          "label": "Lý do chưa khảo sát",
+          "id": "fld-1789009671530-fpb5",
+          "type": "textarea",
+          "required": false,
+          "placeholder": "Giá trị mặc định: (định dạng text)"
+        }
+      ],
+      "defaultTemplateContent": "Số thành viên trong tổ: (định dạng number)\n\n\n\nSố đã khảo sát: (định dạng number)\n\n\n\nSố chưa khảo sát: (định dạng number)\n\n\n\nLý do chưa khảo sát: (định dạng text)\n\n\n\n"
+    },
+    "id": "period-1789009780369",
+    "academicYear": "2026-2027",
+    "isRequired": true,
+    "defaultTemplateContent": "Số thành viên trong tổ: (định dạng number)\n\n\n\nSố đã khảo sát: (định dạng number)\n\n\n\nSố chưa khảo sát: (định dạng number)\n\n\n\nLý do chưa khảo sát: (định dạng text)\n\n\n\n",
+    "createdAt": "2026-09-10T03:09:40.369Z",
+    "targetRoles": [
+      "teacher",
+      "dept_head"
     ],
+    "status": "active",
+    "startDate": "2026-09-10T03:09:40.368Z",
+    "reportType": "hybrid",
+    "createdBy": "Ban Giám Hiệu",
     "allowMultipleSubmissions": false
   },
   {
-    "title": "Báo cáo kết quả tập trung học sinh đầu năm học 2026-2027",
-    "createdAt": "2026-09-04T15:26:21.418Z",
     "deadline": "2026-09-11T10:00:00.000Z",
+    "createdAt": "2026-09-04T15:26:21.418Z",
+    "isRequired": true,
+    "semester": "HK1",
+    "targetDepartmentIds": [
+      "all"
+    ],
     "createdBy": "Ban Giám Hiệu",
+    "status": "active",
+    "startDate": "2026-09-04T15:26:21.418Z",
+    "description": "Yêu cầu nộp báo cáo theo mẫu trực tuyến gồm 2 mục thông tin và 2 bảng số liệu. Thầy/Cô điền trực tiếp vào form trên hệ thống trước thời hạn.",
+    "reportType": "hybrid",
+    "academicYear": "2026-2027",
+    "targetAudience": "homeroom_teachers",
+    "id": "period-1788535581418",
+    "defaultTemplateContent": "\\- Số học sinh chưa ra lớp đến thời điểm ngày 07/9/2026:\r\n\r\n\\- Danh sách học sinh chưa ra lớp (theo bảng thống kê)\r\n\r\n|**TT**|**Họ và tên học sinh**|**Lớp năm học trước**|**Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng)**|**Số điện thoại học sinh (nếu có)**|**Số điện thoại phụ huynh (nếu có)**|**Lý do chưa ra lớp (nếu biết)**|\r\n| :-: | :-: | :-: | :-: | :-: | :-: | :-: |\r\n|**1**|||||||\r\n|**2**|||||||\r\n|**3**|||||||\r\n|**4**|||||||\r\n|**5**|||||||\r\n- Thông tin học sinh có thành tích về hội thi, phong trào:\r\n\r\n|**TT**|**Cuộc thi**|**Đạt giải**|**Họ tên học sinh đạt giải**|\r\n| :-: | :-: | :-: | :-: |\r\n|1|Văn nghệ vòng tỉnh, vòng xã|||\r\n|2|Hội khỏe phù đổng|||\r\n|3|Giải thể thao học sinh tỉnh Đồng Tháp|||\r\n|4|Sáng tạo thanh thiếu niên nhi đồng|||\r\n|5|Khoa học kỹ thuật|||\r\n|6|Vẽ tranh |||\r\n|7|<p>Phong trào khác:</p><p>...............................</p><p>...............................</p>|||\r\n|8|<p>Thành tích khác:</p><p>...............................</p>|||\r\n\\- Họ và tên lớp trưởng: \r\n2\r\n\r\n",
     "formTemplate": {
+      "fields": [
+        {
+          "required": false,
+          "id": "fld-1788535567817-w89u",
+          "placeholder": "Nhập số học sinh chưa ra lớp đến thời điểm ngày 07/9/2026...",
+          "type": "number",
+          "label": "Số học sinh chưa ra lớp đến thời điểm ngày 07/9/2026"
+        },
+        {
+          "label": "Họ và tên lớp trưởng",
+          "id": "fld-1788535567817-afs9",
+          "placeholder": "Giá trị mặc định: 2",
+          "required": false,
+          "type": "text"
+        }
+      ],
       "tables": [
         {
+          "title": "Danh sách học sinh chưa ra lớp (theo bảng thống kê)",
           "headers": [
             "TT",
             "Họ và tên học sinh",
@@ -864,152 +1111,123 @@
             "Số điện thoại phụ huynh (nếu có)",
             "Lý do chưa ra lớp (nếu biết)"
           ],
-          "id": "tbl-1788535567817-egt2",
           "rows": [
             {
+              "Số điện thoại phụ huynh (nếu có)": "",
               "Họ và tên học sinh": "",
-              "Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng)": "",
+              "Lý do chưa ra lớp (nếu biết)": "",
               "Lớp năm học trước": "",
+              "TT": "1",
               "Số điện thoại học sinh (nếu có)": "",
-              "Số điện thoại phụ huynh (nếu có)": "",
-              "Lý do chưa ra lớp (nếu biết)": "",
-              "TT": "1"
+              "Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng)": ""
             },
             {
               "Lý do chưa ra lớp (nếu biết)": "",
-              "Số điện thoại phụ huynh (nếu có)": "",
-              "Lớp năm học trước": "",
+              "Số điện thoại học sinh (nếu có)": "",
               "Họ và tên học sinh": "",
               "Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng)": "",
+              "Số điện thoại phụ huynh (nếu có)": "",
               "TT": "2",
-              "Số điện thoại học sinh (nếu có)": ""
+              "Lớp năm học trước": ""
             },
             {
+              "Lý do chưa ra lớp (nếu biết)": "",
               "Số điện thoại phụ huynh (nếu có)": "",
+              "Họ và tên học sinh": "",
+              "Số điện thoại học sinh (nếu có)": "",
               "Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng)": "",
               "TT": "3",
-              "Số điện thoại học sinh (nếu có)": "",
-              "Họ và tên học sinh": "",
-              "Lý do chưa ra lớp (nếu biết)": "",
               "Lớp năm học trước": ""
             },
             {
-              "Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng)": "",
-              "TT": "4",
-              "Lý do chưa ra lớp (nếu biết)": "",
-              "Số điện thoại phụ huynh (nếu có)": "",
-              "Số điện thoại học sinh (nếu có)": "",
-              "Họ và tên học sinh": "",
-              "Lớp năm học trước": ""
-            },
-            {
-              "Họ và tên học sinh": "",
-              "Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng)": "",
-              "Lý do chưa ra lớp (nếu biết)": "",
-              "TT": "5",
               "Lớp năm học trước": "",
+              "Số điện thoại học sinh (nếu có)": "",
+              "Lý do chưa ra lớp (nếu biết)": "",
+              "Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng)": "",
+              "Họ và tên học sinh": "",
               "Số điện thoại phụ huynh (nếu có)": "",
-              "Số điện thoại học sinh (nếu có)": ""
+              "TT": "4"
+            },
+            {
+              "Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng)": "",
+              "Họ và tên học sinh": "",
+              "TT": "5",
+              "Số điện thoại học sinh (nếu có)": "",
+              "Số điện thoại phụ huynh (nếu có)": "",
+              "Lý do chưa ra lớp (nếu biết)": "",
+              "Lớp năm học trước": ""
             }
           ],
-          "title": "Danh sách học sinh chưa ra lớp (theo bảng thống kê)"
+          "id": "tbl-1788535567817-egt2"
         },
         {
+          "id": "tbl-1788535567817-fpw0",
           "rows": [
             {
+              "Cuộc thi": "Văn nghệ vòng tỉnh, vòng xã",
               "TT": "1",
-              "Họ tên học sinh đạt giải": "",
               "Đạt giải": "",
-              "Cuộc thi": "Văn nghệ vòng tỉnh, vòng xã"
+              "Họ tên học sinh đạt giải": ""
             },
             {
-              "Đạt giải": "",
               "TT": "2",
-              "Cuộc thi": "Hội khỏe phù đổng",
-              "Họ tên học sinh đạt giải": ""
+              "Họ tên học sinh đạt giải": "",
+              "Đạt giải": "",
+              "Cuộc thi": "Hội khỏe phù đổng"
             },
             {
               "Cuộc thi": "Giải thể thao học sinh tỉnh Đồng Tháp",
-              "Đạt giải": "",
               "Họ tên học sinh đạt giải": "",
-              "TT": "3"
+              "TT": "3",
+              "Đạt giải": ""
             },
             {
+              "TT": "4",
               "Họ tên học sinh đạt giải": "",
               "Cuộc thi": "Sáng tạo thanh thiếu niên nhi đồng",
-              "TT": "4",
               "Đạt giải": ""
             },
             {
-              "Đạt giải": "",
+              "Họ tên học sinh đạt giải": "",
               "TT": "5",
-              "Họ tên học sinh đạt giải": "",
-              "Cuộc thi": "Khoa học kỹ thuật"
-            },
-            {
-              "Cuộc thi": "Vẽ tranh",
-              "Họ tên học sinh đạt giải": "",
-              "TT": "6",
+              "Cuộc thi": "Khoa học kỹ thuật",
               "Đạt giải": ""
             },
             {
+              "TT": "6",
               "Họ tên học sinh đạt giải": "",
-              "Đạt giải": "",
+              "Cuộc thi": "Vẽ tranh",
+              "Đạt giải": ""
+            },
+            {
               "Cuộc thi": "Phong trào khác:",
+              "Đạt giải": "",
+              "Họ tên học sinh đạt giải": "",
               "TT": "7"
             },
             {
-              "TT": "8",
               "Đạt giải": "",
               "Cuộc thi": "Thành tích khác:",
+              "TT": "8",
               "Họ tên học sinh đạt giải": ""
             }
           ],
+          "title": "Thông tin học sinh có thành tích về hội thi, phong trào",
           "headers": [
             "TT",
             "Cuộc thi",
             "Đạt giải",
             "Họ tên học sinh đạt giải"
-          ],
-          "title": "Thông tin học sinh có thành tích về hội thi, phong trào",
-          "id": "tbl-1788535567817-fpw0"
+          ]
         }
       ],
-      "defaultTemplateContent": "\\- Số học sinh chưa ra lớp đến thời điểm ngày 07/9/2026:\r\n\r\n\\- Danh sách học sinh chưa ra lớp (theo bảng thống kê)\r\n\r\n|**TT**|**Họ và tên học sinh**|**Lớp năm học trước**|**Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng)**|**Số điện thoại học sinh (nếu có)**|**Số điện thoại phụ huynh (nếu có)**|**Lý do chưa ra lớp (nếu biết)**|\r\n| :-: | :-: | :-: | :-: | :-: | :-: | :-: |\r\n|**1**|||||||\r\n|**2**|||||||\r\n|**3**|||||||\r\n|**4**|||||||\r\n|**5**|||||||\r\n- Thông tin học sinh có thành tích về hội thi, phong trào:\r\n\r\n|**TT**|**Cuộc thi**|**Đạt giải**|**Họ tên học sinh đạt giải**|\r\n| :-: | :-: | :-: | :-: |\r\n|1|Văn nghệ vòng tỉnh, vòng xã|||\r\n|2|Hội khỏe phù đổng|||\r\n|3|Giải thể thao học sinh tỉnh Đồng Tháp|||\r\n|4|Sáng tạo thanh thiếu niên nhi đồng|||\r\n|5|Khoa học kỹ thuật|||\r\n|6|Vẽ tranh |||\r\n|7|<p>Phong trào khác:</p><p>...............................</p><p>...............................</p>|||\r\n|8|<p>Thành tích khác:</p><p>...............................</p>|||\r\n\\- Họ và tên lớp trưởng: \r\n2\r\n\r\n",
-      "fields": [
-        {
-          "required": false,
-          "type": "number",
-          "id": "fld-1788535567817-w89u",
-          "placeholder": "Nhập số học sinh chưa ra lớp đến thời điểm ngày 07/9/2026...",
-          "label": "Số học sinh chưa ra lớp đến thời điểm ngày 07/9/2026"
-        },
-        {
-          "placeholder": "Giá trị mặc định: 2",
-          "label": "Họ và tên lớp trưởng",
-          "required": false,
-          "id": "fld-1788535567817-afs9",
-          "type": "text"
-        }
-      ]
+      "defaultTemplateContent": "\\- Số học sinh chưa ra lớp đến thời điểm ngày 07/9/2026:\r\n\r\n\\- Danh sách học sinh chưa ra lớp (theo bảng thống kê)\r\n\r\n|**TT**|**Họ và tên học sinh**|**Lớp năm học trước**|**Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng)**|**Số điện thoại học sinh (nếu có)**|**Số điện thoại phụ huynh (nếu có)**|**Lý do chưa ra lớp (nếu biết)**|\r\n| :-: | :-: | :-: | :-: | :-: | :-: | :-: |\r\n|**1**|||||||\r\n|**2**|||||||\r\n|**3**|||||||\r\n|**4**|||||||\r\n|**5**|||||||\r\n- Thông tin học sinh có thành tích về hội thi, phong trào:\r\n\r\n|**TT**|**Cuộc thi**|**Đạt giải**|**Họ tên học sinh đạt giải**|\r\n| :-: | :-: | :-: | :-: |\r\n|1|Văn nghệ vòng tỉnh, vòng xã|||\r\n|2|Hội khỏe phù đổng|||\r\n|3|Giải thể thao học sinh tỉnh Đồng Tháp|||\r\n|4|Sáng tạo thanh thiếu niên nhi đồng|||\r\n|5|Khoa học kỹ thuật|||\r\n|6|Vẽ tranh |||\r\n|7|<p>Phong trào khác:</p><p>...............................</p><p>...............................</p>|||\r\n|8|<p>Thành tích khác:</p><p>...............................</p>|||\r\n\\- Họ và tên lớp trưởng: \r\n2\r\n\r\n"
     },
-    "targetDepartmentIds": [
-      "all"
-    ],
-    "startDate": "2026-09-04T15:26:21.418Z",
-    "academicYear": "2026-2027",
-    "status": "active",
-    "targetAudience": "homeroom_teachers",
-    "reportType": "hybrid",
     "targetRoles": [
       "teacher",
       "dept_head"
     ],
-    "description": "Yêu cầu nộp báo cáo theo mẫu trực tuyến gồm 2 mục thông tin và 2 bảng số liệu. Thầy/Cô điền trực tiếp vào form trên hệ thống trước thời hạn.",
-    "id": "period-1788535581418",
-    "semester": "HK1",
-    "isRequired": true,
-    "defaultTemplateContent": "\\- Số học sinh chưa ra lớp đến thời điểm ngày 07/9/2026:\r\n\r\n\\- Danh sách học sinh chưa ra lớp (theo bảng thống kê)\r\n\r\n|**TT**|**Họ và tên học sinh**|**Lớp năm học trước**|**Nơi ở hiện nay (nếu có thông tin chi tiết càng tốt như ở đường nào, khúc nào, gần những chỗ nào dễ nhận dạng)**|**Số điện thoại học sinh (nếu có)**|**Số điện thoại phụ huynh (nếu có)**|**Lý do chưa ra lớp (nếu biết)**|\r\n| :-: | :-: | :-: | :-: | :-: | :-: | :-: |\r\n|**1**|||||||\r\n|**2**|||||||\r\n|**3**|||||||\r\n|**4**|||||||\r\n|**5**|||||||\r\n- Thông tin học sinh có thành tích về hội thi, phong trào:\r\n\r\n|**TT**|**Cuộc thi**|**Đạt giải**|**Họ tên học sinh đạt giải**|\r\n| :-: | :-: | :-: | :-: |\r\n|1|Văn nghệ vòng tỉnh, vòng xã|||\r\n|2|Hội khỏe phù đổng|||\r\n|3|Giải thể thao học sinh tỉnh Đồng Tháp|||\r\n|4|Sáng tạo thanh thiếu niên nhi đồng|||\r\n|5|Khoa học kỹ thuật|||\r\n|6|Vẽ tranh |||\r\n|7|<p>Phong trào khác:</p><p>...............................</p><p>...............................</p>|||\r\n|8|<p>Thành tích khác:</p><p>...............................</p>|||\r\n\\- Họ và tên lớp trưởng: \r\n2\r\n\r\n",
+    "title": "Báo cáo kết quả tập trung học sinh đầu năm học 2026-2027",
     "allowMultipleSubmissions": false
   }
 ]

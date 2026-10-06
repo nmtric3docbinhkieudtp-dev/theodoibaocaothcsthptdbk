@@ -153,9 +153,9 @@ export const SubmitReportModal: React.FC<SubmitReportModalProps> = ({
     currentPeriod?.targetAudience !== 'gvcn_tan_kieu'
   );
 
-  const isDeptMinutesActive = formMode === 'dept_minutes' || (formMode === 'auto' && isDeptMeetingPeriod && !hasFormTemplate && !isSpecificLegacyHomeroomMinutes);
+  const isDeptMinutesActive = (formMode === 'dept_minutes' && !hasFormTemplate) || (formMode === 'auto' && isDeptMeetingPeriod && !hasFormTemplate && !isSpecificLegacyHomeroomMinutes);
   const isHomeroomActive = formMode === 'homeroom_minutes' || (formMode === 'auto' && isSpecificLegacyHomeroomMinutes);
-  const isCustomFormActive = formMode === 'custom_form' || (formMode === 'auto' && hasFormTemplate && !isDeptMinutesActive && !isHomeroomActive);
+  const isCustomFormActive = formMode === 'custom_form' || (hasFormTemplate && !isHomeroomActive) || (formMode === 'auto' && hasFormTemplate && !isDeptMinutesActive && !isHomeroomActive);
 
   const isMultiple = Boolean(
     currentPeriod?.allowMultipleSubmissions ||
@@ -220,7 +220,9 @@ export const SubmitReportModal: React.FC<SubmitReportModalProps> = ({
       setDeptMinutesData(null);
       setAttachments([]);
 
-      if (
+      if (hasFormTemplate) {
+        setFormMode('custom_form');
+      } else if (
         currentPeriod?.targetAudience === 'dept_heads_only' ||
         currentPeriod?.title?.toLowerCase().includes('họp tổ') ||
         currentPeriod?.title?.toLowerCase().includes('sinh hoạt tổ') ||
@@ -229,8 +231,6 @@ export const SubmitReportModal: React.FC<SubmitReportModalProps> = ({
         setFormMode('dept_minutes');
       } else if (isSpecificLegacyHomeroomMinutes) {
         setFormMode('homeroom_minutes');
-      } else if (hasFormTemplate) {
-        setFormMode('custom_form');
       } else {
         setFormMode('auto');
       }
@@ -673,7 +673,7 @@ export const SubmitReportModal: React.FC<SubmitReportModalProps> = ({
           {/* Bộ chuyển đổi mẫu báo cáo */}
           <div className="flex items-center gap-1.5 flex-wrap">
             <span className="text-[11px] font-bold text-slate-500 uppercase mr-1">Mẫu báo cáo:</span>
-            {isDeptMeetingPeriod && (
+            {isDeptMeetingPeriod && !hasFormTemplate && (
               <button
                 type="button"
                 onClick={() => setFormMode('dept_minutes')}
@@ -691,7 +691,13 @@ export const SubmitReportModal: React.FC<SubmitReportModalProps> = ({
             {hasFormTemplate ? (
               <div className="px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-700 text-white shadow-xs flex items-center gap-1.5">
                 <Layers className="w-3.5 h-3.5" />
-                <span>{isLeaveRequestPeriod ? 'Biểu Mẫu Đơn Xin Nghỉ Phép' : 'Biểu Mẫu Nhập Liệu Trực Tuyến'}</span>
+                <span>
+                  {isLeaveRequestPeriod 
+                    ? 'Biểu Mẫu Đơn Xin Nghỉ Phép' 
+                    : (/họp\s*tổ|biên\s*bản/i.test(currentPeriod?.title || '') 
+                      ? 'Biên Bản Họp Tổ Chuyên Môn' 
+                      : 'Biểu Mẫu Nhập Liệu Trực Tuyến')}
+                </span>
               </div>
             ) : !isDeptMinutesActive && !isHomeroomActive ? (
               <div className="px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-700 text-white shadow-xs flex items-center gap-1.5">

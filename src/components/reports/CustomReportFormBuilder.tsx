@@ -373,6 +373,16 @@ export const CustomReportFormBuilder: React.FC<CustomReportFormBuilderProps> = (
             <Download className="w-3.5 h-3.5" />
             <span>Tải Word</span>
           </button>
+
+          <button
+            type="button"
+            onClick={handleDownloadPdf}
+            className="px-2.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
+            title="Xuất hoặc in file PDF (.pdf) theo đúng chuẩn văn bản hành chính để ký và in"
+          >
+            <Printer className="w-3.5 h-3.5" />
+            <span>Xuất PDF / In</span>
+          </button>
         </div>
       </div>
 
@@ -1117,6 +1127,113 @@ export const CustomReportFormBuilder: React.FC<CustomReportFormBuilderProps> = (
 
               {(() => {
                 const isLeave = /nghỉ\s*phép/i.test(formTitle) || /xin\s*phép/i.test(formTitle) || /đơn\s*xin/i.test(formTitle);
+                const isMinutes = /biên\s*bản/i.test(formTitle) || /họp\s*tổ/i.test(formTitle) || fields.some(f => /thư\s*ký|chủ\s*trì/i.test(f.label));
+
+                if (!isLeave && isMinutes) {
+                  // Bóc tách thông tin mở đầu cuộc họp
+                  let mTime = '';
+                  let mLocation = '';
+                  let mParticipants = '';
+                  let mTotal = '';
+                  let mPresent = '';
+                  let mAbsentPerm = '';
+                  let mAbsentNoPerm = '';
+                  let mChair = '';
+                  let mSecretary = '';
+                  const handledIds = new Set<string>();
+
+                  for (const f of fields) {
+                    const val = fieldValues[f.id];
+                    const valStr = val !== undefined && val !== null ? String(val).trim() : '';
+                    const lLower = (f.label || '').toLowerCase();
+                    if (lLower.includes('thời gian') || lLower.includes('giờ, phút')) {
+                      if (!lLower.includes('kết thúc')) {
+                        mTime = valStr;
+                        handledIds.add(f.id);
+                      }
+                    } else if (lLower.includes('địa điểm') || lLower.includes('phòng')) {
+                      mLocation = valStr;
+                      handledIds.add(f.id);
+                    } else if (lLower.includes('tổng số thành viên của tổ') || lLower.includes('tổng số thành viên')) {
+                      mTotal = valStr;
+                      handledIds.add(f.id);
+                    } else if (lLower.includes('tham dự') || lLower.includes('có mặt')) {
+                      mPresent = valStr;
+                      handledIds.add(f.id);
+                    } else if (lLower.includes('vắng có phép') || lLower.includes('có phép')) {
+                      mAbsentPerm = valStr;
+                      handledIds.add(f.id);
+                    } else if (lLower.includes('vắng không phép') || lLower.includes('không phép')) {
+                      mAbsentNoPerm = valStr;
+                      handledIds.add(f.id);
+                    } else if (lLower.includes('thành phần')) {
+                      mParticipants = valStr;
+                      handledIds.add(f.id);
+                    } else if (lLower.includes('chủ trì') || lLower.includes('chủ tọa')) {
+                      mChair = valStr;
+                      handledIds.add(f.id);
+                    } else if (lLower.includes('thư ký')) {
+                      mSecretary = valStr;
+                      handledIds.add(f.id);
+                    } else if (lLower.includes('kết thúc')) {
+                      handledIds.add(f.id);
+                    }
+                  }
+
+                  const activeMinutesFields = fields.filter(f => !handledIds.has(f.id));
+
+                  return (
+                    <div className="space-y-3 text-xs leading-relaxed">
+                      <div className="space-y-1 bg-slate-50 p-2.5 rounded-lg border border-slate-200">
+                        {mTime && <p><strong>Thời gian:</strong> Vào lúc {mTime}</p>}
+                        {mLocation && <p><strong>Địa điểm:</strong> {mLocation}</p>}
+                        <p className="font-bold pt-1">Thành phần tham dự:</p>
+                        {mParticipants && <p className="pl-4">- Đối tượng: {mParticipants}</p>}
+                        {(mTotal || mPresent) && (
+                          <p className="pl-4">- Tổng số thành viên của tổ: <strong>{mTotal || '...'}</strong>; Số lượng có mặt: <strong>{mPresent || '...'}</strong></p>
+                        )}
+                        {(mAbsentPerm || mAbsentNoPerm) && (
+                          <p className="pl-4">- Vắng: {mAbsentPerm ? `Có phép: ${mAbsentPerm}` : '0'}{mAbsentNoPerm && mAbsentNoPerm !== '0' ? `; Không phép: ${mAbsentNoPerm}` : ''}</p>
+                        )}
+                        <p className="pl-4">- Chủ trì cuộc họp: <strong>{mChair || authorName}</strong> - {authorRole || 'Tổ trưởng'}</p>
+                        {mSecretary && <p className="pl-4">- Thư ký cuộc họp: <strong>{mSecretary}</strong></p>}
+                      </div>
+
+                      <div className="font-bold uppercase text-center pt-2 text-xs">NỘI DUNG CUỘC HỌP</div>
+
+                      <div className="space-y-2">
+                        {activeMinutesFields.map((f) => {
+                          const val = fieldValues[f.id];
+                          const valStr = val !== undefined && val !== null ? String(val).trim() : '';
+                          if (f.type === 'section') {
+                            return (
+                              <div key={f.id} className="font-bold text-slate-900 pt-2 border-t border-slate-200">
+                                {f.label}
+                              </div>
+                            );
+                          }
+                          const isSubBullet = /^(ưu điểm|hạn chế|nguyên nhân|giải pháp)/i.test(f.label.replace(/^[-•+*–\s]+/, ''));
+                          if (isSubBullet) {
+                            return (
+                              <div key={f.id} className="pl-4 text-justify">
+                                <strong>- {f.label.replace(/:$/, '').trim()}:</strong> {valStr || <span className="italic text-slate-400">Chưa ghi nhận</span>}
+                              </div>
+                            );
+                          }
+                          return (
+                            <div key={f.id} className="space-y-0.5">
+                              <div className="font-semibold text-slate-800">{f.label.replace(/:$/, '')}:</div>
+                              <div className="pl-4 whitespace-pre-line text-slate-700 text-justify">
+                                {valStr || <span className="italic text-slate-400">(Chưa nhập)</span>}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                }
+
                 if (!isLeave) {
                   return (
                     <>
@@ -1335,6 +1452,51 @@ export const CustomReportFormBuilder: React.FC<CustomReportFormBuilderProps> = (
                           <div className="italic text-[11px] text-slate-500">(Ký và ghi rõ họ tên)</div>
                           <div className="h-16"></div>
                           <div className="font-bold text-xs">{authorName}</div>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              ) : (/biên\s*bản/i.test(formTitle) || /họp\s*tổ/i.test(formTitle) || fields.some(f => /thư\s*ký|chủ\s*trì/i.test(f.label))) ? (
+                <div className="pt-4 space-y-4">
+                  <div className="text-xs text-justify" style={{ textIndent: '20px' }}>
+                    Cuộc họp kết thúc vào lúc {(() => {
+                      for (const f of fields) {
+                        if ((f.label || '').toLowerCase().includes('kết thúc')) {
+                          return fieldValues[f.id] || '... giờ ... phút';
+                        }
+                      }
+                      return '... giờ ... phút';
+                    })()} cùng ngày, biên bản đã được thông qua toàn thể cuộc họp và thống nhất ký tên./.
+                  </div>
+                  <table className="w-full text-center border-collapse">
+                    <tbody>
+                      <tr>
+                        <td style={{ width: '50%', verticalAlign: 'top', padding: '2px 4px' }}>
+                          <div className="font-bold uppercase text-xs">THƯ KÝ</div>
+                          <div className="italic text-[11px] text-slate-500">(Ký và ghi rõ họ tên)</div>
+                          <div className="h-16"></div>
+                          <div className="font-bold text-xs">{(() => {
+                            for (const f of fields) {
+                              if ((f.label || '').toLowerCase().includes('thư ký')) {
+                                return fieldValues[f.id] || '.......................................';
+                              }
+                            }
+                            return '.......................................';
+                          })()}</div>
+                        </td>
+                        <td style={{ width: '50%', verticalAlign: 'top', padding: '2px 4px' }}>
+                          <div className="font-bold uppercase text-xs">CHỦ TRÌ CUỘC HỌP</div>
+                          <div className="italic text-[11px] text-slate-500">(Ký và ghi rõ họ tên)</div>
+                          <div className="h-16"></div>
+                          <div className="font-bold text-xs">{(() => {
+                            for (const f of fields) {
+                              if ((f.label || '').toLowerCase().includes('chủ trì') || (f.label || '').toLowerCase().includes('chủ tọa')) {
+                                return fieldValues[f.id] || authorName;
+                              }
+                            }
+                            return authorName;
+                          })()}</div>
                         </td>
                       </tr>
                     </tbody>

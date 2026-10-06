@@ -980,6 +980,12 @@ export function generateCustomReportHtml({
   let cleanTitle = title.trim();
   cleanTitle = cleanTitle.replace(/^Báo cáo (tổng hợp:?|:?)\s*/i, '').trim();
 
+  // Bóc tách ngày tháng trong tiêu đề đợt báo cáo nếu có (ví dụ: (08-10-2026))
+  const titleDateMatch = title.match(/(\d{1,2})[-/.](\d{1,2})[-/.](\d{4})/);
+  const titleDateStr = titleDateMatch 
+    ? `ngày ${titleDateMatch[1]} tháng ${titleDateMatch[2]} năm ${titleDateMatch[3]}` 
+    : '';
+
   // Bóc tách thông tin mở đầu cuộc họp nếu là Biên bản
   let meetingTimeStr = '';
   let locationStr = '';
@@ -1034,11 +1040,35 @@ export function generateCustomReportHtml({
         handledFieldIds.add(f.id);
       }
     }
+
+    // Nếu thời gian họp chỉ có giờ phút mà chưa có ngày, bổ sung ngày từ tiêu đề
+    if (meetingTimeStr && !/ngày/i.test(meetingTimeStr) && titleDateStr) {
+      meetingTimeStr = `${meetingTimeStr}, ${titleDateStr}`;
+    }
   }
 
   // Tên hiển thị người ký
   const secretaryName = secretaryStr || '';
   const chairPersonName = chairPersonStr || authorName;
+
+  // Bóc tách tên tổ để đưa vào tiêu đề cơ quan ban hành (TỔ TOÁN, TỔ VĂN PHÒNG,...)
+  let deptNameForHeader = '';
+  const rawDeptStr = departmentOrClass || participantsStr || '';
+  if (rawDeptStr) {
+    const cleaned = rawDeptStr
+      .replace(/^Thành viên tổ\s+/i, '')
+      .replace(/^Tổ\s+/i, '')
+      .trim();
+    if (cleaned && !cleaned.toLowerCase().includes('tất cả')) {
+      deptNameForHeader = cleaned.toUpperCase();
+    }
+  }
+
+  // Xử lý tiêu đề phụ cho biên bản
+  let minutesMainTitle = cleanTitle;
+  // Loại bỏ hậu tố tác giả (ví dụ: - Trần Văn Út) nếu có
+  minutesMainTitle = minutesMainTitle.replace(/\s*[-–]\s*(Thầy|Cô|GV|Tổ trưởng)?\s*[A-ZÀ-Ỹ][a-zà-ỹ]+(\s+[A-ZÀ-Ỹ][a-zà-ỹ]+)*$/i, '').trim();
+  const minutesSubTitle = minutesMainTitle.replace(/^BIÊN\s*BẢN\s*[-–:]?\s*/i, '').trim();
 
   // Kiểm tra xem trong các trường có mục 1 (Đánh giá hoạt động của tổ) hay không
   let hasEvaluationField = false;
@@ -1212,7 +1242,9 @@ export function generateCustomReportHtml({
   }).join('');
 
   const today = new Date();
-  const dateStr = `Đốc Binh Kiều, ngày ${today.getDate()} tháng ${today.getMonth() + 1} năm ${today.getFullYear()}`;
+  const dateStr = titleDateStr 
+    ? `Đồng Tháp, ${titleDateStr}` 
+    : `Đồng Tháp, ngày ${today.getDate()} tháng ${today.getMonth() + 1} năm ${today.getFullYear()}`;
 
   return `
     <!DOCTYPE html>
@@ -1321,6 +1353,7 @@ export function generateCustomReportHtml({
             <div style="text-align: center; font-size: 1pt; line-height: 1pt; margin-top: 4px; margin-bottom: 4px;">
               <span style="display: inline-block; width: 90px; border-bottom: 1.5px solid #000; height: 1px; vertical-align: top;"></span>
             </div>
+            ${deptNameForHeader ? `<div style="font-size: 11pt; font-weight: bold; text-transform: uppercase; margin-top: 2px;">TỔ ${deptNameForHeader}</div>` : ''}
             <div style="font-size: 11pt; margin-top: 2px;">Số: &nbsp; &nbsp; /${isMinutes ? 'BB' : 'BC'}-THCS&amp;THPTĐBK</div>
           </td>
           <td style="width: 55%; text-align: center; vertical-align: top; border: none; padding: 0;">
@@ -1338,10 +1371,15 @@ export function generateCustomReportHtml({
       <div class="main-title" style="text-align: center; margin-top: 16px; margin-bottom: 20px;">
         ${!isMinutes ? `
           <div style="font-size: 14pt; font-weight: bold; text-transform: uppercase; margin: 0 0 4px 0;">BÁO CÁO</div>
-        ` : ''}
-        <div style="font-size: 14pt; font-weight: bold; text-transform: uppercase; margin: 0 0 4px 0;">
-          ${cleanTitle}
-        </div>
+          <div style="font-size: 14pt; font-weight: bold; text-transform: uppercase; margin: 0 0 4px 0;">
+            ${cleanTitle}
+          </div>
+        ` : `
+          <div style="font-size: 14pt; font-weight: bold; text-transform: uppercase; margin: 0 0 4px 0;">BIÊN BẢN</div>
+          <div style="font-size: 13.5pt; font-weight: bold; text-transform: uppercase; margin: 0 0 4px 0;">
+            ${minutesSubTitle}
+          </div>
+        `}
         <div style="font-size: 13.5pt; font-weight: bold; text-transform: uppercase; margin: 4px 0 0 0;">
           NĂM HỌC: ${academicYear}
         </div>
@@ -1418,14 +1456,14 @@ export function generateCustomReportHtml({
             <td style="width: 50%; text-align: center; vertical-align: top;">
               <div style="font-weight: bold; font-size: 13pt; text-transform: uppercase;">THƯ KÝ</div>
               <div style="font-style: italic; font-size: 11pt; margin-top: 2px;">(Ký và ghi rõ họ tên)</div>
-              <div style="height: 70px;"></div>
-              <div style="font-weight: bold; font-size: 12.5pt;">${secretaryName}</div>
+              <div style="height: 75px;"></div>
+              <div style="font-weight: bold; font-size: 13pt;">${secretaryName}</div>
             </td>
             <td style="width: 50%; text-align: center; vertical-align: top;">
               <div style="font-weight: bold; font-size: 13pt; text-transform: uppercase;">CHỦ TRÌ CUỘC HỌP</div>
               <div style="font-style: italic; font-size: 11pt; margin-top: 2px;">(Ký và ghi rõ họ tên)</div>
-              <div style="height: 70px;"></div>
-              <div style="font-weight: bold; font-size: 12.5pt;">${chairPersonName}</div>
+              <div style="height: 75px;"></div>
+              <div style="font-weight: bold; font-size: 13pt;">${chairPersonName}</div>
             </td>
           </tr>
         </table>
