@@ -164,6 +164,34 @@ async function startServer() {
     }
   });
 
+  function cleanSubmissionAttachments(sub: any): any {
+    if (!sub || !Array.isArray(sub.attachments)) return sub;
+    const cleanedAttachments = sub.attachments.map((att: any) => {
+      if (att && att.url && typeof att.url === 'string' && att.url.startsWith('data:') && att.url.length > 5000) {
+        try {
+          const fileId = 'att-' + Date.now() + '-' + Math.random().toString(36).substring(2, 8);
+          const safeName = (att.name || 'file').replace(/[^a-zA-Z0-9._-]/g, '_');
+          const filename = `${fileId}_${safeName}`;
+          const filePath = path.join(UPLOADS_DIR, filename);
+          const base64Data = att.url.includes(';base64,') ? att.url.split(';base64,')[1] : att.url;
+          const buffer = Buffer.from(base64Data, 'base64');
+          fs.writeFileSync(filePath, buffer);
+          return {
+            ...att,
+            id: att.id || fileId,
+            size: att.size || buffer.length,
+            url: `/api/files/${fileId}`
+          };
+        } catch (e) {
+          console.warn('Failed to extract base64 attachment:', e);
+          return att;
+        }
+      }
+      return att;
+    });
+    return { ...sub, attachments: cleanedAttachments };
+  }
+
   // Get all submissions
   app.get('/api/submissions', (req, res) => {
     const deletedIds = readDeletedIds();
@@ -173,10 +201,11 @@ async function startServer() {
 
   // Save or update single submission
   app.post('/api/submissions', (req, res) => {
-    const submission = req.body;
-    if (!submission || !submission.id) {
+    const rawSubmission = req.body;
+    if (!rawSubmission || !rawSubmission.id) {
       return res.status(400).json({ error: 'Missing submission id' });
     }
+    const submission = cleanSubmissionAttachments(rawSubmission);
 
     const list = readSubmissions();
     const index = list.findIndex(s => s.id === submission.id);
@@ -192,7 +221,7 @@ async function startServer() {
 
   // Batch sync submissions (handles cross-device sync when clients connect)
   app.post('/api/submissions/batch-sync', (req, res) => {
-    const clientSubs: any[] = req.body?.submissions || [];
+    const clientSubs: any[] = (req.body?.submissions || []).map(cleanSubmissionAttachments);
     const serverSubs = readSubmissions();
     const deletedIds = readDeletedIds();
     const subMap = new Map<string, any>();

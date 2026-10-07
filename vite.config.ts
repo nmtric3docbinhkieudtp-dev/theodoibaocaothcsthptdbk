@@ -15,6 +15,8 @@ export default defineConfig(() => {
             if (id.includes('firebase') || id.includes('@firebase')) return 'vendor-firebase';
             if (id.includes('xlsx')) return 'vendor-xlsx';
             if (id.includes('mammoth') || id.includes('jszip')) return 'vendor-mammoth';
+            if (id.includes('lucide-react')) return 'vendor-icons';
+            if (id.includes('motion')) return 'vendor-motion';
             return 'vendor';
           },
         },

@@ -482,20 +482,32 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
   };
 
-  // Sync once, then every 60s while visible; no polling at all when no Express backend exists (e.g. Vercel)
+  // Sync once on load when backend is available; avoid constant background polling to protect network bandwidth
   useEffect(() => {
-    let interval: ReturnType<typeof setInterval> | null = null;
     let cancelled = false;
+    let lastSyncTime = Date.now();
     isBackendAvailable().then(ok => {
       if (!ok || cancelled) return;
       syncWithServer();
-      interval = setInterval(() => {
-        if (document.visibilityState === 'visible') syncWithServer();
-      }, 60000);
+      lastSyncTime = Date.now();
     });
+
+    // Only re-sync when user returns to tab after a long inactivity period (>= 15 minutes)
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && Date.now() - lastSyncTime >= 15 * 60 * 1000) {
+        isBackendAvailable().then(ok => {
+          if (ok && !cancelled) {
+            syncWithServer();
+            lastSyncTime = Date.now();
+          }
+        });
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
     return () => {
       cancelled = true;
-      if (interval) clearInterval(interval);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, []);
 

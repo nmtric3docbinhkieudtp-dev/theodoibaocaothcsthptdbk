@@ -1,4 +1,4 @@
-﻿import { ReportSubmission, ReportPeriod, ReportAttachment } from '../types';
+import { ReportSubmission, ReportPeriod, ReportAttachment } from '../types';
 
 // On static hosts (e.g. Vercel) /api/* falls back to index.html; probe once and skip all later calls.
 let backendProbe: Promise<boolean> | null = null;
@@ -49,10 +49,18 @@ export const ApiService = {
 
   async batchSyncSubmissions(localSubs: ReportSubmission[]): Promise<ReportSubmission[] | null> {
     try {
+      // Strip large base64 attachments so batch-sync transfers kilobytes instead of megabytes
+      const sanitizedSubs = localSubs.map(s => ({
+        ...s,
+        attachments: (s.attachments || []).map(att => ({
+          ...att,
+          url: (att.url && att.url.startsWith('data:') && att.url.length > 5000) ? '' : att.url
+        }))
+      }));
       const res = await apiFetch('/api/submissions/batch-sync', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ submissions: localSubs })
+        body: JSON.stringify({ submissions: sanitizedSubs })
       });
       if (!res.ok) return null;
       const data = await res.json();
