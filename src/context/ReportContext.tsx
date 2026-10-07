@@ -241,19 +241,6 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         // Use official departments
         setDepartments(OFFICIAL_DEPARTMENTS);
         setLocal('dbk_departments_data', OFFICIAL_DEPARTMENTS);
-
-        // Check and sanitize periods in Firestore - never auto re-seed if cleared
-        const isPeriodsCleared = localStorage.getItem('dbk_periods_cleared_by_user') === 'true';
-        const periodsSnap = await getDocs(collection(db, 'periods'));
-        if (periodsSnap.empty && !isPeriodsCleared) {
-          localStorage.setItem('dbk_periods_cleared_by_user', 'true');
-        }
-
-        const subsSnap = await getDocs(collection(db, 'submissions'));
-        const isSubmissionsCleared = localStorage.getItem('dbk_submissions_cleared_by_user') === 'true';
-        if (subsSnap.empty && !isSubmissionsCleared) {
-          localStorage.setItem('dbk_submissions_cleared_by_user', 'true');
-        }
       } catch (err) {
         console.warn('Firestore initial check error:', err);
       }
@@ -261,6 +248,9 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       // Realtime listener for Submissions
       try {
         unsubscribeSubs = onSnapshot(collection(db, 'submissions'), (snapshot) => {
+          if (snapshot.empty && !localStorage.getItem('dbk_submissions_cleared_by_user')) {
+            localStorage.setItem('dbk_submissions_cleared_by_user', 'true');
+          }
           const deletedIds = getDeletedSubmissionIds();
           const rawList: ReportSubmission[] = !snapshot.empty 
             ? snapshot.docs
