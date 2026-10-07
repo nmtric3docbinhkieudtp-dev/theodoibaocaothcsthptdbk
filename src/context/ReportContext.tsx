@@ -24,7 +24,7 @@ import { collection, doc, onSnapshot, getDocs, getDoc, setDoc, deleteDoc } from 
 import { OFFICIAL_DEPARTMENTS, OFFICIAL_USERS } from '../data/staffRoster';
 import { INITIAL_SUBMISSIONS, INITIAL_PERIODS } from '../data/initialData';
 import { EmailService } from '../services/emailService';
-import { ApiService } from '../services/apiService';
+import { ApiService, isBackendAvailable } from '../services/apiService';
 import { useAuth } from './AuthContext';
 
 interface ReportContextType {
@@ -482,13 +482,21 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
   };
 
-  // Run server sync on mount and periodically every 5 seconds
+  // Sync once, then every 60s while visible; no polling at all when no Express backend exists (e.g. Vercel)
   useEffect(() => {
-    syncWithServer();
-    const interval = setInterval(() => {
+    let interval: ReturnType<typeof setInterval> | null = null;
+    let cancelled = false;
+    isBackendAvailable().then(ok => {
+      if (!ok || cancelled) return;
       syncWithServer();
-    }, 5000);
-    return () => clearInterval(interval);
+      interval = setInterval(() => {
+        if (document.visibilityState === 'visible') syncWithServer();
+      }, 60000);
+    });
+    return () => {
+      cancelled = true;
+      if (interval) clearInterval(interval);
+    };
   }, []);
 
   // Update browser tab favicon dynamically if logo changes

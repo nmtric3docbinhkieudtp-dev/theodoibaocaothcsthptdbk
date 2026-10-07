@@ -1,0 +1,8 @@
+data
+scripts
+node_modules
+dist
+1.jpg
+2.jpg
+3.jpg
+.env*

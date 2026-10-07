@@ -1,9 +1,28 @@
-import { ReportSubmission, ReportPeriod, ReportAttachment } from '../types';
+﻿import { ReportSubmission, ReportPeriod, ReportAttachment } from '../types';
+
+// On static hosts (e.g. Vercel) /api/* falls back to index.html; probe once and skip all later calls.
+let backendProbe: Promise<boolean> | null = null;
+
+const probeBackend = (): Promise<boolean> => {
+  if (!backendProbe) {
+    backendProbe = fetch('/api/periods', { headers: { Accept: 'application/json' } })
+      .then(res => res.ok && (res.headers.get('content-type') || '').includes('application/json'))
+      .catch(() => false);
+  }
+  return backendProbe;
+};
+
+export const isBackendAvailable = (): Promise<boolean> => probeBackend();
+
+const apiFetch = async (input: string, init?: RequestInit): Promise<Response> => {
+  if (!(await probeBackend())) return new Response(null, { status: 503 });
+  return fetch(input, init);
+};
 
 export const ApiService = {
   async fetchSubmissions(): Promise<ReportSubmission[] | null> {
     try {
-      const res = await fetch('/api/submissions');
+      const res = await apiFetch('/api/submissions');
       if (!res.ok) return null;
       return await res.json();
     } catch (e) {
@@ -14,7 +33,7 @@ export const ApiService = {
 
   async saveSubmission(submission: ReportSubmission): Promise<ReportSubmission | null> {
     try {
-      const res = await fetch('/api/submissions', {
+      const res = await apiFetch('/api/submissions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(submission)
@@ -30,7 +49,7 @@ export const ApiService = {
 
   async batchSyncSubmissions(localSubs: ReportSubmission[]): Promise<ReportSubmission[] | null> {
     try {
-      const res = await fetch('/api/submissions/batch-sync', {
+      const res = await apiFetch('/api/submissions/batch-sync', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ submissions: localSubs })
@@ -46,7 +65,7 @@ export const ApiService = {
 
   async deleteSubmission(id: string): Promise<boolean> {
     try {
-      const res = await fetch(`/api/submissions/${id}`, { method: 'DELETE' });
+      const res = await apiFetch(`/api/submissions/${id}`, { method: 'DELETE' });
       return res.ok;
     } catch (e) {
       console.warn('[ApiService] Failed to delete submission via server API:', e);
@@ -56,7 +75,7 @@ export const ApiService = {
 
   async batchDeleteSubmissions(ids: string[]): Promise<boolean> {
     try {
-      const res = await fetch('/api/submissions/batch-delete', {
+      const res = await apiFetch('/api/submissions/batch-delete', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ids })
@@ -70,7 +89,7 @@ export const ApiService = {
 
   async deduplicateSubmissions(): Promise<{ removedCount: number; submissions: ReportSubmission[] } | null> {
     try {
-      const res = await fetch('/api/submissions/deduplicate', {
+      const res = await apiFetch('/api/submissions/deduplicate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }
       });
@@ -84,7 +103,7 @@ export const ApiService = {
 
   async waiveLateSubmissions(params: { submissionId?: string; periodId?: string }): Promise<{ waivedCount: number; submissions: ReportSubmission[] } | null> {
     try {
-      const res = await fetch('/api/submissions/waive-late', {
+      const res = await apiFetch('/api/submissions/waive-late', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(params)
@@ -99,7 +118,7 @@ export const ApiService = {
 
   async fetchPeriods(): Promise<ReportPeriod[] | null> {
     try {
-      const res = await fetch('/api/periods');
+      const res = await apiFetch('/api/periods');
       if (!res.ok) return null;
       return await res.json();
     } catch (e) {
@@ -110,7 +129,7 @@ export const ApiService = {
 
   async savePeriod(period: ReportPeriod): Promise<ReportPeriod | null> {
     try {
-      const res = await fetch('/api/periods', {
+      const res = await apiFetch('/api/periods', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(period)
@@ -126,7 +145,7 @@ export const ApiService = {
 
   async batchSyncPeriods(localPeriods: ReportPeriod[]): Promise<ReportPeriod[] | null> {
     try {
-      const res = await fetch('/api/periods/batch-sync', {
+      const res = await apiFetch('/api/periods/batch-sync', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ periods: localPeriods })
@@ -142,7 +161,7 @@ export const ApiService = {
 
   async deletePeriod(id: string): Promise<boolean> {
     try {
-      const res = await fetch(`/api/periods/${id}`, { method: 'DELETE' });
+      const res = await apiFetch(`/api/periods/${id}`, { method: 'DELETE' });
       return res.ok;
     } catch (e) {
       console.warn('[ApiService] Failed to delete period via server API:', e);
@@ -157,7 +176,7 @@ export const ApiService = {
         reader.onload = async () => {
           try {
             const dataUrl = typeof reader.result === 'string' ? reader.result : '';
-            const res = await fetch('/api/upload', {
+            const res = await apiFetch('/api/upload', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
